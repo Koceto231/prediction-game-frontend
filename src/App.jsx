@@ -1,0 +1,80 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import { useAuth } from './context/AuthContext';
+import AdminPage from './pages/AdminPage';
+import LeaderboardPage from './pages/LeaderboardPage';
+import LoginPage from './pages/LoginPage';
+import MatchesPage from './pages/MatchesPage';
+import PredictionsPage from './pages/PredictionsPage';
+import LeaguesPage from './pages/LeaguesPage';
+import LeaguePage from './pages/LeaguePage';
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { isAdmin } = useAuth();
+
+  if (!isAdmin) {
+    return <Navigate to="/matches" replace />;
+  }
+
+  return children;
+}
+
+function AppLayout() {
+  return (
+    <div className="app-shell">
+      <div className="pitch-overlay" />
+      <div className="container">
+        <Navbar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/predictions" element={<PredictionsPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/leagues" element={<LeaguesPage />} />
+            <Route path="/leagues/:leagueId" element={<LeaguePage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminPage />
+                </AdminRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/matches" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/matches" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
