@@ -40,40 +40,70 @@ export function AuthProvider({ children }) {
   const user = parseJwt(token);
   const isAdmin = user?.role === 'Admin';
 
-  const login = async (email, password) => {
-    const response = await api.post('/Auth/login', { email, password });
-    const newToken = response.data.token ?? response.data.Token;
+ const login = async (email, password) => {
+  const response = await api.post('/Auth/login', { email, password });
 
-    if (!newToken) {
-      throw new Error('Token was not returned from login response.');
-    }
+  const { accessToken, refreshToken } = response.data;
 
-    localStorage.setItem('bpfl_token', newToken);
-    setToken(newToken);
-  };
+  if (!accessToken || !refreshToken) {
+    throw new Error('Tokens not returned');
+  }
+
+  localStorage.setItem('bpfl_token', accessToken);
+  localStorage.setItem('bpfl_refresh', refreshToken);
+
+  setToken(accessToken);
+};
+
+ const loginWithGoogle = async (idToken) => {
+  const response = await api.post('/Auth/google', { idToken });
+
+  const { accessToken, refreshToken } = response.data;
+
+  if (!accessToken || !refreshToken) {
+    throw new Error('Tokens not returned');
+  }
+
+  localStorage.setItem('bpfl_token', accessToken);
+  localStorage.setItem('bpfl_refresh', refreshToken);
+
+  setToken(accessToken);
+};
 
   const register = async (username, email, password) => {
     const response = await api.post('/Auth/register', { username, email, password });
     return response.data;
   };
 
-  const logout = () => {
-    localStorage.removeItem('bpfl_token');
-    setToken('');
-  };
+  const logout = async () => {
+  const refreshToken = localStorage.getItem('bpfl_refresh');
+
+  try {
+    if (refreshToken) {
+      await api.post('/Auth/logout', {
+        refreshToken
+      });
+    }
+  } catch {}
+
+  localStorage.removeItem('bpfl_token');
+  localStorage.removeItem('bpfl_refresh');
+  setToken('');
+};
 
   const value = useMemo(
-    () => ({
-      token,
-      isAuthenticated,
-      login,
-      register,
-      logout,
-      user,
-      isAdmin
-    }),
-    [token, isAuthenticated, user, isAdmin]
-  );
+  () => ({
+    token,
+    isAuthenticated,
+    login,
+    loginWithGoogle,
+    register,
+    logout,
+    user,
+    isAdmin
+  }),
+  [token, isAuthenticated, user, isAdmin]
+);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

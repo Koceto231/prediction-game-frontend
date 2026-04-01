@@ -1,47 +1,101 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'https://localhost:7031/api';
+
 const api = axios.create({
-  baseURL: 'https://localhost:7031/api',
-  timeout: 10000 // по желание (10 сек)
+  baseURL: API_BASE_URL,
+  timeout: 10000,
 });
 
+let isRefreshing = false;
+let failedQueue = [];
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('bpfl_token');
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  failedQueue = [];
+};
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('bpfl_token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const requestUrl = error.config?.url || '';
-    const hasToken = !!localStorage.getItem('bpfl_token');
+  async (error) => {
+    const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || '';
 
     const isAuthRequest =
       requestUrl.includes('/Auth/login') ||
-      requestUrl.includes('/Auth/register');
-
+      requestUrl.includes('/Auth/register') ||
+      requestUrl.includes('/Auth/google') ||
+      requestUrl.includes('/Auth/refresh');
 
     if (
-      !isAuthRequest &&
-      hasToken &&
-      (!error.response || error.response.status === 401)
+      error.response?.status === 401 &&
+      !originalRequest?._retry &&
+      !isAuthRequest
     ) {
-      console.warn('Auto logout triggered');
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
 
-      localStorage.removeItem('bpfl_token');
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-      // избягва infinite loop
-      if (window.location.pathname !== '/login') {
+      const refreshToken = localStorage.getItem('bpfl_refresh');
+
+      if (!refreshToken) {
+        localStorage.removeItem('bpfl_token');
+        localStorage.removeItem('bpfl_refresh');
         window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      try {
+        const res = await axios.post(
+          'https://localhost:7031/api/Auth/refresh',
+          { refreshToken }
+        );
+
+        const { accessToken, refreshToken: newRefresh } = res.data;
+
+        localStorage.setItem('bpfl_token', accessToken);
+        localStorage.setItem('bpfl_refresh', newRefresh);
+
+        processQueue(null, accessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (err) {
+        processQueue(err, null);
+
+        localStorage.removeItem('bpfl_token');
+        localStorage.removeItem('bpfl_refresh');
+
+        window.location.href = '/login';
+
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
     }
 

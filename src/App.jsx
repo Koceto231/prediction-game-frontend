@@ -8,6 +8,10 @@ import MatchesPage from './pages/MatchesPage';
 import PredictionsPage from './pages/PredictionsPage';
 import LeaguesPage from './pages/LeaguesPage';
 import LeaguePage from './pages/LeaguePage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -42,6 +46,7 @@ function AppLayout() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/leagues" element={<LeaguesPage />} />
             <Route path="/leagues/:leagueId" element={<LeaguePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route
               path="/admin"
               element={
@@ -67,6 +72,9 @@ export default function App() {
         path="/login"
         element={isAuthenticated ? <Navigate to="/matches" replace /> : <LoginPage />}
       />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/*"
         element={
