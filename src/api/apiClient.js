@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:7031/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:7031/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -72,7 +73,7 @@ api.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          'https://localhost:7031/api/Auth/refresh',
+          `${API_BASE_URL}/Auth/refresh`,
           { refreshToken }
         );
 
