@@ -217,29 +217,7 @@ export default function MatchesPage() {
 )}
 
           <div className="prediction-form">
-            {!predictionMode && (
-              <div className="prediction-mode-switch">
-                <button
-                  type="button"
-                  className={`prediction-mode-switch__option ${predictionMode === 'exact' ? 'prediction-mode-switch__option--active' : ''
-                    }`}
-                  onClick={() => setPredictionMode('exact')}
-                >
-                  <span className="prediction-mode-switch__title">Exact Score</span>
-                  <span className="prediction-mode-switch__meta">5 pts</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={`prediction-mode-switch__option ${predictionMode === 'market' ? 'prediction-mode-switch__option--active' : ''
-                    }`}
-                  onClick={() => setPredictionMode('market')}
-                >
-                  <span className="prediction-mode-switch__title">Market Pick</span>
-                  <span className="prediction-mode-switch__meta">up to 3 pts</span>
-                </button>
-              </div>
-            )}
+           
 
             {isExactMode && (
               <>
