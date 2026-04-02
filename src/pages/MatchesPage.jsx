@@ -175,83 +175,94 @@ export default function MatchesPage() {
 
           <div className="prediction-form">
             {!predictionMode && (
-              <div className="mode-selector">
+              <div className="prediction-mode-switch">
                 <button
-                  className="primary-button"
                   type="button"
+                  className={`prediction-mode-switch__option ${predictionMode === 'exact' ? 'prediction-mode-switch__option--active' : ''
+                    }`}
                   onClick={() => setPredictionMode('exact')}
                 >
-                  Exact Score (5 pts)
+                  <span className="prediction-mode-switch__title">Exact Score</span>
+                  <span className="prediction-mode-switch__meta">5 pts</span>
                 </button>
+
                 <button
-                  className="ghost-button"
                   type="button"
+                  className={`prediction-mode-switch__option ${predictionMode === 'market' ? 'prediction-mode-switch__option--active' : ''
+                    }`}
                   onClick={() => setPredictionMode('market')}
                 >
-                  Market Pick (up to 3 pts)
+                  <span className="prediction-mode-switch__title">Market Pick</span>
+                  <span className="prediction-mode-switch__meta">up to 3 pts</span>
                 </button>
               </div>
             )}
 
             {isExactMode && (
-  <>
-    <div className="mode-card mode-card--exact">
-      <div className="mode-card__top">
-        <span className="mode-badge">Exact Score Mode</span>
-        <span className="mode-points">5 PTS</span>
-      </div>
+              <>
+                <div className="mode-card mode-card--exact premium-mode-card">
+                  <div className="mode-card__top">
+                    <span className="mode-badge">Exact Score Mode</span>
+                    <span className="mode-points">5 PTS</span>
+                  </div>
 
-      <div className="mode-card__title">Exact score prediction</div>
+                  <div className="mode-card__title">Exact score prediction</div>
 
-      <div className="mode-card__text">
-        Predict the exact final score for this match.
-      </div>
+                  <div className="mode-card__text">
+                    Predict the exact final score for this match and earn maximum points.
+                  </div>
 
-      <button
-        type="button"
-        className="ghost-button"
-        onClick={() => {
-          setPredictionMode('');
-          setFields(EMPTY_PREDICTION);
-        }}
-      >
-        Change type
-      </button>
-    </div>
+                  <button
+                    type="button"
+                    className="ghost-button mode-card__action"
+                    onClick={() => {
+                      setPredictionMode('');
+                      setFields(EMPTY_PREDICTION);
+                    }}
+                  >
+                    Change type
+                  </button>
+                </div>
 
-    <div className="score-block">
-      <span className="score-block__label">Enter predicted result</span>
+                <div className="scoreboard-card">
+                  <div className="scoreboard-card__head">
+                    <span className="scoreboard-card__eyebrow">Enter predicted result</span>
+                  </div>
 
-      <div className="score-inputs">
-        <div className="score-field">
-          <label>{selectedMatch.homeTeamName}</label>
-          <input
-            type="number"
-            min="0"
-            max="20"
-            placeholder="0"
-            value={homeScore}
-            onChange={(e) => setField('homeScore', e.target.value)}
-          />
-        </div>
+                  <div className="scoreboard">
+                    <div className="scoreboard-team">
+                      <div className="scoreboard-team__name">{selectedMatch.homeTeamName}</div>
+                      <div className="scorebox">
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          placeholder="0"
+                          value={homeScore}
+                          onChange={(e) => setField('homeScore', e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-        <div className="score-separator">:</div>
+                    <div className="scoreboard__separator">:</div>
 
-        <div className="score-field">
-          <label>{selectedMatch.awayTeamName}</label>
-          <input
-            type="number"
-            min="0"
-            max="20"
-            placeholder="0"
-            value={awayScore}
-            onChange={(e) => setField('awayScore', e.target.value)}
-          />
-        </div>
-      </div>
-    </div>
-  </>
-)}
+                    <div className="scoreboard-team">
+                      <div className="scoreboard-team__name">{selectedMatch.awayTeamName}</div>
+                      <div className="scorebox">
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          placeholder="0"
+                          value={awayScore}
+                          onChange={(e) => setField('awayScore', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {isMarketMode && (
               <>
