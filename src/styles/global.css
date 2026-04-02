@@ -2941,6 +2941,9 @@ select:focus {
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    padding-bottom: 6px;
+  margin-top: 60px;
+
 }
 
 .primary-button {
@@ -3088,4 +3091,34 @@ select:focus {
   .prediction-mode-switch__meta {
     font-size: 0.88rem;
   }
+}
+
+.mode-card {
+  padding: 18px 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mode-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mode-card__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mode-card__text {
+  font-size: 0.9rem;
+  color: #9fb3a7;
+}
+
+.mode-card__action {
+  margin-top: 4px;
+  align-self: flex-start;
 }
