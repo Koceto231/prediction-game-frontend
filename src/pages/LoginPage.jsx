@@ -1,8 +1,3 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-import { useAuth } from '../context/AuthContext';
-
 export default function LoginPage() {
   const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +26,14 @@ export default function LoginPage() {
       setFeedbackType('success');
     }
   }, [searchParams]);
+
+  const passwordChecks = {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -171,55 +174,44 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleRegister} className="auth-form">
-  <input
-    placeholder="Username"
-    value={username}
-    onChange={(e) => setUsername(e.target.value)}
-    autoComplete="username"
-  />
+            <input
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+            />
 
-  <input
-    type="email"
-    placeholder="Email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    autoComplete="email"
-  />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
 
-  <input
-    placeholder="Password"
-    type="password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    autoComplete="new-password"
-  />
+            <input
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
 
+            <div className="password-rules">
+              <div className="password-rules__title">Password must contain:</div>
+              <ul>
+                <li className={passwordChecks.length ? 'rule-ok' : ''}>At least 8 characters</li>
+                <li className={passwordChecks.upper ? 'rule-ok' : ''}>At least 1 uppercase letter</li>
+                <li className={passwordChecks.lower ? 'rule-ok' : ''}>At least 1 lowercase letter</li>
+                <li className={passwordChecks.number ? 'rule-ok' : ''}>At least 1 number</li>
+                <li className={passwordChecks.special ? 'rule-ok' : ''}>At least 1 special character</li>
+              </ul>
+            </div>
 
-  <div className="password-rules">
-    <div className="password-rules__title">Password must contain:</div>
-    <ul>
-      <li className={passwordChecks.length ? 'rule-ok' : ''}>
-        At least 8 characters
-      </li>
-      <li className={passwordChecks.upper ? 'rule-ok' : ''}>
-        At least 1 uppercase letter
-      </li>
-      <li className={passwordChecks.lower ? 'rule-ok' : ''}>
-        At least 1 lowercase letter
-      </li>
-      <li className={passwordChecks.number ? 'rule-ok' : ''}>
-        At least 1 number
-      </li>
-      <li className={passwordChecks.special ? 'rule-ok' : ''}>
-        At least 1 special character
-      </li>
-    </ul>
-  </div>
-
-  <button className="primary-button" type="submit" disabled={loading}>
-    {loading ? 'Loading...' : 'Register'}
-  </button>
-</form>
+            <button className="primary-button" type="submit" disabled={loading}>
+              {loading ? 'Loading...' : 'Register'}
+            </button>
+          </form>
         )}
 
         {feedback && (

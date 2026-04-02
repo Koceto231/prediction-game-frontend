@@ -2624,3 +2624,9 @@ select:focus {
   opacity: 1;
   font-weight: 600;
 }
+
+.rule-ok {
+  color: #59ff93;
+  opacity: 1;
+  font-weight: 600;
+}
