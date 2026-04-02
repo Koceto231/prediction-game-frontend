@@ -2590,3 +2590,37 @@ select:focus {
 .leagueAndCode{
    margin-top: 15px;
 }
+
+.password-rules {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(0, 255, 150, 0.05);
+  border: 1px solid rgba(0, 255, 150, 0.15);
+  color: rgba(231, 255, 237, 0.85);
+}
+
+.password-rules__title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #dfffe9;
+}
+
+.password-rules ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.password-rules li {
+  font-size: 0.92rem;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+.rule-ok {
+  color: #59ff93;
+  opacity: 1;
+  font-weight: 600;
+}

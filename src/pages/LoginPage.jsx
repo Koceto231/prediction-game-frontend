@@ -171,33 +171,55 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleRegister} className="auth-form">
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-            />
+  <input
+    placeholder="Username"
+    value={username}
+    onChange={(e) => setUsername(e.target.value)}
+    autoComplete="username"
+  />
 
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
+  <input
+    type="email"
+    placeholder="Email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    autoComplete="email"
+  />
 
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
+  <input
+    placeholder="Password"
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    autoComplete="new-password"
+  />
 
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Loading...' : 'Register'}
-            </button>
-          </form>
+
+  <div className="password-rules">
+    <div className="password-rules__title">Password must contain:</div>
+    <ul>
+      <li className={passwordChecks.length ? 'rule-ok' : ''}>
+        At least 8 characters
+      </li>
+      <li className={passwordChecks.upper ? 'rule-ok' : ''}>
+        At least 1 uppercase letter
+      </li>
+      <li className={passwordChecks.lower ? 'rule-ok' : ''}>
+        At least 1 lowercase letter
+      </li>
+      <li className={passwordChecks.number ? 'rule-ok' : ''}>
+        At least 1 number
+      </li>
+      <li className={passwordChecks.special ? 'rule-ok' : ''}>
+        At least 1 special character
+      </li>
+    </ul>
+  </div>
+
+  <button className="primary-button" type="submit" disabled={loading}>
+    {loading ? 'Loading...' : 'Register'}
+  </button>
+</form>
         )}
 
         {feedback && (
