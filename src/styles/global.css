@@ -3122,3 +3122,24 @@ select:focus {
   margin-top: 4px;
   align-self: flex-start;
 }
+
+.mode-card__button {
+  margin-top: 14px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(20, 30, 25, 0.95), rgba(10, 18, 14, 0.95));
+  color: #eafaf0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.mode-card__button:hover {
+  border-color: rgba(72, 255, 144, 0.2);
+  background:
+    linear-gradient(180deg, rgba(30, 45, 36, 0.95), rgba(12, 22, 17, 0.95));
+  transform: translateY(-1px);
+}

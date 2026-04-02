@@ -200,21 +200,21 @@ export default function MatchesPage() {
 
             {isExactMode && (
               <>
-                <div className="mode-card mode-card--exact premium-mode-card">
+                <div className="mode-card mode-card--exact">
                   <div className="mode-card__top">
-                    <span className="mode-badge">Exact Score Mode</span>
+                    <span className="mode-badge">EXACT SCORE MODE</span>
                     <span className="mode-points">5 PTS</span>
                   </div>
 
                   <div className="mode-card__title">Exact score prediction</div>
 
                   <div className="mode-card__text">
-                    Predict the exact final score for this match and earn maximum points.
+                    Predict the exact final score for this match.
                   </div>
 
                   <button
                     type="button"
-                    className="ghost-button mode-card__action"
+                    className="mode-card__button"
                     onClick={() => {
                       setPredictionMode('');
                       setFields(EMPTY_PREDICTION);
@@ -350,7 +350,7 @@ export default function MatchesPage() {
                     <div className="option-card option-card--compact">
                       <div className="option-card__header">
                         <span className="option-card__label">Over / Under Pick</span>
-            
+
                       </div>
                       <div className="pick-row pick-row--compact">
                         <button
@@ -375,7 +375,7 @@ export default function MatchesPage() {
                     <div className="option-card option-card--compact">
                       <div className="option-card__header">
                         <span className="option-card__label">Over / Under Line</span>
-                  
+
                       </div>
                       <div className="pick-row pick-row--compact">
                         {['Line15', 'Line25', 'Line35'].map((line) => (
