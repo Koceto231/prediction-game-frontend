@@ -94,6 +94,7 @@ export default function LeaguesPage() {
             <label>
               League Name
               <input
+              className="leagueAndCode"
                 value={leagueName}
                 onChange={(e) => setLeagueName(e.target.value)}
                 placeholder="Enter league name"
@@ -109,6 +110,7 @@ export default function LeaguesPage() {
             <label>
               Invite Code
               <input
+              className="leagueAndCode"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 placeholder="Enter invite code"
