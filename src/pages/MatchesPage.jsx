@@ -328,7 +328,7 @@ export default function MatchesPage() {
                       </button>
                       <button
                         type="button"
-                        className="ghost-button"
+                        className="mode-card__button"
                         onClick={() => setShowNilNilPrompt(false)}
                       >
                         No, keep manual
