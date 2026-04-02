@@ -148,7 +148,7 @@ export default function MatchesPage() {
               key={match.id}
               match={match}
               selected={selectedMatch?.id === match.id}
-              onClick={() => {
+              onSelect={() => {
                 if (selectedMatch?.id === match.id) {
                   setSelectedMatch(null);
                   resetPredictionFields();

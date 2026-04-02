@@ -2,7 +2,7 @@ export default function MatchCard({ match, selected, onSelect }) {
   return (
     <button
       className={`match-card ${selected ? 'match-card--selected' : ''}`}
-      onClick={() => onSelect(match)}
+      onClick={() => onSelect?.(match)}
       type="button"
     >
       <div className="match-card__top">
