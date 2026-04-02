@@ -931,7 +931,7 @@ select:focus {
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
-  align-items: end;
+  align-items: center;
   gap: 18px;
 }
 
@@ -2571,4 +2571,8 @@ select:focus {
   .podium-medal {
     font-size: 2rem;
   }
+}
+
+.shell-card.panel {
+  scroll-margin-top: 90px;
 }

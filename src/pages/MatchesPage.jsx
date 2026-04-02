@@ -155,6 +155,12 @@ export default function MatchesPage() {
                 } else {
                   setSelectedMatch(match);
                   resetPredictionFields();
+                  setTimeout(() => {
+                    predictionRef.current?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    });
+                  }, 50);
                 }
               }}
             />
@@ -165,59 +171,59 @@ export default function MatchesPage() {
       {selectedMatch && (
         <section className="shell-card panel" ref={predictionRef}>
           <div className="match-hero">
-  <div className="match-hero__badge">Selected Match</div>
+            <div className="match-hero__badge">Selected Match</div>
 
-  <h2 className="match-hero__title">
-    <span>{selectedMatch.homeTeamName}</span>
-    <span className="match-hero__vs">vs</span>
-    <span>{selectedMatch.awayTeamName}</span>
-  </h2>
+            <h2 className="match-hero__title">
+              <span>{selectedMatch.homeTeamName}</span>
+              <span className="match-hero__vs">vs</span>
+              <span>{selectedMatch.awayTeamName}</span>
+            </h2>
 
-  <div className="match-hero__meta">
-    <span className="match-hero__date">
-      {new Date(selectedMatch.matchDate).toLocaleString()}
-    </span>
-  </div>
-</div>
+            <div className="match-hero__meta">
+              <span className="match-hero__date">
+                {new Date(selectedMatch.matchDate).toLocaleString()}
+              </span>
+            </div>
+          </div>
 
-{!predictionMode && (
-  <div className="premium-mode-grid">
-    <button
-      type="button"
-      className="premium-mode-card premium-mode-card--exact"
-      onClick={() => setPredictionMode('exact')}
-    >
-      <div className="premium-mode-card__top">
-        <span className="premium-mode-card__icon">🎯</span>
-        <span className="premium-mode-card__points">5 pts</span>
-      </div>
+          {!predictionMode && (
+            <div className="premium-mode-grid">
+              <button
+                type="button"
+                className="premium-mode-card premium-mode-card--exact"
+                onClick={() => setPredictionMode('exact')}
+              >
+                <div className="premium-mode-card__top">
+                  <span className="premium-mode-card__icon">🎯</span>
+                  <span className="premium-mode-card__points">5 pts</span>
+                </div>
 
-      <div className="premium-mode-card__title">Exact Score</div>
-      <div className="premium-mode-card__text">
-        Predict the final score and earn maximum points.
-      </div>
-    </button>
+                <div className="premium-mode-card__title">Exact Score</div>
+                <div className="premium-mode-card__text">
+                  Predict the final score and earn maximum points.
+                </div>
+              </button>
 
-    <button
-      type="button"
-      className="premium-mode-card premium-mode-card--market"
-      onClick={() => setPredictionMode('market')}
-    >
-      <div className="premium-mode-card__top">
-        <span className="premium-mode-card__icon">📈</span>
-        <span className="premium-mode-card__points">up to 3 pts</span>
-      </div>
+              <button
+                type="button"
+                className="premium-mode-card premium-mode-card--market"
+                onClick={() => setPredictionMode('market')}
+              >
+                <div className="premium-mode-card__top">
+                  <span className="premium-mode-card__icon">📈</span>
+                  <span className="premium-mode-card__points">up to 3 pts</span>
+                </div>
 
-      <div className="premium-mode-card__title">Market Pick</div>
-      <div className="premium-mode-card__text">
-        Predict winner, BTTS and Over / Under outcomes.
-      </div>
-    </button>
-  </div>
-)}
+                <div className="premium-mode-card__title">Market Pick</div>
+                <div className="premium-mode-card__text">
+                  Predict winner, BTTS and Over / Under outcomes.
+                </div>
+              </button>
+            </div>
+          )}
 
           <div className="prediction-form">
-           
+
 
             {isExactMode && (
               <>
