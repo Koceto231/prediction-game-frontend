@@ -194,46 +194,64 @@ export default function MatchesPage() {
             )}
 
             {isExactMode && (
-              <>
-                <div className="mode-card mode-card--exact">
-                  <div className="mode-card__top">
-                    <span className="mode-badge">EXACT SCORE MODE</span>
-                    <span className="mode-points">5 PTS</span>
-                  </div>
-                  <div className="mode-card__title">Exact score prediction</div>
-                  <div className="mode-card__text">
-                    Predict the exact final score for this match.
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => { setPredictionMode(''); setFields(EMPTY_PREDICTION); }}
-                  >
-                    Change type
-                  </button>
-                </div>
+  <>
+    <div className="mode-card mode-card--exact">
+      <div className="mode-card__top">
+        <span className="mode-badge">Exact Score Mode</span>
+        <span className="mode-points">5 PTS</span>
+      </div>
 
-                <div className="score-inputs">
-                  <input
-                    type="number"
-                    min="0"
-                    max="20"
-                    placeholder={selectedMatch.homeTeamName}
-                    value={homeScore}
-                    onChange={(e) => setField('homeScore', e.target.value)}
-                  />
-                  <span>:</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="20"
-                    placeholder={selectedMatch.awayTeamName}
-                    value={awayScore}
-                    onChange={(e) => setField('awayScore', e.target.value)}
-                  />
-                </div>
-              </>
-            )}
+      <div className="mode-card__title">Exact score prediction</div>
+
+      <div className="mode-card__text">
+        Predict the exact final score for this match.
+      </div>
+
+      <button
+        type="button"
+        className="ghost-button"
+        onClick={() => {
+          setPredictionMode('');
+          setFields(EMPTY_PREDICTION);
+        }}
+      >
+        Change type
+      </button>
+    </div>
+
+    <div className="score-block">
+      <span className="score-block__label">Enter predicted result</span>
+
+      <div className="score-inputs">
+        <div className="score-field">
+          <label>{selectedMatch.homeTeamName}</label>
+          <input
+            type="number"
+            min="0"
+            max="20"
+            placeholder="0"
+            value={homeScore}
+            onChange={(e) => setField('homeScore', e.target.value)}
+          />
+        </div>
+
+        <div className="score-separator">:</div>
+
+        <div className="score-field">
+          <label>{selectedMatch.awayTeamName}</label>
+          <input
+            type="number"
+            min="0"
+            max="20"
+            placeholder="0"
+            value={awayScore}
+            onChange={(e) => setField('awayScore', e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  </>
+)}
 
             {isMarketMode && (
               <>
