@@ -2586,3 +2586,13 @@ select:focus {
   margin-top: 55px;
   padding-bottom: 4px;
 }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.list-card button {
+  margin-top: 8px;
+}
