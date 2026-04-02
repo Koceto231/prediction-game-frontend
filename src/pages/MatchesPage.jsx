@@ -304,7 +304,7 @@ export default function MatchesPage() {
                   </div>
                   <button
                     type="button"
-                    className="ghost-button"
+                    className="mode-card__button"
                     onClick={() => { setPredictionMode(''); setFields(EMPTY_PREDICTION); setShowNilNilPrompt(false); }}
                   >
                     Change type
@@ -328,7 +328,7 @@ export default function MatchesPage() {
                       </button>
                       <button
                         type="button"
-                        className="mode-card__button"
+                        className="ghost-button"
                         onClick={() => setShowNilNilPrompt(false)}
                       >
                         No, keep manual
