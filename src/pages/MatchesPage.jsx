@@ -156,9 +156,9 @@ export default function MatchesPage() {
                   setSelectedMatch(match);
                   resetPredictionFields();
                   setTimeout(() => {
-                    predictionRef.current?.scrollIntoView({
+                    window.scrollTo({
+                      top: 0,
                       behavior: 'smooth',
-                      block: 'start',
                     });
                   }, 50);
                 }
