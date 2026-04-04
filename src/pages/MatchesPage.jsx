@@ -173,8 +173,8 @@ export default function MatchesPage() {
                   resetPredictionFields();
                   setTimeout(() => {
   predictionRef.current?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
+ top: document.body.scrollHeight,
+  behavior: 'smooth',
   });
 }, 150);
                 }
