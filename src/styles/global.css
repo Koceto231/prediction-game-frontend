@@ -2634,3 +2634,7 @@ select:focus {
 .ai-card {
   scroll-margin-top: 24px;
 }
+
+.shell-card.panel {
+  scroll-margin-top: 16px;
+}

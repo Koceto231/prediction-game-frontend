@@ -172,11 +172,11 @@ export default function MatchesPage() {
                   setSelectedMatch(match);
                   resetPredictionFields();
                   setTimeout(() => {
-                    window.scrollTo({
-                      top: 0,
-                      behavior: 'smooth',
-                    });
-                  }, 50);
+  predictionRef.current?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  });
+}, 150);
                 }
               }}
             />
