@@ -2932,51 +2932,69 @@ select:focus {
 
 .scoreboard {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   grid-template-rows: auto auto;
   align-items: center;
   justify-items: center;
-  gap: 10px 12px;
+  gap: 12px 12px;
+  width: 100%;
 }
 
 .scoreboard-team {
-  min-width: 0;
-  width: 100%;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; /* 🔥 важно */
-  text-align: center;
+  display: contents;
 }
 
+/* Ляв отбор */
+.scoreboard-team:first-of-type .scoreboard-team__name {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.scoreboard-team:first-of-type .scorebox {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+/* Десен отбор */
+.scoreboard-team:last-of-type .scoreboard-team__name {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.scoreboard-team:last-of-type .scorebox {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+/* Двете точки */
+.scoreboard__separator {
+  grid-column: 2;
+  grid-row: 2;
+
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  flex-shrink: 0;
+}
+
+/* Имена */
 .scoreboard-team__name {
   width: 100%;
+  max-width: 100%;
   text-align: center;
   line-height: 1.2;
 
   display: -webkit-box;
   -webkit-box-orient: vertical;
-
-  /* стандартно (ново) */
   line-clamp: 2;
-
-  /* за браузъри (Chrome, Safari) */
   -webkit-line-clamp: 2;
-
   overflow: hidden;
 }
 
-.scoreboard__separator {
-  width: 44px;
-  height: 44px;
-
-  display: grid;
-  place-items: center;
-
-  flex-shrink: 0;
-}
-
+/* Input box */
 .scorebox {
   width: 100%;
   display: flex;
@@ -2984,54 +3002,21 @@ select:focus {
 }
 
 .scorebox input {
-  width: 110px;
+  width: min(100%, 110px);
   text-align: center;
 }
 
-/* имена */
-.scoreboard-team:nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.scoreboard-team:nth-child(3) {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-/* score inputs */
-.scoreboard-team:nth-child(1) .scorebox {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.scoreboard-team:nth-child(3) .scorebox {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-/* separator */
-.scoreboard__separator {
-  grid-column: 2;
-  grid-row: 2;
-}
 @media (max-width: 480px) {
   .scoreboard {
-    gap: 10px;
+    gap: 10px 10px;
   }
 
   .scoreboard__separator {
     width: 40px;
     height: 40px;
-    font-size: 22px;
   }
 
   .scorebox input {
-    width: 100%;
-    max-width: 120px;
-  }
-
-  .scoreboard-team__name {
-    font-size: 0.95rem;
+    width: min(100%, 100px);
   }
 }
