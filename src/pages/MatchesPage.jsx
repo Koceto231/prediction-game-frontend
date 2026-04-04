@@ -414,7 +414,7 @@ export default function MatchesPage() {
 
                     <div className="option-card option-card--compact">
                       <div className="option-card__header">
-                        <span className="option-card__label">Over / Under Line</span>
+                        <span className="option-card__label">Over / Under Goals</span>
                       </div>
                       <div className="pick-row pick-row--compact">
                         {['Line15', 'Line25', 'Line35'].map((line) => (
