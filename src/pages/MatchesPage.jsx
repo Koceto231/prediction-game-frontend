@@ -374,7 +374,7 @@ export default function MatchesPage() {
                     </div>
 
                     <div className="option-card">
-                      <span className="option-card__label">BTTS</span>
+                      <span className="option-card__label">Both teams to score</span>
                       <div className="pick-row">
                         {[['true', 'Yes'], ['false', 'No']].map(([val, label]) => (
                           <button
