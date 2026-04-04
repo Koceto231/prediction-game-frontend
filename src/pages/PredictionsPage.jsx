@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 
-// FIX: Moved maps outside the component — were recreated on every render
 const WINNER_MAP = { 1: 'Home', 2: 'Draw', 3: 'Away', Home: 'Home', Draw: 'Draw', Away: 'Away' };
 const OU_LINE_MAP = { 1: '1.5', 2: '2.5', 3: '3.5', Line15: '1.5', Line25: '2.5', Line35: '3.5' };
 const OU_PICK_MAP = { 1: 'Over', 2: 'Under', Over: 'Over', Under: 'Under' };
 
 export default function PredictionsPage() {
   const [predictions, setPredictions] = useState([]);
-  const [loading, setLoading] = useState(true); // FIX: Added loading state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let cancelled = false; // FIX: Cleanup on unmount
+    let cancelled = false;
 
     const fetchPredictions = async () => {
       try {
@@ -31,7 +30,9 @@ export default function PredictionsPage() {
     };
 
     fetchPredictions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -52,7 +53,6 @@ export default function PredictionsPage() {
       {!loading && !error && (
         <div className="cards-grid">
           {predictions.map((item) => {
-            // FIX: API returns camelCase — removed all the ?? PascalCase fallback noise
             const {
               id,
               homeTeam,
@@ -79,22 +79,30 @@ export default function PredictionsPage() {
                 className={`prediction-card ${hasExactScore ? 'prediction-card--exact' : 'prediction-card--market'}`}
               >
                 <div className="prediction-card__top">
-                  <span className={`prediction-card__mode ${hasExactScore ? 'prediction-card__mode--exact' : 'prediction-card__mode--market'}`}>
+                  <span
+                    className={`prediction-card__mode ${
+                      hasExactScore ? 'prediction-card__mode--exact' : 'prediction-card__mode--market'
+                    }`}
+                  >
                     {hasExactScore ? 'Exact Score' : 'Market Pick'}
                   </span>
                   <div className="prediction-card__points">{points} pts</div>
                 </div>
 
                 {hasExactScore ? (
-                  <div className="prediction-card__scorebox">
-                    <div className="prediction-card__team">
-                      <span className="prediction-card__team-name">{homeTeam}</span>
-                      <span className="prediction-card__score">{predictedHomeScore}</span>
+                  <div className="prediction-card__scoreboard">
+                    <div className="prediction-card__scoreboard-team prediction-card__scoreboard-team--home">
+                      {homeTeam}
                     </div>
+
+                    <div className="prediction-card__scorebox">{predictedHomeScore}</div>
+
                     <div className="prediction-card__divider">:</div>
-                    <div className="prediction-card__team prediction-card__team--away">
-                      <span className="prediction-card__score">{predictedAwayScore}</span>
-                      <span className="prediction-card__team-name">{awayTeam}</span>
+
+                    <div className="prediction-card__scorebox">{predictedAwayScore}</div>
+
+                    <div className="prediction-card__scoreboard-team prediction-card__scoreboard-team--away">
+                      {awayTeam}
                     </div>
                   </div>
                 ) : (

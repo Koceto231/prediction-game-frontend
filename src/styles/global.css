@@ -2638,3 +2638,63 @@ select:focus {
 .shell-card.panel {
   scroll-margin-top: 16px;
 }
+
+.prediction-card__scoreboard {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) 56px 24px 56px minmax(90px, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.prediction-card__scoreboard-team {
+  min-width: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f4fff6;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.prediction-card__scoreboard-team--home {
+  text-align: left;
+}
+
+.prediction-card__scoreboard-team--away {
+  text-align: right;
+}
+
+.prediction-card__scorebox {
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(67, 241, 145, 0.12);
+  font-size: 2rem;
+  font-weight: 900;
+  color: #50f59a;
+}
+
+.prediction-card__divider {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 640px) {
+  .prediction-card__scoreboard {
+    grid-template-columns: 1fr 54px 18px 54px 1fr;
+    gap: 8px;
+  }
+
+  .prediction-card__scoreboard-team {
+    font-size: 0.98rem;
+  }
+
+  .prediction-card__scorebox {
+    height: 50px;
+    font-size: 1.7rem;
+  }
+}
