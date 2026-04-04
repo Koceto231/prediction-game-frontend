@@ -2674,6 +2674,7 @@ select:focus {
   font-size: 2rem;
   font-weight: 900;
   color: #50f59a;
+  padding-top: 7px
 }
 
 .prediction-card__divider {
