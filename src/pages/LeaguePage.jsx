@@ -121,8 +121,9 @@ export default function LeaguePage() {
                 return (
                   <article
                     key={player.userId}
-                    className={`podium-card podium-card--${player.rank} ${isCurrentUser ? 'podium-card--current' : ''
-                      }`}
+                    className={`podium-card podium-card--${player.rank} ${
+                      isCurrentUser ? 'podium-card--current' : ''
+                    }`}
                   >
                     <div className="podium-card__glow" />
                     <div className="podium-medal">{getMedal(player.rank)}</div>
@@ -177,8 +178,9 @@ export default function LeaguePage() {
                 return (
                   <div
                     key={row.userId}
-                    className={`modern-table__row ${isCurrentUser ? 'modern-table__row--current' : ''
-                      }`}
+                    className={`modern-table__row ${
+                      isCurrentUser ? 'modern-table__row--current' : ''
+                    }`}
                   >
                     <div className="modern-table__rank">
                       <span className="rank-pill">{getMedal(row.rank)}</span>
@@ -193,15 +195,15 @@ export default function LeaguePage() {
                       <div className="modern-table__mobile-stats">
                         <span>{row.totalPoints} pts</span>
                         <span>{row.correctResults} correct</span>
-                        <span>{row.totalPredictions} preds</span>
+                        <span>
+                      {row.totalPredictions} {row.totalPredictions === 1 ? 'prediction' : 'predictions'}
+                    </span>
                       </div>
                     </div>
 
                     <div className="modern-table__points">{row.totalPoints}</div>
                     <div className="modern-table__correct">{row.correctResults}</div>
-                    <span>
-                      {row.totalPredictions} {row.totalPredictions === 1 ? 'prediction' : 'predictions'}
-                    </span>
+                    <div className="modern-table__predictions">{row.totalPredictions}</div>
                   </div>
                 );
               })}
