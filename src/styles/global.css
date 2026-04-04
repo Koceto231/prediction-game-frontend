@@ -2643,7 +2643,8 @@ select:focus {
   display: grid;
   grid-template-columns: 1fr auto auto auto 1fr;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
   padding: 18px 0;
 }
 
@@ -2665,23 +2666,25 @@ select:focus {
 }
 
 .prediction-card__scorebox {
-  height: 56px;
-  display: grid;
-  place-items: center;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(67, 241, 145, 0.12);
   font-size: 2rem;
   font-weight: 900;
   color: #50f59a;
-  padding-top: 4px
+  padding-top: 4px;
 }
 
 .prediction-card__divider {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
   font-size: 1.8rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 @media (max-width: 640px) {
@@ -2697,6 +2700,7 @@ select:focus {
   .prediction-card__scorebox {
     height: 50px;
     font-size: 1.7rem;
+    padding-top: 4px
   }
 }
 
