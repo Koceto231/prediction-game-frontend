@@ -3,19 +3,18 @@ import api from '../api/apiClient';
 
 export default function LeaderboardPage() {
   const [rows, setRows] = useState([]);
-  // FIX: Added loading and error states — original showed nothing while loading
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let cancelled = false; // FIX: Prevent state update on unmounted component
+    let cancelled = false;
 
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
         setError('');
         const response = await api.get('/Leaderboard');
-        if (!cancelled) setRows(response.data);
+        if (!cancelled) setRows(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         if (!cancelled) {
           setError(err?.response?.data?.message || 'Failed to load leaderboard.');
@@ -27,7 +26,9 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -57,10 +58,18 @@ export default function LeaderboardPage() {
 
           {rows.map((row, index) => (
             <div className="leaderboard-row" key={row.userId}>
-              <span>{index + 1}</span>
-              <span>{row.username}</span>
-              <span>{row.totalPoints}</span>
-              <span>{row.correctResults}</span>
+              <div className="leaderboard-rank">{index + 1}</div>
+
+              <div className="leaderboard-user">
+                <div className="leaderboard-name">{row.username}</div>
+                <div className="leaderboard-mobile-stats">
+                  <span>{row.totalPoints} pts</span>
+                  <span>{row.correctResults} correct</span>
+                </div>
+              </div>
+
+              <div className="leaderboard-points">{row.totalPoints}</div>
+              <div className="leaderboard-correct">{row.correctResults}</div>
             </div>
           ))}
         </div>
