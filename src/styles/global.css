@@ -2801,3 +2801,115 @@ select:focus {
     color: rgba(232, 244, 237, 0.72);
   }
 }
+
+.modern-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modern-table__row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 90px 90px 110px;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(67, 241, 145, 0.1);
+}
+
+.modern-table__head {
+  background: rgba(67, 241, 145, 0.08);
+  border: 1px solid rgba(67, 241, 145, 0.14);
+  font-weight: 800;
+  color: rgba(232, 244, 237, 0.85);
+}
+
+.modern-table__row--current {
+  border-color: rgba(67, 241, 145, 0.26);
+  box-shadow: 0 0 0 1px rgba(67, 241, 145, 0.08) inset;
+}
+
+.modern-table__rank {
+  display: flex;
+  align-items: center;
+}
+
+.rank-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(67, 241, 145, 0.12);
+  color: #f4fff6;
+  font-weight: 900;
+}
+
+.modern-table__user {
+  min-width: 0;
+}
+
+.modern-table__username {
+  font-weight: 800;
+  color: #f4fff6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-table__points,
+.modern-table__correct,
+.modern-table__predictions {
+  font-weight: 900;
+  color: #50f59a;
+}
+
+.modern-table__mobile-stats {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .modern-table__head {
+    display: none;
+  }
+
+  .modern-table__row {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px 15px;
+  }
+
+  .modern-table__username {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+    font-size: 0.98rem;
+  }
+
+  .modern-table__points,
+  .modern-table__correct,
+  .modern-table__predictions {
+    display: none;
+  }
+
+  .modern-table__mobile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: rgba(232, 244, 237, 0.72);
+  }
+
+  .rank-pill {
+    min-width: 40px;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 0.95rem;
+  }
+}

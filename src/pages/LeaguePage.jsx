@@ -182,14 +182,26 @@ export default function LeaguePage() {
                       isCurrentUser ? 'modern-table__row--current' : ''
                     }`}
                   >
-                    <span className="rank-pill">{getMedal(row.rank)}</span>
-                    <span>
-                      {row.username}
-                      {isCurrentUser ? ' (You)' : ''}
-                    </span>
-                    <span>{row.totalPoints}</span>
-                    <span>{row.correctResults}</span>
-                    <span>{row.totalPredictions}</span>
+                    <div className="modern-table__rank">
+                      <span className="rank-pill">{getMedal(row.rank)}</span>
+                    </div>
+
+                    <div className="modern-table__user">
+                      <div className="modern-table__username">
+                        {row.username}
+                        {isCurrentUser ? ' (You)' : ''}
+                      </div>
+
+                      <div className="modern-table__mobile-stats">
+                        <span>{row.totalPoints} pts</span>
+                        <span>{row.correctResults} correct</span>
+                        <span>{row.totalPredictions} preds</span>
+                      </div>
+                    </div>
+
+                    <div className="modern-table__points">{row.totalPoints}</div>
+                    <div className="modern-table__correct">{row.correctResults}</div>
+                    <div className="modern-table__predictions">{row.totalPredictions}</div>
                   </div>
                 );
               })}
