@@ -2912,19 +2912,36 @@ select:focus {
     padding: 0 10px;
     font-size: 0.95rem;
   }
+  .scoreboard__separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+  background: rgba(20, 60, 40, 0.6);
+  border: 1px solid rgba(80, 200, 120, 0.15);
+
+  font-size: 26px;
+  font-weight: 700;
+  margin-left: 9px;
+}
 }
 
 .scoreboard {
-  display: flex;
-  align-items: center;      /* центрира вертикално */
-  justify-content: center;  /* центрира хоризонтално */
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
 }
 
 .scoreboard-team {
   display: flex;
   flex-direction: column;
-  align-items: center; /* центрира текста + input */
+  align-items: center;
+  text-align: center;
 }
 
 .scoreboard__separator {
@@ -2941,4 +2958,12 @@ select:focus {
 
   font-size: 26px;
   font-weight: 700;
+}
+
+.scoreboard-team__name {
+  text-align: center;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
