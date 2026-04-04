@@ -106,7 +106,7 @@ export default function LoginPage() {
   return (
     <div className="login-shell">
       <div className="shell-card auth-card">
-        <h1>BPFL Predictor</h1>
+        <h1>Football Games Predictor</h1>
         <p>Modern football prediction app</p>
 
         <div className="auth-switch">
