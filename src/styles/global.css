@@ -2641,9 +2641,9 @@ select:focus {
 
 .prediction-card__scoreboard {
   display: grid;
-  grid-template-columns: minmax(90px, 1fr) 56px 24px 56px minmax(90px, 1fr);
+  grid-template-columns: 1fr auto auto auto 1fr;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 18px 0;
 }
 
