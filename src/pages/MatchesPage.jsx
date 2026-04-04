@@ -120,13 +120,20 @@ export default function MatchesPage() {
       setFeedback('Prediction saved!');
 
       if (nextAiPrediction) {
-        setTimeout(() => {
-          aiPredictionRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-        }, 150);
-      }
+  setTimeout(() => {
+    aiPredictionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+
+    setTimeout(() => {
+      window.scrollBy({
+        top: 120,
+        behavior: 'smooth',
+      });
+    }, 250);
+  }, 200);
+}
     } catch (err) {
       setFeedback(err?.response?.data?.message || 'Failed to save prediction.');
     } finally {
