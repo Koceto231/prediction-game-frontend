@@ -2934,35 +2934,47 @@ select:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  justify-items: center; /* 🔥 това оправя центрирането */
+  gap: 10px;
   width: 100%;
 }
 
 .scoreboard-team {
-  min-width: 0; /* много важно за mobile */
+  min-width: 0;
+  width: 100%;
+
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; /* 🔥 важно */
   text-align: center;
 }
 
 .scoreboard-team__name {
-  max-width: 100%;
+  width: 100%;
   text-align: center;
-  line-height: 1.25;
-  overflow-wrap: anywhere; /* ако името е много дълго */
-  word-break: break-word;
+  line-height: 1.2;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+
+  /* стандартно (ново) */
+  line-clamp: 2;
+
+  /* за браузъри (Chrome, Safari) */
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
 }
 
 .scoreboard__separator {
   width: 44px;
   height: 44px;
-  flex-shrink: 0;
+
   display: grid;
   place-items: center;
-  border-radius: 14px;
-  font-size: 24px;
-  font-weight: 800;
+
+  flex-shrink: 0;
 }
 
 .scorebox {
@@ -2972,7 +2984,7 @@ select:focus {
 }
 
 .scorebox input {
-  width: min(100%, 140px);
+  width: 110px;
   text-align: center;
 }
 
