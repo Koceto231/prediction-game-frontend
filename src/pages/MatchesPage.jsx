@@ -39,6 +39,7 @@ export default function MatchesPage() {
   const [pageLoading, setPageLoading] = useState(false);
 
   const predictionRef = useRef(null);
+  const aiPredictionRef = useRef(null);
 
   // FIX: Stable field setter — avoids re-creating lambdas on every render
   const setField = useCallback((key, value) => {
@@ -113,11 +114,19 @@ export default function MatchesPage() {
       };
 
       const res = await api.post('/Prediction', body);
-      setAiPrediction(res.data?.aiPredictionResponseDTO ?? null);
+      const nextAiPrediction = res.data?.aiPredictionResponseDTO ?? null;
+
+      setAiPrediction(nextAiPrediction);
       setFeedback('Prediction saved!');
 
-      // Scroll to AI result
-      setTimeout(() => predictionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      if (nextAiPrediction) {
+        setTimeout(() => {
+          aiPredictionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }, 150);
+      }
     } catch (err) {
       setFeedback(err?.response?.data?.message || 'Failed to save prediction.');
     } finally {
@@ -223,8 +232,6 @@ export default function MatchesPage() {
           )}
 
           <div className="prediction-form">
-
-
             {isExactMode && (
               <>
                 <div className="mode-card mode-card--exact">
@@ -305,7 +312,11 @@ export default function MatchesPage() {
                   <button
                     type="button"
                     className="mode-card__button"
-                    onClick={() => { setPredictionMode(''); setFields(EMPTY_PREDICTION); setShowNilNilPrompt(false); }}
+                    onClick={() => {
+                      setPredictionMode('');
+                      setFields(EMPTY_PREDICTION);
+                      setShowNilNilPrompt(false);
+                    }}
                   >
                     Change type
                   </button>
@@ -339,7 +350,6 @@ export default function MatchesPage() {
 
                 {!hasExactScore && (
                   <div className="prediction-options">
-                    {/* Winner */}
                     <div className="option-card">
                       <span className="option-card__label">Winner</span>
                       <div className="pick-row">
@@ -356,7 +366,6 @@ export default function MatchesPage() {
                       </div>
                     </div>
 
-                    {/* BTTS */}
                     <div className="option-card">
                       <span className="option-card__label">BTTS</span>
                       <div className="pick-row">
@@ -373,11 +382,9 @@ export default function MatchesPage() {
                       </div>
                     </div>
 
-                    {/* OU Pick */}
                     <div className="option-card option-card--compact">
                       <div className="option-card__header">
                         <span className="option-card__label">Over / Under Pick</span>
-
                       </div>
                       <div className="pick-row pick-row--compact">
                         <button
@@ -398,11 +405,9 @@ export default function MatchesPage() {
                       </div>
                     </div>
 
-                    {/* OU Line */}
                     <div className="option-card option-card--compact">
                       <div className="option-card__header">
                         <span className="option-card__label">Over / Under Line</span>
-
                       </div>
                       <div className="pick-row pick-row--compact">
                         {['Line15', 'Line25', 'Line35'].map((line) => (
@@ -436,7 +441,7 @@ export default function MatchesPage() {
             {feedback && <div className="alert alert-info">{feedback}</div>}
 
             {aiPrediction && (
-              <div className="ai-card">
+              <div ref={aiPredictionRef} className="ai-card">
                 <h3>AI Prediction</h3>
                 <div className="ai-grid">
                   <div>
