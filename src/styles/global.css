@@ -2666,8 +2666,8 @@ select:focus {
 }
 
 .prediction-card__scorebox {
-  width: 64px;
-  height: 64px;
+ width: 93px;
+  height: 94px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2675,7 +2675,7 @@ select:focus {
   font-size: 2rem;
   font-weight: 900;
   color: #50f59a;
-  padding-top: 4px;
+  padding-top: 14px;
 }
 
 .prediction-card__divider {
@@ -2698,9 +2698,10 @@ select:focus {
   }
 
   .prediction-card__scorebox {
+    width: 64px;
     height: 50px;
     font-size: 1.7rem;
-    padding-top: 4px
+    padding-top: 14px
   }
 }
 
