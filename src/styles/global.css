@@ -2913,3 +2913,32 @@ select:focus {
     font-size: 0.95rem;
   }
 }
+
+.scoreboard {
+  display: flex;
+  align-items: center;      /* центрира вертикално */
+  justify-content: center;  /* центрира хоризонтално */
+  gap: 16px;
+}
+
+.scoreboard-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* центрира текста + input */
+}
+
+.scoreboard__separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+  background: rgba(20, 60, 40, 0.6);
+  border: 1px solid rgba(80, 200, 120, 0.15);
+
+  font-size: 26px;
+  font-weight: 700;
+}
