@@ -32,6 +32,11 @@ export default function MatchesPage() {
   const [loadError, setLoadError] = useState('');
   const [aiPrediction, setAiPrediction] = useState(null);
   const [showNilNilPrompt, setShowNilNilPrompt] = useState(false);
+  const [betPick, setBetPick] = useState('');
+  const [betAmount, setBetAmount] = useState('');
+  const [betLoading, setBetLoading] = useState(false);
+  const [betFeedback, setBetFeedback] = useState('');
+  const [userBalance, setUserBalance] = useState(null);
 
   // FIX: Added pagination state
   const [page, setPage] = useState(1);
@@ -67,13 +72,47 @@ export default function MatchesPage() {
     fetchMatches();
   }, []);
 
+  useEffect(() => {
+    api.get('/Wallet').then(r => setUserBalance(r.data.balance)).catch(() => {});
+  }, []);
+
   const resetPredictionFields = useCallback(() => {
     setFields(EMPTY_PREDICTION);
     setShowNilNilPrompt(false);
     setPredictionMode('');
     setAiPrediction(null);
     setFeedback('');
+    setBetPick('');
+    setBetAmount('');
+    setBetFeedback('');
   }, []);
+
+  const placeBet = async () => {
+    if (!betPick || !betAmount || !selectedMatch) return;
+    setBetLoading(true);
+    setBetFeedback('');
+    const PICK_MAP = { Home: 1, Draw: 2, Away: 3 };
+    try {
+      const res = await api.post('/Bet', {
+        matchId: selectedMatch.id,
+        pick: PICK_MAP[betPick],
+        amount: Number(betAmount),
+      });
+      setUserBalance(res.data.potentialPayout != null ? userBalance - Number(betAmount) : userBalance);
+      api.get('/Wallet').then(r => setUserBalance(r.data.balance)).catch(() => {});
+      setBetFeedback(`✅ Bet placed! Potential payout: ${Number(res.data.potentialPayout).toFixed(2)} coins`);
+      setBetPick('');
+      setBetAmount('');
+    } catch (err) {
+      setBetFeedback(err?.response?.data?.message || 'Failed to place bet.');
+    } finally {
+      setBetLoading(false);
+    }
+  };
+
+  const selectedOdds = selectedMatch
+    ? { Home: selectedMatch.homeOdds, Draw: selectedMatch.drawOdds, Away: selectedMatch.awayOdds }
+    : {};
 
   const { homeScore, awayScore, winner, btts, ouLine, ouPick } = fields;
 
@@ -450,6 +489,9 @@ export default function MatchesPage() {
             {aiPrediction && (
               <div ref={aiPredictionRef} className="ai-card">
                 <h3>AI Prediction</h3>
+                {aiPrediction.aiAnalysis && (
+                  <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
+                )}
                 <div className="ai-grid">
                   <div>
                     <span className="muted-text">Predicted Score</span>
@@ -478,6 +520,71 @@ export default function MatchesPage() {
                     <div className="ai-value">{aiPrediction.awayWinProbability}%</div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {selectedMatch?.homeOdds != null && (
+              <div className="bet-panel">
+                <div className="bet-panel__header">
+                  <h3>Place a Bet</h3>
+                  {userBalance != null && (
+                    <span className="wallet-badge">
+                      <span className="wallet-icon">🪙</span>
+                      <span className="wallet-amount">{Number(userBalance).toLocaleString()}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="bet-picks">
+                  {[
+                    { key: 'Home', label: selectedMatch.homeTeamName, odds: selectedMatch.homeOdds },
+                    { key: 'Draw', label: 'Draw', odds: selectedMatch.drawOdds },
+                    { key: 'Away', label: selectedMatch.awayTeamName, odds: selectedMatch.awayOdds },
+                  ].map(({ key, label, odds }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`bet-pick-btn ${betPick === key ? 'bet-pick-btn--active' : ''}`}
+                      onClick={() => setBetPick(betPick === key ? '' : key)}
+                    >
+                      <span className="bet-pick-btn__label">{label}</span>
+                      <span className="bet-pick-btn__odds">{Number(odds).toFixed(2)}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {betPick && (
+                  <div className="bet-amount-row">
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Amount (coins)"
+                      value={betAmount}
+                      onChange={e => setBetAmount(e.target.value)}
+                      className="bet-amount-input"
+                    />
+                    {betAmount > 0 && selectedOdds[betPick] && (
+                      <span className="bet-potential">
+                        → {(Number(betAmount) * Number(selectedOdds[betPick])).toFixed(2)} coins
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={!betPick || !betAmount || betLoading}
+                  onClick={placeBet}
+                >
+                  {betLoading ? 'Placing...' : 'Place Bet'}
+                </button>
+
+                {betFeedback && (
+                  <div className={`alert ${betFeedback.startsWith('✅') ? 'alert-info' : 'alert-error'}`}>
+                    {betFeedback}
+                  </div>
+                )}
               </div>
             )}
           </div>

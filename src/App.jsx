@@ -12,6 +12,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
+import BetsPage from './pages/BetsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -47,6 +48,7 @@ function AppLayout() {
             <Route path="/leagues" element={<LeaguesPage />} />
             <Route path="/leagues/:leagueId" element={<LeaguePage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/bets" element={<BetsPage />} />
             <Route
               path="/admin"
               element={

@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [balance, setBalance] = useState(null);
+  const [topping, setTopping] = useState(false);
+  const [topUpMsg, setTopUpMsg] = useState('');
 
   useEffect(() => {
     let cancelled = false; // FIX: Cleanup on unmount
@@ -16,14 +20,16 @@ export default function ProfilePage() {
         setError('');
 
         // FIX: Both requests run in parallel — was already correct, kept
-        const [profileRes, statsRes] = await Promise.all([
+        const [profileRes, statsRes, walletRes] = await Promise.all([
           api.get('/Profile/me'),
           api.get('/Profile/stats'),
+          api.get('/Wallet'),
         ]);
 
         if (!cancelled) {
           setProfile(profileRes.data);
           setStats(statsRes.data);
+          setBalance(walletRes.data.balance);
         }
       } catch (err) {
         if (!cancelled)
@@ -74,6 +80,39 @@ export default function ProfilePage() {
           </div>
           <p className="profile-email-text">{email}</p>
           <p className="profile-muted-text">Your BPFL account and prediction stats.</p>
+        </div>
+      </div>
+
+      <div className="shell-card profile-wallet-card">
+        <div className="profile-wallet-left">
+          <span className="wallet-icon-big">🪙</span>
+          <div>
+            <h3>Demo Wallet</h3>
+            <p className="profile-muted-text">Use coins to place bets on matches</p>
+          </div>
+        </div>
+        <div className="profile-wallet-right">
+          <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} coins</span>
+          <button
+            className="primary-button"
+            disabled={topping}
+            onClick={async () => {
+              setTopping(true);
+              setTopUpMsg('');
+              try {
+                const res = await api.post('/Wallet/topup');
+                setBalance(res.data.balance);
+                setTopUpMsg('+1,000 coins added!');
+              } catch (err) {
+                setTopUpMsg(err?.response?.data?.message || 'Top up failed.');
+              } finally {
+                setTopping(false);
+              }
+            }}
+          >
+            {topping ? 'Adding...' : '+ Top Up 1,000'}
+          </button>
+          {topUpMsg && <span className="wallet-topup-msg">{topUpMsg}</span>}
         </div>
       </div>
 
