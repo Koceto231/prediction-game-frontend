@@ -3688,3 +3688,244 @@ select:focus {
 .fantasy-lb-row__team { display: block; font-size: 0.9rem; font-weight: 600; }
 .fantasy-lb-row__user { display: block; font-size: 0.78rem; color: var(--text-muted); }
 .fantasy-lb-row__pts  { width: 80px; text-align: right; font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+
+/* ── Inline bet (inside prediction modes) ─────────────────────── */
+
+.inline-bet-wrapper {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-top: 12px;
+}
+
+.inline-bet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inline-bet__odds {
+  display: flex;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+/* ── Market Pick odds breakdown ───────────────────────────────── */
+
+.mp-odds-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mp-odds-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-softer);
+  color: var(--text-muted);
+}
+
+.mp-odds-row strong { color: var(--text-main); }
+
+.mp-odds-row--total {
+  border-bottom: none;
+  border-top: 1px solid var(--border-soft);
+  margin-top: 4px;
+  padding-top: 10px;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* ── Fantasy pitch view ───────────────────────────────────────── */
+
+.fantasy-pitch {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    #1a5c2a 0%,   /* darker green at top */
+    #1f7a32 12%, #1a5c2a 24%,
+    #1f7a32 36%, #1a5c2a 48%,
+    #1f7a32 60%, #1a5c2a 72%,
+    #1f7a32 84%, #1a5c2a 100%
+  );
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+  padding: 28px 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+/* Pitch markings (behind content) */
+.fantasy-pitch__lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fantasy-pitch__midline {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-50%);
+}
+
+.fantasy-pitch__circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.fantasy-pitch__box {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 14%;
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+.fantasy-pitch__box--top    { top: 0; border-top: none; border-radius: 0 0 8px 8px; }
+.fantasy-pitch__box--bottom { bottom: 0; border-bottom: none; border-radius: 8px 8px 0 0; }
+
+/* Formation row */
+.fantasy-pitch__row {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Individual player on pitch */
+.pitch-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.pitch-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.pitch-avatar--captain::after {
+  content: 'C';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #ffd700;
+  color: #1a0e00;
+  font-size: 0.65rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #07110c;
+  line-height: 1;
+}
+
+.pitch-avatar__c { display: none; } /* handled via ::after */
+
+.pitch-player__name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e8ffe8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  max-width: 72px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pitch-player__pts {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  line-height: 1.4;
+}
+
+/* ── Fantasy view toggle (pitch / list) ───────────────────────── */
+
+.fantasy-view-toggle {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.fantasy-view-btn {
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+
+.fantasy-view-btn--active {
+  background: var(--accent-soft-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Fantasy player card mini avatar (list view) ──────────────── */
+
+.fantasy-player-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* ── Fantasy deadline bar ─────────────────────────────────────── */
+
+.fantasy-deadline-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-softer);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}

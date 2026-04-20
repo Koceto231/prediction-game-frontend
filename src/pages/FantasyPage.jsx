@@ -5,21 +5,79 @@ import api from '../api/apiClient';
 const POSITION_ORDER = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
 const POSITION_COLORS = {
-  GK:  { bg: 'rgba(255,180,0,0.15)',  color: '#ffb400' },
-  DEF: { bg: 'rgba(30,140,255,0.15)', color: '#4da6ff' },
-  MID: { bg: 'rgba(89,255,147,0.15)', color: '#59ff93' },
-  FWD: { bg: 'rgba(255,80,80,0.15)',  color: '#ff6060' },
+  GK:  { bg: '#ffb400', ring: '#ffd966', text: '#1a0e00' },
+  DEF: { bg: '#4da6ff', ring: '#82c2ff', text: '#001a33' },
+  MID: { bg: '#59ff93', ring: '#9dffc0', text: '#002214' },
+  FWD: { bg: '#ff6060', ring: '#ff9898', text: '#1a0000' },
 };
 
-function PositionBadge({ pos }) {
-  const style = POSITION_COLORS[pos] ?? {};
+// ── Avatar circle with initials ──────────────────────────────────
+function PlayerAvatar({ name, position, isCaptain, points, price, small = false }) {
+  const col = POSITION_COLORS[position] ?? { bg: '#aaa', ring: '#ccc', text: '#000' };
+  const initials = name
+    ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
+  const size = small ? 42 : 56;
+
   return (
-    <span style={{
-      fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
-      borderRadius: 20, background: style.bg, color: style.color,
-    }}>
-      {pos}
-    </span>
+    <div className="pitch-player">
+      <div
+        className={`pitch-avatar${isCaptain ? ' pitch-avatar--captain' : ''}`}
+        style={{
+          width: size, height: size,
+          background: col.bg,
+          boxShadow: `0 0 0 3px ${col.ring}`,
+          color: col.text,
+        }}
+      >
+        {initials}
+        {isCaptain && <span className="pitch-avatar__c">C</span>}
+      </div>
+      <div className="pitch-player__name">{name?.split(' ').slice(-1)[0] ?? name}</div>
+      {points != null && <div className="pitch-player__pts">{points} pts</div>}
+    </div>
+  );
+}
+
+// ── Pitch formation view ─────────────────────────────────────────
+// Formation rows: FWD → MID → DEF → GK (attack at top, GK at bottom)
+function PitchView({ players }) {
+  const byPos = { GK: [], DEF: [], MID: [], FWD: [] };
+  players.forEach(p => { if (byPos[p.position]) byPos[p.position].push(p); });
+
+  const rows = [
+    { pos: 'FWD', label: 'Forwards'    },
+    { pos: 'MID', label: 'Midfielders' },
+    { pos: 'DEF', label: 'Defenders'   },
+    { pos: 'GK',  label: 'Goalkeeper'  },
+  ];
+
+  return (
+    <div className="fantasy-pitch">
+      {/* Pitch markings */}
+      <div className="fantasy-pitch__lines">
+        <div className="fantasy-pitch__circle" />
+        <div className="fantasy-pitch__midline" />
+        <div className="fantasy-pitch__box fantasy-pitch__box--top" />
+        <div className="fantasy-pitch__box fantasy-pitch__box--bottom" />
+      </div>
+
+      {rows.map(({ pos, label }) => (
+        <div key={pos} className="fantasy-pitch__row">
+          {byPos[pos].map(p => (
+            <PlayerAvatar
+              key={p.fantasyPlayerId}
+              name={p.name}
+              position={p.position}
+              isCaptain={p.isCaptain}
+              points={p.points}
+              price={p.price}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -30,6 +88,7 @@ export default function FantasyPage() {
   const [teamData, setTeamData] = useState(null);   // null = loading, false = no team
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pitchView, setPitchView] = useState(true); // toggle pitch / list view
 
   // Create team form
   const [teamName, setTeamName] = useState('');
@@ -180,13 +239,36 @@ export default function FantasyPage() {
           <span>Deadline: {new Date(gameweek.deadline).toLocaleString()}</span>
         </div>
 
-        {/* Player list */}
+        {/* View toggle */}
+        {players.length > 0 && (
+          <div className="fantasy-view-toggle">
+            <button
+              type="button"
+              className={`fantasy-view-btn${pitchView ? ' fantasy-view-btn--active' : ''}`}
+              onClick={() => setPitchView(true)}
+            >
+              ⚽ Pitch
+            </button>
+            <button
+              type="button"
+              className={`fantasy-view-btn${!pitchView ? ' fantasy-view-btn--active' : ''}`}
+              onClick={() => setPitchView(false)}
+            >
+              📋 List
+            </button>
+          </div>
+        )}
+
+        {/* Player display */}
         {players.length === 0 ? (
           <div className="empty-box">
             No players selected yet.{' '}
             <Link to="/fantasy/draft" className="link-accent">Pick your squad →</Link>
           </div>
+        ) : pitchView ? (
+          <PitchView players={players} />
         ) : (
+          /* List view */
           <div className="fantasy-squad">
             {['GK', 'DEF', 'MID', 'FWD'].map(pos => {
               const posPlayers = players.filter(p => p.position === pos);
@@ -194,12 +276,24 @@ export default function FantasyPage() {
               return (
                 <div key={pos} className="fantasy-squad__row">
                   <div className="fantasy-squad__pos-label">
-                    <PositionBadge pos={pos} />
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
+                      borderRadius: 20,
+                      background: POSITION_COLORS[pos]?.bg + '26',
+                      color: POSITION_COLORS[pos]?.bg,
+                    }}>{pos}</span>
                   </div>
                   <div className="fantasy-squad__players">
                     {posPlayers.map(p => (
                       <div key={p.fantasyPlayerId} className={`fantasy-player-card ${p.isCaptain ? 'fantasy-player-card--captain' : ''}`}>
                         {p.isCaptain && <div className="fantasy-player-card__captain">C</div>}
+                        {/* Mini avatar */}
+                        <div className="fantasy-player-card__avatar" style={{
+                          background: POSITION_COLORS[p.position]?.bg,
+                          color: POSITION_COLORS[p.position]?.text,
+                        }}>
+                          {p.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
                         <div className="fantasy-player-card__name">{p.name}</div>
                         <div className="fantasy-player-card__club">{p.teamName}</div>
                         <div className="fantasy-player-card__pts">{p.points} pts</div>
