@@ -1,18 +1,12 @@
 import { NavLink, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/apiClient';
+import { useWallet } from '../context/WalletContext';
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
-  const [balance, setBalance] = useState(null);
+  const { balance } = useWallet();
 
   const username = user?.username ?? '';
-
-  useEffect(() => {
-    if (!user) return;
-    api.get('/Wallet').then(res => setBalance(res.data.balance)).catch(() => {});
-  }, [user]);
 
   return (
     <header className="navbar shell-card">

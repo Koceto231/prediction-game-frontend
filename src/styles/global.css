@@ -3258,3 +3258,73 @@ select:focus {
 .bet-status--void { background: var(--surface-2); color: var(--text-muted); }
 
 .text-won { color: var(--accent); }
+
+/* ── Extended bet panel ──────────────────────────────── */
+.bet-type-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bet-type-tab {
+  flex: 1;
+  min-width: 80px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.bet-type-tab:hover { border-color: var(--accent); color: var(--text-main); }
+
+.bet-type-tab--active {
+  background: var(--accent-soft-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bet-exact-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.bet-dynamic-odds {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+}
+
+.bet-dynamic-odds strong { color: var(--accent); font-size: 1.1rem; }
+
+.bet-ou {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bet-ou__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bet-ou__row .option-card__label {
+  min-width: 50px;
+  font-size: 0.85rem;
+}
+
+.muted-text {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}

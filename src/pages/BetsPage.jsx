@@ -76,7 +76,7 @@ export default function BetsPage() {
 
                 <div className="bet-card__details">
                   <div className="bet-card__pick">
-                    Pick: <strong>{bet.pick}</strong>
+                    Pick: <strong>{bet.betDescription}</strong>
                   </div>
                   <div>Odds: <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
                   <div>Stake: <strong>{Number(bet.amount).toLocaleString()} 🪙</strong></div>
