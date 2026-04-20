@@ -27,123 +27,167 @@ const EMPTY_PREDICTION = {
   ouPick: '',
 };
 
+// ── Fetch one market's odds from API ────────────────────────────
+async function fetchMarketOdds(matchId, betType, params) {
+  const qs = new URLSearchParams({ betType, ...params });
+  try {
+    const r = await api.get(`/Odds/${matchId}?${qs}`);
+    return r.data?.odds ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Bet panel sub-component ──────────────────────────────────────
-function BetPanel({ match, onBetPlaced }) {
+function BetPanel({ match }) {
   const { balance, refreshBalance } = useWallet();
 
-  const [betType, setBetType] = useState('Winner');
-  // Winner
+  const [tab, setTab] = useState('Winner'); // 'Winner' | 'ExactScore' | 'MarketPick'
+
+  // ── Winner state ─────────────────────────────────────────────
   const [winnerPick, setWinnerPick] = useState('');
-  // ExactScore
+
+  // ── Exact Score state ────────────────────────────────────────
   const [scoreH, setScoreH] = useState('');
   const [scoreA, setScoreA] = useState('');
-  // BTTS
-  const [bttsPick, setBttsPick] = useState(''); // 'true' | 'false'
-  // OverUnder
-  const [ouLine, setOuLine] = useState('');
-  const [ouPick, setOuPick] = useState('');
+  const [exactOdds, setExactOdds] = useState(null);
+  const [exactLoading, setExactLoading] = useState(false);
 
-  const [dynamicOdds, setDynamicOdds] = useState(null);
-  const [oddsLoading, setOddsLoading] = useState(false);
+  // ── Market Pick state ────────────────────────────────────────
+  const [mpWinner, setMpWinner] = useState('');   // 'Home'|'Draw'|'Away'|''
+  const [mpBTTS, setMpBTTS] = useState('');        // 'true'|'false'|''
+  const [mpOULine, setMpOULine] = useState('');    // 'Line15'|'Line25'|'Line35'|''
+  const [mpOUPick, setMpOUPick] = useState('');    // 'Over'|'Under'|''
+  const [mpOdds, setMpOdds] = useState({ winner: null, btts: null, ou: null });
+  const [mpLoading, setMpLoading] = useState(false);
 
+  // ── Shared ───────────────────────────────────────────────────
   const [betAmount, setBetAmount] = useState('');
   const [betLoading, setBetLoading] = useState(false);
   const [betFeedback, setBetFeedback] = useState('');
 
-  // Reset all picks when match or betType changes
+  // Reset on tab or match change
   useEffect(() => {
     setWinnerPick('');
-    setScoreH('');
-    setScoreA('');
-    setBttsPick('');
-    setOuLine('');
-    setOuPick('');
-    setDynamicOdds(null);
-    setBetFeedback('');
-    setBetAmount('');
-  }, [match?.id, betType]);
+    setScoreH(''); setScoreA(''); setExactOdds(null);
+    setMpWinner(''); setMpBTTS(''); setMpOULine(''); setMpOUPick('');
+    setMpOdds({ winner: null, btts: null, ou: null });
+    setBetAmount(''); setBetFeedback('');
+  }, [match?.id, tab]);
 
-  // Fetch dynamic odds for ExactScore / BTTS / OverUnder
+  // Fetch exact score odds when score changes
   useEffect(() => {
-    if (betType === 'Winner') {
-      setDynamicOdds(null);
-      return;
-    }
-
-    const params = new URLSearchParams({ betType: BET_TYPE[betType] });
-
-    if (betType === 'ExactScore') {
-      const h = parseScore(scoreH);
-      const a = parseScore(scoreA);
-      if (h === null || a === null) { setDynamicOdds(null); return; }
-      params.set('scoreHome', h);
-      params.set('scoreAway', a);
-    } else if (betType === 'BTTS') {
-      if (!bttsPick) { setDynamicOdds(null); return; }
-      params.set('btts', bttsPick);
-    } else if (betType === 'OverUnder') {
-      if (!ouLine || !ouPick) { setDynamicOdds(null); return; }
-      params.set('ouLine', OU_LINE_MAP[ouLine]);
-      params.set('ouPick', OU_PICK_MAP[ouPick]);
-    }
-
+    if (tab !== 'ExactScore') return;
+    const h = parseScore(scoreH), a = parseScore(scoreA);
+    if (h === null || a === null) { setExactOdds(null); return; }
     let cancelled = false;
-    setOddsLoading(true);
-    api.get(`/Odds/${match.id}?${params}`)
-      .then(r => { if (!cancelled) setDynamicOdds(r.data); })
-      .catch(() => { if (!cancelled) setDynamicOdds(null); })
-      .finally(() => { if (!cancelled) setOddsLoading(false); });
+    setExactLoading(true);
+    fetchMarketOdds(match.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a })
+      .then(o => { if (!cancelled) setExactOdds(o); })
+      .finally(() => { if (!cancelled) setExactLoading(false); });
+    return () => { cancelled = true; };
+  }, [tab, match?.id, scoreH, scoreA]);
+
+  // Fetch market pick odds whenever any market selection changes
+  useEffect(() => {
+    if (tab !== 'MarketPick') return;
+    let cancelled = false;
+    setMpLoading(true);
+
+    const fetches = [
+      // Winner — use stored match odds directly (no extra API call)
+      Promise.resolve(
+        mpWinner === 'Home' ? match.homeOdds :
+        mpWinner === 'Draw' ? match.drawOdds :
+        mpWinner === 'Away' ? match.awayOdds : null
+      ),
+      // BTTS
+      mpBTTS
+        ? fetchMarketOdds(match.id, BET_TYPE.BTTS, { btts: mpBTTS })
+        : Promise.resolve(null),
+      // Over/Under
+      mpOULine && mpOUPick
+        ? fetchMarketOdds(match.id, BET_TYPE.OverUnder, {
+            ouLine: OU_LINE_MAP[mpOULine],
+            ouPick: OU_PICK_MAP[mpOUPick],
+          })
+        : Promise.resolve(null),
+    ];
+
+    Promise.all(fetches).then(([winner, btts, ou]) => {
+      if (!cancelled) setMpOdds({ winner, btts, ou });
+    }).finally(() => { if (!cancelled) setMpLoading(false); });
 
     return () => { cancelled = true; };
-  }, [match?.id, betType, scoreH, scoreA, bttsPick, ouLine, ouPick]);
+  }, [tab, match?.id, mpWinner, mpBTTS, mpOULine, mpOUPick]);
 
-  // Determine effective odds to display
-  const effectiveOdds = (() => {
-    if (betType === 'Winner') {
-      const map = { Home: match.homeOdds, Draw: match.drawOdds, Away: match.awayOdds };
-      return winnerPick ? map[winnerPick] : null;
-    }
-    return dynamicOdds?.odds ?? null;
-  })();
+  // ── Combined odds (product of all selected markets) ──────────
+  const selectedMpOdds = Object.values(mpOdds).filter(o => o != null);
+  const combinedOdds = selectedMpOdds.length > 0
+    ? selectedMpOdds.reduce((acc, o) => acc * Number(o), 1)
+    : null;
 
-  const isReadyToBet = (() => {
-    if (!betAmount || Number(betAmount) <= 0) return false;
-    if (betType === 'Winner') return !!winnerPick && effectiveOdds != null;
-    if (betType === 'ExactScore') return parseScore(scoreH) !== null && parseScore(scoreA) !== null && effectiveOdds != null;
-    if (betType === 'BTTS') return !!bttsPick && effectiveOdds != null;
-    if (betType === 'OverUnder') return !!ouLine && !!ouPick && effectiveOdds != null;
+  // How many bets will be placed in Market Pick
+  const mpBetCount = [mpWinner, mpBTTS, (mpOULine && mpOUPick) ? 'ou' : '']
+    .filter(Boolean).length;
+
+  // ── Ready checks ─────────────────────────────────────────────
+  const amount = Number(betAmount);
+  const isReady = (() => {
+    if (!betAmount || amount <= 0) return false;
+    if (tab === 'Winner')     return !!winnerPick;
+    if (tab === 'ExactScore') return exactOdds != null;
+    if (tab === 'MarketPick') return mpBetCount > 0 && combinedOdds != null;
     return false;
   })();
 
+  // ── Place bet ────────────────────────────────────────────────
   const placeBet = async () => {
-    if (!isReadyToBet) return;
+    if (!isReady) return;
     setBetLoading(true);
     setBetFeedback('');
 
-    const body = {
-      matchId: match.id,
-      betType: BET_TYPE[betType],
-      amount: Number(betAmount),
-    };
-
-    if (betType === 'Winner') {
-      body.pick = WINNER_PICK_MAP[winnerPick];
-    } else if (betType === 'ExactScore') {
-      body.scoreHome = parseScore(scoreH);
-      body.scoreAway = parseScore(scoreA);
-    } else if (betType === 'BTTS') {
-      body.bttsPick = bttsPick === 'true';
-    } else if (betType === 'OverUnder') {
-      body.ouLine = OU_LINE_MAP[ouLine];
-      body.ouPick = OU_PICK_MAP[ouPick];
-    }
-
     try {
-      const res = await api.post('/Bet', body);
+      if (tab === 'Winner') {
+        const res = await api.post('/Bet', {
+          matchId: match.id,
+          betType: BET_TYPE.Winner,
+          pick: WINNER_PICK_MAP[winnerPick],
+          amount,
+        });
+        setBetFeedback(`✅ Bet placed! Potential: ${Number(res.data.potentialPayout).toFixed(2)} 🪙`);
+
+      } else if (tab === 'ExactScore') {
+        const res = await api.post('/Bet', {
+          matchId: match.id,
+          betType: BET_TYPE.ExactScore,
+          scoreHome: parseScore(scoreH),
+          scoreAway: parseScore(scoreA),
+          amount,
+        });
+        setBetFeedback(`✅ Bet placed! Potential: ${Number(res.data.potentialPayout).toFixed(2)} 🪙`);
+
+      } else if (tab === 'MarketPick') {
+        // Place one bet per selected market
+        const bets = [];
+        if (mpWinner) bets.push({ betType: BET_TYPE.Winner, pick: WINNER_PICK_MAP[mpWinner] });
+        if (mpBTTS)   bets.push({ betType: BET_TYPE.BTTS, bttsPick: mpBTTS === 'true' });
+        if (mpOULine && mpOUPick) bets.push({
+          betType: BET_TYPE.OverUnder,
+          ouLine: OU_LINE_MAP[mpOULine],
+          ouPick: OU_PICK_MAP[mpOUPick],
+        });
+
+        let totalPayout = 0;
+        for (const extra of bets) {
+          const res = await api.post('/Bet', { matchId: match.id, amount, ...extra });
+          totalPayout += Number(res.data.potentialPayout);
+        }
+        setBetFeedback(`✅ ${bets.length} bet(s) placed! Total potential: ${totalPayout.toFixed(2)} 🪙`);
+      }
+
       await refreshBalance();
-      setBetFeedback(`✅ Bet placed! Potential payout: ${Number(res.data.potentialPayout).toFixed(2)} 🪙`);
       setBetAmount('');
-      if (onBetPlaced) onBetPlaced();
     } catch (err) {
       setBetFeedback(err?.response?.data?.message || 'Failed to place bet.');
     } finally {
@@ -151,8 +195,8 @@ function BetPanel({ match, onBetPlaced }) {
     }
   };
 
-  const BET_TYPES = ['Winner', 'ExactScore', 'BTTS', 'OverUnder'];
-  const BET_TYPE_LABELS = { Winner: '1 / X / 2', ExactScore: 'Exact Score', BTTS: 'BTTS', OverUnder: 'Over/Under' };
+  // ── Render ───────────────────────────────────────────────────
+  const winnerOdds = { Home: match.homeOdds, Draw: match.drawOdds, Away: match.awayOdds };
 
   return (
     <div className="bet-panel">
@@ -166,26 +210,26 @@ function BetPanel({ match, onBetPlaced }) {
         )}
       </div>
 
-      {/* Bet type tabs */}
+      {/* Tabs */}
       <div className="bet-type-tabs">
-        {BET_TYPES.map(t => (
+        {[['Winner', '1 / X / 2'], ['ExactScore', 'Exact Score'], ['MarketPick', 'Market Pick']].map(([key, label]) => (
           <button
-            key={t}
+            key={key}
             type="button"
-            className={`bet-type-tab ${betType === t ? 'bet-type-tab--active' : ''}`}
-            onClick={() => setBetType(t)}
+            className={`bet-type-tab ${tab === key ? 'bet-type-tab--active' : ''}`}
+            onClick={() => setTab(key)}
           >
-            {BET_TYPE_LABELS[t]}
+            {label}
           </button>
         ))}
       </div>
 
-      {/* Winner picks */}
-      {betType === 'Winner' && (
+      {/* ── Tab: 1/X/2 ── */}
+      {tab === 'Winner' && (
         <div className="bet-picks">
           {[
             { key: 'Home', label: match.homeTeamName, odds: match.homeOdds },
-            { key: 'Draw', label: 'Draw', odds: match.drawOdds },
+            { key: 'Draw', label: 'Draw',             odds: match.drawOdds },
             { key: 'Away', label: match.awayTeamName, odds: match.awayOdds },
           ].map(({ key, label, odds }) => (
             <button
@@ -201,124 +245,173 @@ function BetPanel({ match, onBetPlaced }) {
         </div>
       )}
 
-      {/* Exact Score picks */}
-      {betType === 'ExactScore' && (
+      {/* ── Tab: Exact Score ── */}
+      {tab === 'ExactScore' && (
         <div className="bet-exact-score">
           <div className="scoreboard">
             <div className="scoreboard-team">
               <div className="scoreboard-team__name">{match.homeTeamName}</div>
               <div className="scorebox">
-                <input
-                  type="number" min="0" max="20" placeholder="0"
-                  value={scoreH}
-                  onChange={e => setScoreH(e.target.value)}
-                />
+                <input type="number" min="0" max="20" placeholder="0"
+                  value={scoreH} onChange={e => setScoreH(e.target.value)} />
               </div>
             </div>
             <div className="scoreboard__separator">:</div>
             <div className="scoreboard-team">
               <div className="scoreboard-team__name">{match.awayTeamName}</div>
               <div className="scorebox">
-                <input
-                  type="number" min="0" max="20" placeholder="0"
-                  value={scoreA}
-                  onChange={e => setScoreA(e.target.value)}
-                />
+                <input type="number" min="0" max="20" placeholder="0"
+                  value={scoreA} onChange={e => setScoreA(e.target.value)} />
               </div>
             </div>
           </div>
-          {oddsLoading && <div className="muted-text" style={{ textAlign: 'center' }}>Calculating odds...</div>}
-          {dynamicOdds && (
+          {exactLoading && <div className="muted-text" style={{ textAlign: 'center' }}>Calculating odds...</div>}
+          {exactOdds != null && !exactLoading && (
             <div className="bet-dynamic-odds">
-              Odds for {scoreH}-{scoreA}: <strong>{Number(dynamicOdds.odds).toFixed(2)}</strong>
+              Odds for {scoreH}–{scoreA}: <strong>{Number(exactOdds).toFixed(2)}</strong>
             </div>
           )}
         </div>
       )}
 
-      {/* BTTS picks */}
-      {betType === 'BTTS' && (
-        <div className="bet-picks">
-          {[['true', 'BTTS Yes'], ['false', 'BTTS No']].map(([val, label]) => (
-            <button
-              key={val}
-              type="button"
-              className={`bet-pick-btn ${bttsPick === val ? 'bet-pick-btn--active' : ''}`}
-              onClick={() => setBttsPick(bttsPick === val ? '' : val)}
-            >
-              <span className="bet-pick-btn__label">{label}</span>
-              {bttsPick === val && dynamicOdds && (
-                <span className="bet-pick-btn__odds">{Number(dynamicOdds.odds).toFixed(2)}</span>
-              )}
-            </button>
-          ))}
-          {oddsLoading && <div className="muted-text">Calculating odds...</div>}
-        </div>
-      )}
+      {/* ── Tab: Market Pick ── */}
+      {tab === 'MarketPick' && (
+        <div className="bet-market-pick">
+          {/* Winner row */}
+          <div className="bet-mp-row">
+            <span className="bet-mp-label">Winner</span>
+            <div className="pick-row">
+              {['Home', 'Draw', 'Away'].map(w => (
+                <button key={w} type="button"
+                  className={`pick-chip ${mpWinner === w ? 'pick-chip--active' : ''}`}
+                  onClick={() => setMpWinner(mpWinner === w ? '' : w)}
+                >
+                  {w === 'Home' ? match.homeTeamName : w === 'Away' ? match.awayTeamName : 'Draw'}
+                  {winnerOdds[w] != null && (
+                    <span style={{ marginLeft: 6, color: 'var(--accent)', fontWeight: 700 }}>
+                      {Number(winnerOdds[w]).toFixed(2)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Over/Under picks */}
-      {betType === 'OverUnder' && (
-        <div className="bet-ou">
-          <div className="bet-ou__row">
-            <span className="option-card__label">Goals</span>
+          {/* BTTS row */}
+          <div className="bet-mp-row">
+            <span className="bet-mp-label">BTTS</span>
+            <div className="pick-row">
+              {[['true', 'Yes'], ['false', 'No']].map(([val, lbl]) => (
+                <button key={val} type="button"
+                  className={`pick-chip ${mpBTTS === val ? 'pick-chip--active' : ''}`}
+                  onClick={() => setMpBTTS(mpBTTS === val ? '' : val)}
+                >
+                  {lbl}
+                  {mpBTTS === val && mpOdds.btts != null && (
+                    <span style={{ marginLeft: 6, color: 'var(--accent)', fontWeight: 700 }}>
+                      {Number(mpOdds.btts).toFixed(2)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Over/Under row */}
+          <div className="bet-mp-row">
+            <span className="bet-mp-label">O/U Line</span>
             <div className="pick-row">
               {['Line15', 'Line25', 'Line35'].map(line => (
-                <button
-                  key={line}
-                  type="button"
-                  className={`pick-chip ${ouLine === line ? 'pick-chip--active' : ''}`}
-                  onClick={() => setOuLine(ouLine === line ? '' : line)}
+                <button key={line} type="button"
+                  className={`pick-chip ${mpOULine === line ? 'pick-chip--active' : ''}`}
+                  onClick={() => setMpOULine(mpOULine === line ? '' : line)}
                 >
                   {line.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}
                 </button>
               ))}
             </div>
           </div>
-          <div className="bet-ou__row">
-            <span className="option-card__label">Pick</span>
-            <div className="pick-row">
-              {['Over', 'Under'].map(p => (
-                <button
-                  key={p}
-                  type="button"
-                  className={`pick-chip ${ouPick === p ? 'pick-chip--active' : ''}`}
-                  onClick={() => setOuPick(ouPick === p ? '' : p)}
-                >
-                  {p}
-                </button>
-              ))}
+
+          {mpOULine && (
+            <div className="bet-mp-row">
+              <span className="bet-mp-label">O/U Pick</span>
+              <div className="pick-row">
+                {['Over', 'Under'].map(p => (
+                  <button key={p} type="button"
+                    className={`pick-chip ${mpOUPick === p ? 'pick-chip--active' : ''}`}
+                    onClick={() => setMpOUPick(mpOUPick === p ? '' : p)}
+                  >
+                    {p}
+                    {mpOUPick === p && mpOdds.ou != null && (
+                      <span style={{ marginLeft: 6, color: 'var(--accent)', fontWeight: 700 }}>
+                        {Number(mpOdds.ou).toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          {oddsLoading && <div className="muted-text">Calculating odds...</div>}
-          {dynamicOdds && (
-            <div className="bet-dynamic-odds">
-              Odds ({ouPick} {ouLine?.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}): <strong>{Number(dynamicOdds.odds).toFixed(2)}</strong>
+          )}
+
+          {mpLoading && <div className="muted-text">Calculating odds...</div>}
+
+          {/* Combined odds display */}
+          {combinedOdds != null && !mpLoading && (
+            <div className="bet-combined-odds">
+              <div className="bet-combined-odds__rows">
+                {mpOdds.winner != null && (
+                  <div className="bet-combined-odds__line">
+                    <span>Winner ({mpWinner})</span>
+                    <span>{Number(mpOdds.winner).toFixed(2)}</span>
+                  </div>
+                )}
+                {mpOdds.btts != null && (
+                  <div className="bet-combined-odds__line">
+                    <span>BTTS {mpBTTS === 'true' ? 'Yes' : 'No'}</span>
+                    <span>{Number(mpOdds.btts).toFixed(2)}</span>
+                  </div>
+                )}
+                {mpOdds.ou != null && (
+                  <div className="bet-combined-odds__line">
+                    <span>{mpOUPick} {mpOULine.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}</span>
+                    <span>{Number(mpOdds.ou).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="bet-combined-odds__total">
+                Combined: <strong>{combinedOdds.toFixed(2)}</strong>
+                <span className="muted-text" style={{ marginLeft: 8, fontSize: '0.78rem' }}>
+                  ({mpBetCount} separate bet{mpBetCount > 1 ? 's' : ''})
+                </span>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Amount + payout */}
+      {/* Amount row */}
       <div className="bet-amount-row">
         <input
-          type="number"
-          min="1"
-          placeholder="Amount (coins)"
+          type="number" min="1" placeholder="Amount (coins)"
           value={betAmount}
           onChange={e => setBetAmount(e.target.value)}
           className="bet-amount-input"
         />
-        {betAmount > 0 && effectiveOdds != null && (
-          <span className="bet-potential">
-            → {(Number(betAmount) * Number(effectiveOdds)).toFixed(2)} 🪙
-          </span>
-        )}
+        {amount > 0 && (() => {
+          if (tab === 'Winner' && winnerPick)
+            return <span className="bet-potential">→ {(amount * Number(winnerOdds[winnerPick])).toFixed(2)} 🪙</span>;
+          if (tab === 'ExactScore' && exactOdds)
+            return <span className="bet-potential">→ {(amount * Number(exactOdds)).toFixed(2)} 🪙</span>;
+          if (tab === 'MarketPick' && combinedOdds)
+            return <span className="bet-potential">→ {(amount * combinedOdds).toFixed(2)} 🪙</span>;
+          return null;
+        })()}
       </div>
 
       <button
         type="button"
         className="primary-button"
-        disabled={!isReadyToBet || betLoading}
+        disabled={!isReady || betLoading}
         onClick={placeBet}
       >
         {betLoading ? 'Placing...' : 'Place Bet'}
