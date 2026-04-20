@@ -13,6 +13,9 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import BetsPage from './pages/BetsPage';
+import FantasyPage from './pages/FantasyPage';
+import FantasyDraftPage from './pages/FantasyDraftPage';
+import FantasyLeaderboardPage from './pages/FantasyLeaderboardPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -49,6 +52,9 @@ function AppLayout() {
             <Route path="/leagues/:leagueId" element={<LeaguePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/bets" element={<BetsPage />} />
+            <Route path="/fantasy" element={<FantasyPage />} />
+            <Route path="/fantasy/draft" element={<FantasyDraftPage />} />
+            <Route path="/fantasy/leaderboard" element={<FantasyLeaderboardPage />} />
             <Route
               path="/admin"
               element={
