@@ -233,21 +233,6 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* Points banner */}
-          <div className="points-banner">
-            <div className="points-banner__item">
-              <span className="points-banner__icon">🎯</span>
-              <span className="points-banner__label">Exact Score</span>
-              <span className="points-banner__pts">5 pts</span>
-            </div>
-            <div className="points-banner__divider" />
-            <div className="points-banner__item">
-              <span className="points-banner__icon">📈</span>
-              <span className="points-banner__label">Market Pick</span>
-              <span className="points-banner__pts">up to 3 pts</span>
-            </div>
-          </div>
-
           {/* Mode selector */}
           {!mode && (
             <div className="premium-mode-grid">
