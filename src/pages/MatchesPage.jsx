@@ -228,10 +228,15 @@ export default function MatchesPage() {
         };
         const predRes = await api.post('/Prediction', predBody);
         ai = predRes.data?.aiPredictionResponseDTO ?? null;
-        if (ai) setAiPrediction(ai);
       } catch {
-        // prediction failed (e.g. already predicted) — bets still go through
+        // prediction failed (e.g. already predicted, or no winner selected)
+        // fall back to standalone AI analysis
+        try {
+          const analysisRes = await api.get(`/Prediction/analysis/${selectedMatch.id}`);
+          ai = analysisRes.data ?? null;
+        } catch { /* AI unavailable — continue silently */ }
       }
+      if (ai) setAiPrediction(ai);
 
       // 2. Place a bet for each selected market (only what has odds)
       let betsPlaced = 0;
