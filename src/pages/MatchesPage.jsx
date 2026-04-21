@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/apiClient';
 import MatchCard from '../components/MatchCard';
 import { useWallet } from '../context/WalletContext';
@@ -30,7 +29,6 @@ async function fetchOdds(matchId, betType, params = {}) {
 // ── Quick 1/X/2 bet panel ────────────────────────────────────────
 function QuickBetPanel({ match }) {
   const { balance, refreshBalance } = useWallet();
-  const navigate = useNavigate();
   const [pick, setPick]       = useState('');
   const [amount, setAmount]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,13 +45,14 @@ function QuickBetPanel({ match }) {
     if (!pick || Number(amount) <= 0) return;
     setLoading(true); setFeedback(null);
     try {
-      const res = await api.post('/Bet', {
+      await api.post('/Bet', {
         matchId: match.id, betType: 'Winner',
         pick: pick, // 'Home' | 'Draw' | 'Away'
         amount: Number(amount),
       });
       await refreshBalance();
-      navigate('/bets');
+      setFeedback('✅ Bet placed! Check My Bets for details.');
+      setPick(''); setAmount('');
     } catch (err) {
       setFeedback(err?.response?.data?.message || 'Failed to place bet.');
     } finally { setLoading(false); }
@@ -113,7 +112,6 @@ function StakeRow({ amount, setAmount, potential }) {
 
 // ── Main page ────────────────────────────────────────────────────
 export default function MatchesPage() {
-  const navigate = useNavigate();
   const { refreshBalance } = useWallet();
 
   const [matches, setMatches]           = useState([]);
@@ -123,6 +121,7 @@ export default function MatchesPage() {
   const [amount, setAmount]             = useState('');
   const [loading, setLoading]           = useState(false);
   const [feedback, setFeedback]         = useState(null); // {type, msg}
+  const [aiPrediction, setAiPrediction] = useState(null);
   const [pageLoading, setPageLoading]   = useState(false);
   const [loadError, setLoadError]       = useState('');
 
@@ -144,8 +143,11 @@ export default function MatchesPage() {
       .finally(() => setPageLoading(false));
   }, []);
 
+  const aiRef = useRef(null);
+
   const resetPanel = useCallback(() => {
     setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null);
+    setAiPrediction(null);
     setExactOdds(null); setMpOdds({ winner: null, btts: null, ou: null });
   }, []);
 
@@ -205,13 +207,13 @@ export default function MatchesPage() {
   const exactPotential  = exactOdds && betAmt > 0 ? betAmt * Number(exactOdds.odds) : null;
   const marketPotential = combinedOdds && betAmt > 0 ? betAmt * combinedOdds : null;
 
-  // ── Place Bet (prediction + bet) ─────────────────────────────
+  // ── Place Bet (prediction + optional bet stake) ───────────────
   const placeBet = async () => {
     if (!selectedMatch || loading) return;
-    setLoading(true); setFeedback(null);
+    setLoading(true); setFeedback(null); setAiPrediction(null);
 
     try {
-      // 1. Save prediction (for points)
+      // 1. Save prediction (for points) — get AI analysis back
       const predBody = {
         matchId: selectedMatch.id,
         predictionHomeScore: isExact ? home : null,
@@ -221,7 +223,9 @@ export default function MatchesPage() {
         predictionOULine:    isMarket && ouLine ? ouLine : null,
         predictionOUPick:    isMarket && ouPick ? ouPick : null,
       };
-      await api.post('/Prediction', predBody);
+      const predRes = await api.post('/Prediction', predBody);
+      const ai = predRes.data?.aiPredictionResponseDTO ?? null;
+      if (ai) setAiPrediction(ai);
 
       // 2. Place bet(s) for My Bets (if stake entered)
       if (betAmt > 0 && hasBetOdds) {
@@ -231,13 +235,12 @@ export default function MatchesPage() {
             scoreHome: home, scoreAway: away, amount: betAmt,
           });
         } else if (isMarket) {
-          // One bet per selected market
           if (winner && mpOdds.winner != null)
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Winner,
               pick: WINNER_MAP[winner], amount: betAmt });
           if (btts && mpOdds.btts != null)
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.BTTS,
-              btts: btts === 'true', amount: betAmt });
+              bttsPick: btts === 'true', amount: betAmt }); // ← bttsPick (not btts)
           if (ouLine && ouPick && mpOdds.ou != null)
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.OverUnder,
               ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick], amount: betAmt });
@@ -245,8 +248,12 @@ export default function MatchesPage() {
         await refreshBalance();
       }
 
-      // 3. Navigate to My Bets
-      navigate('/bets');
+      setFeedback({ type: 'ok', msg: betAmt > 0 ? '✅ Bet placed!' : '✅ Prediction saved!' });
+
+      // Scroll to AI prediction
+      if (ai) {
+        setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+      }
     } catch (err) {
       setFeedback({ type: 'err', msg: err?.response?.data?.message || 'Failed to place bet.' });
     } finally {
@@ -514,6 +521,42 @@ export default function MatchesPage() {
               </div>
             )}
           </div>
+
+          {/* AI Prediction card */}
+          {aiPrediction && (
+            <div ref={aiRef} className="ai-card" style={{ marginTop: 16 }}>
+              <h3>🤖 AI Prediction</h3>
+              {aiPrediction.aiAnalysis && (
+                <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
+              )}
+              <div className="ai-grid">
+                <div>
+                  <span className="muted-text">Predicted Score</span>
+                  <div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div>
+                </div>
+                <div>
+                  <span className="muted-text">Pick</span>
+                  <div className="ai-value">{aiPrediction.pick}</div>
+                </div>
+                <div>
+                  <span className="muted-text">Confidence</span>
+                  <div className="ai-value">{aiPrediction.confidence}%</div>
+                </div>
+                <div>
+                  <span className="muted-text">Home Win</span>
+                  <div className="ai-value">{aiPrediction.homeWinProbability}%</div>
+                </div>
+                <div>
+                  <span className="muted-text">Draw</span>
+                  <div className="ai-value">{aiPrediction.drawProbability}%</div>
+                </div>
+                <div>
+                  <span className="muted-text">Away Win</span>
+                  <div className="ai-value">{aiPrediction.awayWinProbability}%</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick 1/X/2 bet — always visible below prediction modes */}
           {hasBetOdds && (
