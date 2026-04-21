@@ -3228,7 +3228,44 @@ select:focus {
   margin-bottom: 4px;
 }
 
-.bet-card__fixture { font-weight: 600; }
+.bet-card__fixture { font-weight: 600; margin-right: 8px; }
+
+.bet-card__type-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.bet-card__points {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-softer);
+  font-size: 0.85rem;
+}
+
+.bet-card__points-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bet-card__points-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.88rem;
+}
 
 .bet-card__date {
   font-size: 0.82rem;

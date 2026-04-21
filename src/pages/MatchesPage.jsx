@@ -4,11 +4,11 @@ import api from '../api/apiClient';
 import MatchCard from '../components/MatchCard';
 import { useWallet } from '../context/WalletContext';
 
-// ── Enums ────────────────────────────────────────────────────────
-const WINNER_MAP   = { Home: 1, Draw: 2, Away: 3 };
-const BET_TYPE     = { Winner: 1, ExactScore: 2, BTTS: 3, OverUnder: 4 };
-const OU_LINE_MAP  = { Line15: 1, Line25: 2, Line35: 3 };
-const OU_PICK_MAP  = { Over: 1, Under: 2 };
+// ── Enums (string values — backend uses JsonStringEnumConverter) ─
+const WINNER_MAP   = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
+const BET_TYPE     = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder' };
+const OU_LINE_MAP  = { Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const OU_PICK_MAP  = { Over: 'Over', Under: 'Under' };
 
 const parseScore = (v) => {
   if (v === '' || v == null) return null;
@@ -48,8 +48,8 @@ function QuickBetPanel({ match }) {
     setLoading(true); setFeedback(null);
     try {
       const res = await api.post('/Bet', {
-        matchId: match.id, betType: 1,
-        pick: { Home: 1, Draw: 2, Away: 3 }[pick],
+        matchId: match.id, betType: 'Winner',
+        pick: pick, // 'Home' | 'Draw' | 'Away'
         amount: Number(amount),
       });
       await refreshBalance();
