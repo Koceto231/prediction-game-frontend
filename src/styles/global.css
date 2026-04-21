@@ -3689,6 +3689,52 @@ select:focus {
 .fantasy-lb-row__user { display: block; font-size: 0.78rem; color: var(--text-muted); }
 .fantasy-lb-row__pts  { width: 80px; text-align: right; font-size: 1.1rem; font-weight: 800; color: var(--accent); }
 
+/* ── Points banner (above mode selector) ─────────────────────── */
+
+.points-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  margin-bottom: 16px;
+}
+
+.points-banner__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+}
+
+.points-banner__icon { font-size: 1.2rem; }
+
+.points-banner__label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.points-banner__pts {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+  border-radius: 20px;
+  padding: 2px 12px;
+}
+
+.points-banner__divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border-soft);
+  flex-shrink: 0;
+}
+
 /* ── Inline bet (inside prediction modes) ─────────────────────── */
 
 .inline-bet-wrapper {
