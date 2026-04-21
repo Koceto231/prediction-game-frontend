@@ -211,6 +211,8 @@ select {
   box-shadow:
     0 16px 30px rgba(57, 223, 125, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    display: block;
+  margin: 0 auto;
 }
 
 .primary-button:hover {
