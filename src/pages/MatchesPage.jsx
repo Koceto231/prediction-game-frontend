@@ -207,53 +207,68 @@ export default function MatchesPage() {
   const exactPotential  = exactOdds && betAmt > 0 ? betAmt * Number(exactOdds.odds) : null;
   const marketPotential = combinedOdds && betAmt > 0 ? betAmt * combinedOdds : null;
 
-  // ── Place Bet (prediction + optional bet stake) ───────────────
+  // ── Place Bet ─────────────────────────────────────────────────
+  // Any combination of markets is valid (1, 2 or all 3).
   const placeBet = async () => {
     if (!selectedMatch || loading) return;
     setLoading(true); setFeedback(null); setAiPrediction(null);
 
     try {
-      // 1. Save prediction (for points) — get AI analysis back
-      const predBody = {
-        matchId: selectedMatch.id,
-        predictionHomeScore: isExact ? home : null,
-        predictionAwayScore: isExact ? away : null,
-        predictionWinner:    isMarket && winner ? WINNER_MAP[winner] : null,
-        predictionBTTS:      isMarket && btts !== '' ? btts === 'true' : null,
-        predictionOULine:    isMarket && ouLine ? ouLine : null,
-        predictionOUPick:    isMarket && ouPick ? ouPick : null,
-      };
-      const predRes = await api.post('/Prediction', predBody);
-      const ai = predRes.data?.aiPredictionResponseDTO ?? null;
-      if (ai) setAiPrediction(ai);
+      // 1. Save prediction for points (try, but don't abort bets if it fails)
+      let ai = null;
+      try {
+        const predBody = {
+          matchId: selectedMatch.id,
+          predictionHomeScore: isExact ? home : null,
+          predictionAwayScore: isExact ? away : null,
+          predictionWinner:    isMarket && winner ? WINNER_MAP[winner] : null,
+          predictionBTTS:      isMarket && btts !== '' ? btts === 'true' : null,
+          predictionOULine:    isMarket && ouLine ? ouLine : null,
+          predictionOUPick:    isMarket && ouPick ? ouPick : null,
+        };
+        const predRes = await api.post('/Prediction', predBody);
+        ai = predRes.data?.aiPredictionResponseDTO ?? null;
+        if (ai) setAiPrediction(ai);
+      } catch {
+        // prediction failed (e.g. already predicted) — bets still go through
+      }
 
-      // 2. Place bet(s) for My Bets (if stake entered)
+      // 2. Place a bet for each selected market (only what has odds)
+      let betsPlaced = 0;
       if (betAmt > 0 && hasBetOdds) {
         if (isExact && home !== null && away !== null) {
           await api.post('/Bet', {
             matchId: selectedMatch.id, betType: BET_TYPE.ExactScore,
             scoreHome: home, scoreAway: away, amount: betAmt,
           });
+          betsPlaced++;
         } else if (isMarket) {
-          if (winner && mpOdds.winner != null)
+          if (winner && mpOdds.winner != null) {
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Winner,
               pick: WINNER_MAP[winner], amount: betAmt });
-          if (btts && mpOdds.btts != null)
+            betsPlaced++;
+          }
+          if (btts && mpOdds.btts != null) {
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.BTTS,
-              bttsPick: btts === 'true', amount: betAmt }); // ← bttsPick (not btts)
-          if (ouLine && ouPick && mpOdds.ou != null)
+              bttsPick: btts === 'true', amount: betAmt });
+            betsPlaced++;
+          }
+          if (ouLine && ouPick && mpOdds.ou != null) {
             await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.OverUnder,
               ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick], amount: betAmt });
+            betsPlaced++;
+          }
         }
-        await refreshBalance();
+        if (betsPlaced > 0) await refreshBalance();
       }
 
-      setFeedback({ type: 'ok', msg: betAmt > 0 ? '✅ Bet placed!' : '✅ Prediction saved!' });
+      const msg = betsPlaced > 0
+        ? `✅ ${betsPlaced} bet${betsPlaced > 1 ? 's' : ''} placed!`
+        : '✅ Prediction saved!';
+      setFeedback({ type: 'ok', msg });
 
-      // Scroll to AI prediction
-      if (ai) {
-        setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-      }
+      if (ai) setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+
     } catch (err) {
       setFeedback({ type: 'err', msg: err?.response?.data?.message || 'Failed to place bet.' });
     } finally {
