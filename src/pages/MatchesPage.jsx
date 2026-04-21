@@ -27,6 +27,74 @@ async function fetchOdds(matchId, betType, params = {}) {
   } catch { return null; }
 }
 
+// ── Quick 1/X/2 bet panel ────────────────────────────────────────
+function QuickBetPanel({ match }) {
+  const { balance, refreshBalance } = useWallet();
+  const navigate = useNavigate();
+  const [pick, setPick]       = useState('');
+  const [amount, setAmount]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => { setPick(''); setAmount(''); setFeedback(null); }, [match?.id]);
+
+  const oddsMap = { Home: match.homeOdds, Draw: match.drawOdds, Away: match.awayOdds };
+  const selectedOdds = pick ? Number(oddsMap[pick]) : null;
+  const potential = selectedOdds && Number(amount) > 0
+    ? (selectedOdds * Number(amount)).toFixed(2) : null;
+
+  const place = async () => {
+    if (!pick || Number(amount) <= 0) return;
+    setLoading(true); setFeedback(null);
+    try {
+      const res = await api.post('/Bet', {
+        matchId: match.id, betType: 1,
+        pick: { Home: 1, Draw: 2, Away: 3 }[pick],
+        amount: Number(amount),
+      });
+      await refreshBalance();
+      navigate('/bets');
+    } catch (err) {
+      setFeedback(err?.response?.data?.message || 'Failed to place bet.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="quick-bet-panel">
+      <div className="quick-bet-panel__title">Quick Bet — 1 / X / 2</div>
+      <div className="bet-picks">
+        {[
+          { key: 'Home', label: match.homeTeamName, odds: match.homeOdds },
+          { key: 'Draw', label: 'Draw',             odds: match.drawOdds  },
+          { key: 'Away', label: match.awayTeamName, odds: match.awayOdds  },
+        ].map(({ key, label, odds }) => (
+          <button key={key} type="button"
+            className={`bet-pick-btn ${pick === key ? 'bet-pick-btn--active' : ''}`}
+            onClick={() => { setPick(pick === key ? '' : key); setFeedback(null); }}>
+            <span className="bet-pick-btn__label">{label}</span>
+            <span className="bet-pick-btn__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</span>
+          </button>
+        ))}
+      </div>
+      {pick && (
+        <div className="bet-amount-row" style={{ marginTop: 12 }}>
+          <input type="number" min="1" placeholder="Stake (coins)"
+            value={amount} onChange={e => setAmount(e.target.value)}
+            className="bet-amount-input"
+            onKeyDown={e => e.key === 'Enter' && place()} />
+          {potential && <span className="bet-potential">→ {potential} 🪙</span>}
+        </div>
+      )}
+      <button type="button" className="primary-button" style={{ marginTop: 12 }}
+        disabled={!pick || Number(amount) <= 0 || loading}
+        onClick={place}>
+        {loading ? 'Placing...' : 'Place Bet'}
+      </button>
+      {feedback && <div className="alert alert-error" style={{ marginTop: 10 }}>{feedback}</div>}
+    </div>
+  );
+}
+
 // ── Inline bet amount row used in both modes ─────────────────────
 function StakeRow({ amount, setAmount, potential }) {
   return (
@@ -446,6 +514,16 @@ export default function MatchesPage() {
               </div>
             )}
           </div>
+
+          {/* Quick 1/X/2 bet — always visible below prediction modes */}
+          {hasBetOdds && (
+            <>
+              <div className="quick-bet-divider">
+                <span>or place a quick bet</span>
+              </div>
+              <QuickBetPanel match={selectedMatch} />
+            </>
+          )}
         </section>
       )}
     </div>
