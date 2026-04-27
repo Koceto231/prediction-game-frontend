@@ -578,8 +578,8 @@ export default function MatchesPage() {
             </div>
           )}
 
-          {/* Quick 1/X/2 bet — always visible below prediction modes */}
-          {hasBetOdds && (
+          {/* Quick 1/X/2 bet — hidden when a prediction mode is active */}
+          {hasBetOdds && !mode && (
             <>
               <div className="quick-bet-divider">
                 <span>or place a quick bet</span>
