@@ -96,8 +96,9 @@ function QuickBetPanel({ match }) {
           <div className="bet-slip__stake-row">
             <div className="bet-slip__stake-wrap">
               <input
-                type="number" min="1" placeholder="0"
-                value={amount} onChange={e => setAmount(e.target.value)}
+                type="text" inputMode="numeric" placeholder="0"
+                value={amount}
+                onChange={e => { const v = e.target.value.replace(/\D/g, ''); setAmount(v); }}
                 className="bet-slip__stake-input"
                 onKeyDown={e => e.key === 'Enter' && place()}
                 autoFocus
@@ -143,8 +144,9 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
       <div className="bet-slip__stake-row">
         <div className="bet-slip__stake-wrap">
           <input
-            type="number" min="1" placeholder="0"
-            value={amount} onChange={e => setAmount(e.target.value)}
+            type="text" inputMode="numeric" placeholder="0"
+            value={amount}
+            onChange={e => { const v = e.target.value.replace(/\D/g, ''); setAmount(v); }}
             className="bet-slip__stake-input"
             onKeyDown={e => e.key === 'Enter' && !disabled && onPlace()}
           />
