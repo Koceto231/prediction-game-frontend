@@ -16,7 +16,7 @@ export default function AdminPage() {
   const [competitionCode, setCompetitionCode] = useState('PL');
   const [matchId, setMatchId]                 = useState('');
   const [seedLeague, setSeedLeague]           = useState('PL');
-  const [seedSeason, setSeedSeason]           = useState('2024');
+  const [seedSeason, setSeedSeason]           = useState('2025');
   const [feedback, setFeedback]               = useState(null);
   const [loading, setLoading]                 = useState('');
 
