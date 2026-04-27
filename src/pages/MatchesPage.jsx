@@ -463,7 +463,7 @@ export default function MatchesPage() {
                       <>
                         <div className="mp-odds-row">
                           <span>Odds for {homeScore}–{awayScore}</span>
-                          <strong style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>
+                          <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>
                             {Number(exactOdds.odds).toFixed(2)}
                           </strong>
                         </div>
@@ -578,7 +578,7 @@ export default function MatchesPage() {
                         {combinedOdds != null && mpSelected.length >= 2 && (
                           <div className="mp-odds-row mp-odds-row--total">
                             <span>Combined odds</span>
-                            <strong style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>
+                            <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>
                               {combinedOdds.toFixed(2)}
                             </strong>
                           </div>
