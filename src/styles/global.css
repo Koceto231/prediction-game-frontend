@@ -2577,6 +2577,7 @@ select:focus {
 
 .shell-card.panel {
   scroll-margin-top: 90px;
+  background: black;
 }
 
 .scoreboard__separator {
@@ -4273,7 +4274,7 @@ select:focus {
 .match-card__team--away { text-align: right; align-items: flex-end; }
 
 .match-card__team-name {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
   color: #f0fdf4;
   line-height: 1.25;
@@ -4578,13 +4579,13 @@ button:focus-visible {
 }
 
 .bet-slip__remove {
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 33px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: transparent;
   color: rgba(220, 255, 230, 0.35);
-  font-size: 11px;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4607,7 +4608,7 @@ button:focus-visible {
 }
 
 .bet-slip__pick {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #f0fdf4;
   white-space: nowrap;
@@ -4674,6 +4675,7 @@ button:focus-visible {
   transition: opacity 0.15s, filter 0.15s;
   letter-spacing: 0.01em;
   background: #19b14e;
+  border-radius: 6px;
 }
 .bet-slip__cta:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -4684,7 +4686,7 @@ button:focus-visible {
 }
 
 .bet-slip__cta-sub {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   opacity: 0.7;
 }
@@ -4693,8 +4695,8 @@ button:focus-visible {
 .bet-slip__stake-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 15px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -4746,7 +4748,7 @@ button:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(220, 255, 230, 0.7);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;

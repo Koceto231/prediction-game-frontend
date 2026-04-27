@@ -85,7 +85,7 @@ export default function ProfilePage() {
 
       <div className="shell-card profile-wallet-card">
         <div className="profile-wallet-left">
-          <span className="wallet-icon-big">🪙</span>
+          <span className="wallet-icon-big">€</span>
           <div>
             <h3>Demo Wallet</h3>
             <p className="profile-muted-text">Use coins to place bets on matches</p>

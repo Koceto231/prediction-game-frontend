@@ -58,11 +58,11 @@ export default function BetsPage() {
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Staked</span>
-              <strong>{Number(totalStaked).toLocaleString()} 🪙</strong>
+              <strong>{Number(totalStaked).toLocaleString()} €</strong>
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Won</span>
-              <strong>{Number(totalWon).toLocaleString()} 🪙</strong>
+              <strong>{Number(totalWon).toLocaleString()} €</strong>
             </div>
             <div className="shell-card profile-stat-card">
               <span>Points Earned</span>
@@ -107,11 +107,11 @@ export default function BetsPage() {
                     Pick: <strong>{bet.betDescription}</strong>
                   </div>
                   <div>Odds: <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
-                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()} 🪙</strong></div>
+                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()} €</strong></div>
                   <div>
                     {isWon
-                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toLocaleString()} 🪙</strong></>
-                      : <>Potential: <strong>{Number(bet.potentialPayout).toLocaleString()} 🪙</strong></>
+                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toLocaleString()} €</strong></>
+                      : <>Potential: <strong>{Number(bet.potentialPayout).toLocaleString()} €</strong></>
                     }
                   </div>
                 </div>

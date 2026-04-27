@@ -120,8 +120,8 @@ function QuickBetPanel({ match }) {
             disabled={stakeNum <= 0 || loading}
             onClick={place}
           >
-            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum.toLocaleString() : ''} 🪙`}</span>
-            {potential && <span className="bet-slip__cta-sub">Potential win: {Number(potential).toLocaleString()} 🪙</span>}
+            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum.toLocaleString() : ''} €`}</span>
+            {potential && <span className="bet-slip__cta-sub">Potential win: {Number(potential).toLocaleString()} €</span>}
           </button>
         </div>
       )}
@@ -145,7 +145,7 @@ function StakeRow({ amount, setAmount, potential }) {
         className="bet-amount-input"
       />
       {potential != null && (
-        <span className="bet-potential">→ {Number(potential).toFixed(2)} 🪙</span>
+        <span className="bet-potential">→ {Number(potential).toFixed(2)} €</span>
       )}
     </div>
   );

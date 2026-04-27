@@ -51,7 +51,7 @@ export default function Navbar() {
       <div className="navbar-right">
         {balance !== null && (
           <div className="wallet-badge">
-            <span className="wallet-icon">🪙</span>
+            <span className="wallet-icon">€</span>
             <span className="wallet-amount">{Number(balance).toLocaleString()}</span>
           </div>
         )}
