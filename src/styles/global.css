@@ -4731,3 +4731,105 @@ button:focus-visible {
   border-color: rgba(59, 222, 124, 0.25);
   color: #3bde7c;
 }
+
+/* ── ADMIN PANEL ────────────────────────────────────────────────── */
+.admin-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.admin-section {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-section__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(220, 255, 230, 0.4);
+  margin-bottom: 14px;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(220, 255, 230, 0.6);
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.admin-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #f0fdf4;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.admin-input:focus {
+  border-color: rgba(59, 222, 124, 0.4);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.admin-btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(220, 255, 230, 0.8);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.admin-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f0fdf4;
+}
+.admin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.admin-btn--accent {
+  background: rgba(59, 222, 124, 0.12);
+  border-color: rgba(59, 222, 124, 0.25);
+  color: #3bde7c;
+}
+.admin-btn--accent:hover:not(:disabled) {
+  background: rgba(59, 222, 124, 0.2);
+}
+
+.admin-hint {
+  font-size: 11px;
+  color: rgba(220, 255, 230, 0.3);
+  margin-top: 8px;
+}
+
+.admin-feedback {
+  margin-top: 16px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+  font-family: monospace;
+}
