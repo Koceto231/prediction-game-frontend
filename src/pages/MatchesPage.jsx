@@ -135,18 +135,41 @@ function QuickBetPanel({ match }) {
   );
 }
 
-// ── Inline bet amount row used in both modes ─────────────────────
-function StakeRow({ amount, setAmount, potential }) {
+// ── Shared bet slip stake row + CTA ─────────────────────────────
+function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled }) {
+  const stakeNum = Number(amount);
   return (
-    <div className="bet-amount-row" style={{ marginTop: 14 }}>
-      <input
-        type="number" min="1" placeholder="Stake (coins)"
-        value={amount} onChange={e => setAmount(e.target.value)}
-        className="bet-amount-input"
-      />
-      {potential != null && (
-        <span className="bet-potential">→ {Number(potential).toFixed(2)} €</span>
-      )}
+    <div className="bet-slip" style={{ marginTop: 14 }}>
+      <div className="bet-slip__stake-row">
+        <div className="bet-slip__stake-wrap">
+          <input
+            type="number" min="1" placeholder="0"
+            value={amount} onChange={e => setAmount(e.target.value)}
+            className="bet-slip__stake-input"
+            onKeyDown={e => e.key === 'Enter' && !disabled && onPlace()}
+          />
+          <span className="bet-slip__stake-coin">€</span>
+        </div>
+        <div className="bet-slip__quick-adds">
+          {[5, 20, 50].map(n => (
+            <button key={n} type="button" className="bet-slip__quick-add"
+              onClick={() => setAmount(a => String((Number(a) || 0) + n))}>
+              +{n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="bet-slip__cta"
+        disabled={disabled || stakeNum <= 0 || loading}
+        onClick={onPlace}
+      >
+        <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum.toLocaleString() : ''} €`}</span>
+        {potential != null && potential > 0 && (
+          <span className="bet-slip__cta-sub">Potential win: {Number(potential).toLocaleString()} €</span>
+        )}
+      </button>
     </div>
   );
 }
@@ -444,16 +467,15 @@ export default function MatchesPage() {
                             {Number(exactOdds.odds).toFixed(2)}
                           </strong>
                         </div>
-                        <StakeRow amount={amount} setAmount={setAmount} potential={exactPotential} />
+                        <BetSlipStake
+                          amount={amount} setAmount={setAmount}
+                          potential={exactPotential}
+                          onPlace={placeBet} loading={loading} disabled={!hasScore}
+                        />
                       </>
                     )}
                   </div>
                 )}
-
-                <button className="primary-button" style={{ marginTop: 14 }}
-                  onClick={placeBet} disabled={loading || !hasScore} type="button">
-                  {loading ? 'Placing...' : 'Place Bet'}
-                </button>
               </>
             )}
 
@@ -561,17 +583,16 @@ export default function MatchesPage() {
                             </strong>
                           </div>
                         )}
-                        <StakeRow amount={amount} setAmount={setAmount} potential={marketPotential} />
+                        <BetSlipStake
+                          amount={amount} setAmount={setAmount}
+                          potential={marketPotential}
+                          onPlace={placeBet} loading={loading}
+                          disabled={!winner && !btts && !ouLine}
+                        />
                       </div>
                     )}
                   </div>
                 )}
-
-                <button className="primary-button" style={{ marginTop: 14 }}
-                  onClick={placeBet}
-                  disabled={loading || (!winner && !btts && !ouLine)} type="button">
-                  {loading ? 'Placing...' : 'Place Bet'}
-                </button>
               </>
             )}
 
