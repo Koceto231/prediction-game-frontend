@@ -4105,7 +4105,7 @@ select:focus {
 .nav-links a {
   padding: 7px 13px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(220, 255, 230, 0.45);
   background: transparent;
@@ -4593,6 +4593,27 @@ button:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.bet-slip__legs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.bet-slip__leg {
+  font-size: 12px;
+  color: rgba(220, 255, 230, 0.5);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bet-slip__leg em {
+  font-style: normal;
+  color: rgba(220, 255, 230, 0.75);
+  font-weight: 600;
 }
 
 .bet-slip__odds {

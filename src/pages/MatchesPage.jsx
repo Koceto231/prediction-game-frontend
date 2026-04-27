@@ -553,44 +553,74 @@ export default function MatchesPage() {
                   </div>
                 </div>
 
-                {/* Odds breakdown + stake */}
+                {/* Single combined bet slip */}
                 {hasBetOdds && (winner || btts || (ouLine && ouPick)) && (
                   <div className="inline-bet-wrapper">
                     {mpOddsLoading && <div className="muted-text">Calculating odds...</div>}
                     {!mpOddsLoading && (
-                      <div className="mp-odds-breakdown">
-                        {winner && mpOdds.winner != null && (
-                          <div className="mp-odds-row">
-                            <span>Winner — {winner === 'Home' ? selectedMatch.homeTeamName : winner === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>
-                            <strong>{Number(mpOdds.winner).toFixed(2)}</strong>
+                      <div className="bet-slip">
+                        {/* Slip header: all picks + combined odds */}
+                        <div className="bet-slip__header">
+                          <div className="bet-slip__info">
+                            <span className="bet-slip__pick">Market Pick</span>
+                            <div className="bet-slip__legs">
+                              {winner && mpOdds.winner != null && (
+                                <span className="bet-slip__leg">
+                                  {winner === 'Home' ? selectedMatch.homeTeamName : winner === 'Away' ? selectedMatch.awayTeamName : 'Draw'}
+                                  <em>{Number(mpOdds.winner).toFixed(2)}</em>
+                                </span>
+                              )}
+                              {btts && mpOdds.btts != null && (
+                                <span className="bet-slip__leg">
+                                  BTTS {btts === 'true' ? 'Yes' : 'No'}
+                                  <em>{Number(mpOdds.btts).toFixed(2)}</em>
+                                </span>
+                              )}
+                              {ouLine && ouPick && mpOdds.ou != null && (
+                                <span className="bet-slip__leg">
+                                  {ouPick} {ouLine.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}
+                                  <em>{Number(mpOdds.ou).toFixed(2)}</em>
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {btts && mpOdds.btts != null && (
-                          <div className="mp-odds-row">
-                            <span>BTTS {btts === 'true' ? 'Yes' : 'No'}</span>
-                            <strong>{Number(mpOdds.btts).toFixed(2)}</strong>
+                          <span className="bet-slip__odds" style={{ color: 'var(--amber)' }}>
+                            {combinedOdds != null ? combinedOdds.toFixed(2) : (mpSelected[0] ? Number(mpSelected[0]).toFixed(2) : '—')}
+                          </span>
+                        </div>
+
+                        <div className="bet-slip__stake-row">
+                          <div className="bet-slip__stake-wrap">
+                            <input
+                              type="text" inputMode="numeric" placeholder="0"
+                              value={amount}
+                              onChange={e => { const v = e.target.value.replace(/\D/g, ''); setAmount(v); }}
+                              className="bet-slip__stake-input"
+                              onKeyDown={e => e.key === 'Enter' && placeBet()}
+                            />
+                            <span className="bet-slip__stake-coin">€</span>
                           </div>
-                        )}
-                        {ouLine && ouPick && mpOdds.ou != null && (
-                          <div className="mp-odds-row">
-                            <span>{ouPick} {ouLine.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}</span>
-                            <strong>{Number(mpOdds.ou).toFixed(2)}</strong>
+                          <div className="bet-slip__quick-adds">
+                            {[5, 20, 50].map(n => (
+                              <button key={n} type="button" className="bet-slip__quick-add"
+                                onClick={() => setAmount(a => String((Number(a) || 0) + n))}>
+                                +{n}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                        {combinedOdds != null && mpSelected.length >= 2 && (
-                          <div className="mp-odds-row mp-odds-row--total">
-                            <span>Combined odds</span>
-                            <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>
-                              {combinedOdds.toFixed(2)}
-                            </strong>
-                          </div>
-                        )}
-                        <BetSlipStake
-                          amount={amount} setAmount={setAmount}
-                          potential={marketPotential}
-                          onPlace={placeBet} loading={loading}
-                          disabled={!winner && !btts && !ouLine}
-                        />
+                        </div>
+
+                        <button
+                          type="button"
+                          className="bet-slip__cta"
+                          disabled={betAmt <= 0 || loading}
+                          onClick={placeBet}
+                        >
+                          <span>{loading ? 'Placing...' : `Place bet ${betAmt > 0 ? betAmt.toLocaleString() : ''} €`}</span>
+                          {marketPotential != null && marketPotential > 0 && (
+                            <span className="bet-slip__cta-sub">Potential win: {Number(marketPotential).toFixed(2)} €</span>
+                          )}
+                        </button>
                       </div>
                     )}
                   </div>
