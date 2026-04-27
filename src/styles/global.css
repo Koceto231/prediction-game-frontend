@@ -4053,7 +4053,7 @@ select:focus {
   align-items: center;
   gap: 14px;
   padding: 10px 28px;
-  max-width: 960px;
+  max-width: 1280px;
   margin: 16px auto 0;
   /* reset grid from old rule */
   grid-template-columns: unset;
