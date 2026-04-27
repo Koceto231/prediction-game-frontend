@@ -7,12 +7,12 @@ export default function Navbar() {
   const { balance } = useWallet();
 
   const username = user?.username ?? '';
+  const initials = username.slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <header className="navbar shell-card">
+    <header className="navbar">
       <Link to="/matches" className="brand-link">
         <div className="brand">Match Predictor</div>
-        <div className="brand-subtitle">Football prediction game</div>
       </Link>
 
       <nav className="nav-links">
@@ -21,8 +21,7 @@ export default function Navbar() {
         <NavLink to="/leaderboard">Leaderboard</NavLink>
         <NavLink to="/leagues">Leagues</NavLink>
         <NavLink to="/fantasy">Fantasy</NavLink>
-        <NavLink to="/profile">Profile</NavLink>
-        {isAdmin ? <NavLink to="/admin">Admin</NavLink> : null}
+        {isAdmin && <NavLink to="/admin">Admin</NavLink>}
       </nav>
 
       <div className="navbar-right">
@@ -32,8 +31,13 @@ export default function Navbar() {
             <span className="wallet-amount">{Number(balance).toLocaleString()}</span>
           </div>
         )}
-        <button className="ghost-button" onClick={logout} type="button">
-          Logout
+        <button
+          className="nav-avatar"
+          onClick={logout}
+          title={`Logout (${username})`}
+          type="button"
+        >
+          {initials}
         </button>
       </div>
     </header>

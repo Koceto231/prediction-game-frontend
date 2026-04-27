@@ -4050,3 +4050,438 @@ select:focus {
   color: var(--text-muted);
   margin-top: 4px;
 }
+/*
+ * ═══════════════════════════════════════════════════════════════
+ *  global-updates.css
+ *  Paste this at the BOTTOM of global.css to override the old rules.
+ *  No deletions needed — cascade handles everything.
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ── 1. FONT ─────────────────────────────────────────────────── */
+/* Add this <link> in your index.html <head>:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+*/
+:root {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* ── 2. AMBER — for odds / money ─────────── */
+  --amber:        oklch(82% 0.18 85);
+  --amber-soft:   oklch(82% 0.18 85 / 0.10);
+  --amber-border: oklch(82% 0.18 85 / 0.22);
+}
+
+/* ── 3. NAVBAR — Floating pill (Option C) ────────────────────── */
+.navbar {
+  position: sticky;
+  top: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  max-width: 780px;
+  margin: 16px auto 0;
+  /* reset grid from old rule */
+  grid-template-columns: unset;
+
+  background: rgba(10, 22, 15, 0.95);
+  border: 1px solid rgba(59, 222, 124, 0.12);
+  border-radius: 999px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Brand — green dot via ::before */
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  white-space: nowrap;
+}
+
+.brand-link::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3bde7c;
+  box-shadow: 0 0 6px rgba(59, 222, 124, 0.7);
+  flex-shrink: 0;
+}
+
+.brand         { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; }
+.brand-subtitle { display: none; }
+
+/* Links — pill style, no box around each */
+.nav-links {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0;
+}
+
+.nav-links a {
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(220, 255, 230, 0.45);
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-links a:hover {
+  color: #f0fdf4;
+  background: rgba(255, 255, 255, 0.05);
+  transform: none;
+}
+
+.nav-links a.active {
+  background: rgba(59, 222, 124, 0.14);
+  border: none;
+  color: #3bde7c;
+}
+
+/* Right side */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.wallet-badge {
+  background: var(--amber-soft);
+  border: 1px solid var(--amber-border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+/* Avatar button (replaces logout button) */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #27c76f, #a5f3c2);
+  color: #07110c;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 0 2px rgba(59, 222, 124, 0.2);
+}
+
+.nav-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px rgba(59, 222, 124, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .navbar {
+    max-width: calc(100% - 28px);
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    border-radius: 22px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    gap: 10px;
+    top: 10px;
+  }
+
+  .brand-link { border-right: none; padding-right: 0; }
+  .navbar-right { border-left: none; padding-left: 0; }
+}
+
+/* ── 4. MATCH CARD — VS layout ───────────────────────────────── */
+.match-card {
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(15, 28, 20, 0.95) 0%, rgba(8, 16, 12, 0.98) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.match-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 222, 124, 0.3), transparent);
+  pointer-events: none;
+}
+
+/* Badge + time row (replaces __top) */
+.match-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(59, 222, 124, 0.1);
+  border: 1px solid rgba(59, 222, 124, 0.2);
+  color: #a7f3c4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+.match-card__time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(220, 255, 230, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* VS layout */
+.match-card__vs-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.match-card__team { display: flex; flex-direction: column; }
+.match-card__team--home { text-align: left; }
+.match-card__team--away { text-align: right; align-items: flex-end; }
+
+.match-card__team-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0fdf4;
+  line-height: 1.25;
+}
+
+.match-card__team-label {
+  font-size: 11px;
+  color: rgba(220, 255, 230, 0.38);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.match-card__vs {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.05em;
+}
+
+/* Odds — amber color + full-width grid */
+.match-card__odds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 0;
+  justify-content: unset;
+}
+
+.odds-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 8px 6px;
+  min-width: unset;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+
+.odds-chip:hover {
+  border-color: var(--amber-border);
+  background: var(--amber-soft);
+}
+
+.odds-chip__label {
+  font-size: 10px;
+  color: rgba(220, 255, 230, 0.38);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.odds-chip__value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--amber);  /* amber instead of green */
+}
+
+/* ── 5. LEADERBOARD — medals + "You" ────────────────────────── */
+.leaderboard-row--top {
+  background: rgba(59, 222, 124, 0.04);
+  border-color: rgba(59, 222, 124, 0.12);
+}
+
+.leaderboard-row--me {
+  background: rgba(59, 222, 124, 0.07);
+  border-color: rgba(59, 222, 124, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(59, 222, 124, 0.08);
+}
+
+.leaderboard-rank {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;   /* square instead of circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-rank--gold   { background: rgba(255, 215, 0, 0.12);   color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.2); }
+.leaderboard-rank--silver { background: rgba(200, 200, 220, 0.10); color: #c8c8dc; border: 1px solid rgba(200, 200, 220, 0.18); }
+.leaderboard-rank--bronze { background: rgba(205, 127, 50, 0.10);  color: #cd7f32; border: 1px solid rgba(205, 127, 50, 0.18); }
+
+/* "You" badge next to username */
+.leaderboard-you-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(59, 222, 124, 0.14);
+  color: #3bde7c;
+  border: 1px solid rgba(59, 222, 124, 0.22);
+  vertical-align: middle;
+}
+
+/* ── 6. AUTH / LOGIN — labels + segmented tabs ───────────────── */
+.auth-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.auth-card h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.auth-card > p {
+  color: rgba(220, 255, 230, 0.5);
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+/* Segmented tabs */
+.auth-tabs,
+.auth-switch {
+  display: flex;
+  gap: 0;
+  margin-bottom: 22px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.auth-tabs button,
+.auth-switch button {
+  flex: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(220, 255, 230, 0.45);
+  border-radius: 9px;
+  padding: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.auth-tabs button:hover,
+.auth-switch button:hover {
+  color: #f0fdf4;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-tabs button.active,
+.auth-switch button.active {
+  background: rgba(59, 222, 124, 0.12);
+  color: var(--accent);
+  border-color: rgba(59, 222, 124, 0.2);
+}
+
+/* Field wrapper with label */
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(220, 255, 230, 0.5);
+  letter-spacing: 0.03em;
+}
+
+/* ── 7. FOCUS STATES — accessibility ─────────────────────────── */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: rgba(59, 222, 124, 0.45);
+  box-shadow:
+    0 0 0 3px rgba(59, 222, 124, 0.10),
+    0 0 0 1px rgba(59, 222, 124, 0.25);
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(59, 222, 124, 0.5);
+  outline-offset: 2px;
+}
+
+/* Primary button — updated text */
+.primary-button {
+  letter-spacing: 0.02em;
+}

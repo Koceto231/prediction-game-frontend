@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 import api from '../api/apiClient';
+import { useAuth } from '../context/AuthContext';
+
+const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+const rankClass = (rank) => {
+  if (rank === 1) return 'leaderboard-rank--gold';
+  if (rank === 2) return 'leaderboard-rank--silver';
+  if (rank === 3) return 'leaderboard-rank--bronze';
+  return '';
+};
 
 export default function LeaderboardPage() {
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,9 +37,7 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -51,27 +60,40 @@ export default function LeaderboardPage() {
         <div className="leaderboard-table">
           <div className="leaderboard-row leaderboard-head">
             <span>#</span>
-            <span>Username</span>
+            <span>Player</span>
             <span>Points</span>
             <span>Correct</span>
           </div>
 
-          {rows.map((row, index) => (
-            <div className="leaderboard-row" key={row.userId}>
-              <div className="leaderboard-rank">{index + 1}</div>
+          {rows.map((row, index) => {
+            const rank = index + 1;
+            const isMe = user && row.username === user.username;
 
-              <div className="leaderboard-user">
-                <div className="leaderboard-name">{row.username}</div>
-                <div className="leaderboard-mobile-stats">
-                  <span>{row.totalPoints} pts</span>
-                  <span>{row.correctResults} correct</span>
+            return (
+              <div
+                className={`leaderboard-row ${isMe ? 'leaderboard-row--me' : ''} ${rank <= 3 ? 'leaderboard-row--top' : ''}`}
+                key={row.userId}
+              >
+                <div className={`leaderboard-rank ${rankClass(rank)}`}>
+                  {MEDAL[rank] ?? rank}
                 </div>
-              </div>
 
-              <div className="leaderboard-points">{row.totalPoints}</div>
-              <div className="leaderboard-correct">{row.correctResults}</div>
-            </div>
-          ))}
+                <div className="leaderboard-user">
+                  <div className="leaderboard-name">
+                    {row.username}
+                    {isMe && <span className="leaderboard-you-badge">You</span>}
+                  </div>
+                  <div className="leaderboard-mobile-stats">
+                    <span>{row.totalPoints} pts</span>
+                    <span>{row.correctResults} correct</span>
+                  </div>
+                </div>
+
+                <div className="leaderboard-points">{row.totalPoints}</div>
+                <div className="leaderboard-correct">{row.correctResults}</div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

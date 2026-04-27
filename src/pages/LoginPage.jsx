@@ -4,7 +4,6 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
-  
   const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -46,7 +45,6 @@ export default function LoginPage() {
     setLoading(true);
     setFeedback('');
     setFeedbackType('info');
-
     try {
       await login(email, password);
       navigate('/matches');
@@ -63,7 +61,6 @@ export default function LoginPage() {
     setLoading(true);
     setFeedback('');
     setFeedbackType('info');
-
     try {
       await register(username, email, password);
       setFeedback('Registration successful. Check your email for a verification link, then log in.');
@@ -83,15 +80,10 @@ export default function LoginPage() {
       setLoading(true);
       setFeedback('');
       setFeedbackType('info');
-
       await loginWithGoogle(credentialResponse.credential);
       navigate('/matches');
     } catch (err) {
-      setFeedback(
-        err?.response?.data?.message ||
-          err.message ||
-          'Google login failed.'
-      );
+      setFeedback(err?.response?.data?.message || err.message || 'Google login failed.');
       setFeedbackType('error');
     } finally {
       setLoading(false);
@@ -106,27 +98,21 @@ export default function LoginPage() {
   return (
     <div className="login-shell">
       <div className="shell-card auth-card">
-        <h1>Football Games Predictor</h1>
-        <p>Modern football prediction app</p>
+        <div className="auth-eyebrow">Match Predictor</div>
+        <h1>Welcome back</h1>
+        <p>Sign in to your account to continue</p>
 
-        <div className="auth-switch">
+        <div className="auth-tabs">
           <button
             className={mode === 'login' ? 'active' : ''}
-            onClick={() => {
-              setMode('login');
-              setFeedback('');
-            }}
+            onClick={() => { setMode('login'); setFeedback(''); }}
             type="button"
           >
             Login
           </button>
-
           <button
             className={mode === 'register' ? 'active' : ''}
-            onClick={() => {
-              setMode('register');
-              setFeedback('');
-            }}
+            onClick={() => { setMode('register'); setFeedback(''); }}
             type="button"
           >
             Register
@@ -135,35 +121,39 @@ export default function LoginPage() {
 
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="auth-form">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="login-email">Email address</label>
+              <input
+                id="login-email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Loading...' : 'Login'}
-            </button>
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
 
             <div className="auth-links-row">
-              <Link to="/forgot-password" className="text-link">
-                Forgot password?
-              </Link>
+              <Link to="/forgot-password" className="text-link">Forgot password?</Link>
             </div>
 
-            <div className="auth-divider">
-              <span>or</span>
-            </div>
+            <button className="primary-button" type="submit" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in →'}
+            </button>
+
+            <div className="auth-divider"><span>or continue with</span></div>
 
             <div className="google-wrapper">
               <GoogleLogin
@@ -180,28 +170,40 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleRegister} className="auth-form">
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-            />
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="reg-username">Username</label>
+              <input
+                id="reg-username"
+                placeholder="your_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
 
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="reg-email">Email address</label>
+              <input
+                id="reg-email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
+            <div className="auth-field">
+              <label className="auth-label" htmlFor="reg-password">Password</label>
+              <input
+                id="reg-password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
 
             <div className="password-rules">
               <div className="password-rules__title">Password must contain:</div>
@@ -215,21 +217,16 @@ export default function LoginPage() {
             </div>
 
             <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Loading...' : 'Register'}
+              {loading ? 'Creating account...' : 'Create account →'}
             </button>
           </form>
         )}
 
         {feedback && (
-          <div
-            className={`alert ${
-              feedbackType === 'success'
-                ? 'alert-success'
-                : feedbackType === 'error'
-                ? 'alert-error'
-                : 'alert-info'
-            }`}
-          >
+          <div className={`alert ${
+            feedbackType === 'success' ? 'alert-success' :
+            feedbackType === 'error'   ? 'alert-error'   : 'alert-info'
+          }`}>
             {feedback}
           </div>
         )}
