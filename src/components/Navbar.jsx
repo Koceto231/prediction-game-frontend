@@ -1,13 +1,37 @@
-import { NavLink, Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const { balance } = useWallet();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const username = user?.username ?? '';
   const initials = username.slice(0, 2).toUpperCase() || 'U';
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleProfile = () => {
+    setMenuOpen(false);
+    navigate('/profile');
+  };
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    logout();
+  };
 
   return (
     <header className="navbar">
@@ -31,14 +55,30 @@ export default function Navbar() {
             <span className="wallet-amount">{Number(balance).toLocaleString()}</span>
           </div>
         )}
-        <button
-          className="nav-avatar"
-          onClick={logout}
-          title={`Logout (${username})`}
-          type="button"
-        >
-          {initials}
-        </button>
+
+        <div className="nav-avatar-wrap" ref={menuRef}>
+          <button
+            className="nav-avatar"
+            onClick={() => setMenuOpen(o => !o)}
+            title={username}
+            type="button"
+          >
+            {initials}
+          </button>
+
+          {menuOpen && (
+            <div className="nav-avatar-menu">
+              <div className="nav-avatar-menu__user">{username}</div>
+              <button className="nav-avatar-menu__item" onClick={handleProfile} type="button">
+                Profile
+              </button>
+              <div className="nav-avatar-menu__divider" />
+              <button className="nav-avatar-menu__item nav-avatar-menu__item--danger" onClick={handleLogout} type="button">
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
