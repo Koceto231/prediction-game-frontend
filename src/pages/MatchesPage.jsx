@@ -94,13 +94,24 @@ function QuickBetPanel({ match }) {
           </div>
 
           <div className="bet-slip__stake-row">
-            <input
-              type="number" min="1" placeholder="Stake (coins)"
-              value={amount} onChange={e => setAmount(e.target.value)}
-              className="bet-slip__stake-input"
-              onKeyDown={e => e.key === 'Enter' && place()}
-              autoFocus
-            />
+            <div className="bet-slip__stake-wrap">
+              <input
+                type="number" min="1" placeholder="0"
+                value={amount} onChange={e => setAmount(e.target.value)}
+                className="bet-slip__stake-input"
+                onKeyDown={e => e.key === 'Enter' && place()}
+                autoFocus
+              />
+              <span className="bet-slip__stake-coin">🪙</span>
+            </div>
+            <div className="bet-slip__quick-adds">
+              {[5, 20, 50].map(n => (
+                <button key={n} type="button" className="bet-slip__quick-add"
+                  onClick={() => setAmount(a => String((Number(a) || 0) + n))}>
+                  +{n}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
