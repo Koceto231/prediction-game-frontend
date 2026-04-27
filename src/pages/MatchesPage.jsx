@@ -102,7 +102,7 @@ function QuickBetPanel({ match }) {
                 onKeyDown={e => e.key === 'Enter' && place()}
                 autoFocus
               />
-              <span className="bet-slip__stake-coin">🪙</span>
+              <span className="bet-slip__stake-coin">€</span>
             </div>
             <div className="bet-slip__quick-adds">
               {[5, 20, 50].map(n => (
