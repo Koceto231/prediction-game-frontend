@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import api from '../api/apiClient';
 
-const LEAGUES = ['PL', 'PD', 'SA', 'BL1', 'FL1', 'CL'];
+const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
 
 function AdminSection({ title, children }) {
   return (
@@ -15,8 +15,8 @@ function AdminSection({ title, children }) {
 export default function AdminPage() {
   const [competitionCode, setCompetitionCode] = useState('PL');
   const [matchId, setMatchId]                 = useState('');
-  const [seedLeague, setSeedLeague]           = useState('PL');
-  const [seedSeason, setSeedSeason]           = useState('2025');
+  const [smLeague, setSmLeague]               = useState('BGL');
+  const [smDays, setSmDays]                   = useState('30');
   const [feedback, setFeedback]               = useState(null);
   const [loading, setLoading]                 = useState('');
 
@@ -45,15 +45,15 @@ export default function AdminPage() {
 
         <div className="admin-grid">
 
-          {/* ── Teams & Matches ── */}
-          <AdminSection title="Teams & Matches">
+          {/* ── Teams & Matches (football-data.org) ── */}
+          <AdminSection title="Teams & Matches (football-data.org)">
             <div className="admin-row">
               <label className="admin-label">Competition code</label>
               <input
                 className="admin-input"
                 value={competitionCode}
                 onChange={e => setCompetitionCode(e.target.value.toUpperCase())}
-                placeholder="PL, PD, SA…"
+                placeholder="PL, PD, SA, BL1…"
               />
             </div>
             <div className="admin-actions">
@@ -68,26 +68,38 @@ export default function AdminPage() {
             </div>
           </AdminSection>
 
-          {/* ── Seed Players ── */}
-          <AdminSection title="Seed Fantasy Players (api-sports)">
+          {/* ── Sportmonks — efbet Liga & other leagues ── */}
+          <AdminSection title="Matches via Sportmonks (efbet Liga, PL, …)">
             <div className="admin-row">
               <label className="admin-label">League</label>
-              <select className="admin-input" value={seedLeague} onChange={e => setSeedLeague(e.target.value)}>
-                {LEAGUES.map(l => <option key={l} value={l}>{l}</option>)}
+              <select className="admin-input" value={smLeague} onChange={e => setSmLeague(e.target.value)}>
+                {SM_LEAGUES.map(l => <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>)}
               </select>
             </div>
             <div className="admin-row">
-              <label className="admin-label">Season</label>
-              <input className="admin-input" value={seedSeason}
-                onChange={e => setSeedSeason(e.target.value)} placeholder="2024" />
+              <label className="admin-label">Days ahead</label>
+              <input className="admin-input" value={smDays}
+                onChange={e => setSmDays(e.target.value)} placeholder="30" />
             </div>
             <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'seed'}
-                onClick={() => run('seed', () => api.post(`/admin/sync/seed-players?league=${seedLeague}&season=${seedSeason}`))}>
-                {loading === 'seed' ? 'Seeding…' : `Seed ${seedLeague} Players`}
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sm-matches'}
+                onClick={() => run('sm-matches', () =>
+                  api.post(`/admin/sync/matches/sportmonks?leagueCode=${smLeague}&daysAhead=${smDays}`))}>
+                {loading === 'sm-matches' ? 'Importing…' : `Import ${smLeague} Matches`}
               </button>
             </div>
-            <p className="admin-hint">Uses ~21 api-sports requests per league. Run once per season.</p>
+            <p className="admin-hint">Covers 7 days back + selected days ahead. Safe to re-run.</p>
+          </AdminSection>
+
+          {/* ── Fantasy Players ── */}
+          <AdminSection title="Fantasy Players">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sync-players'}
+                onClick={() => run('sync-players', () => api.post('/admin/sync/sync-players'))}>
+                {loading === 'sync-players' ? 'Syncing…' : 'Sync Players from Squads'}
+              </button>
+            </div>
+            <p className="admin-hint">Fetches squad data from football-data.org for all teams. Run once per season.</p>
           </AdminSection>
 
           {/* ── Score Predictions ── */}
