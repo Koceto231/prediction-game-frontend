@@ -4994,3 +4994,51 @@ button:focus-visible {
 
 /* ── end Special Bets ─────────────────────────────────────────── */
 }
+
+/* ── Fantasy pitch — draft page tweaks ───────────────────────── */
+
+/* Give the pitch a minimum height so it looks like a real pitch */
+.fantasy-pitch {
+  min-height: 420px;
+  justify-content: space-evenly;
+}
+
+/* Pitch rows: stretch to fill evenly */
+.fantasy-pitch__row {
+  flex: 1;
+  max-height: 110px;
+}
+
+/* Player action buttons row under each avatar */
+.pitch-player-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* Photo image inside pitch-avatar fills the circle */
+.pitch-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Fallback span (initials) always centred */
+.pitch-avatar > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Mini avatars in the player list */
+.fantasy-list-row__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
