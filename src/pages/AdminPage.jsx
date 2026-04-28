@@ -13,12 +13,11 @@ function AdminSection({ title, children }) {
 }
 
 export default function AdminPage() {
-  const [competitionCode, setCompetitionCode] = useState('PL');
-  const [matchId, setMatchId]                 = useState('');
-  const [smLeague, setSmLeague]               = useState('BGL');
-  const [smDays, setSmDays]                   = useState('30');
-  const [feedback, setFeedback]               = useState(null);
-  const [loading, setLoading]                 = useState('');
+  const [smLeague, setSmLeague] = useState('BGL');
+  const [smDays, setSmDays]     = useState('30');
+  const [matchId, setMatchId]   = useState('');
+  const [feedback, setFeedback] = useState(null);
+  const [loading, setLoading]   = useState('');
 
   const run = async (key, fn) => {
     setLoading(key);
@@ -45,35 +44,14 @@ export default function AdminPage() {
 
         <div className="admin-grid">
 
-          {/* ── Teams & Matches (football-data.org) ── */}
-          <AdminSection title="Teams & Matches (football-data.org)">
-            <div className="admin-row">
-              <label className="admin-label">Competition code</label>
-              <input
-                className="admin-input"
-                value={competitionCode}
-                onChange={e => setCompetitionCode(e.target.value.toUpperCase())}
-                placeholder="PL, PD, SA, BL1…"
-              />
-            </div>
-            <div className="admin-actions">
-              <button className="admin-btn" type="button" disabled={loading === 'teams'}
-                onClick={() => run('teams', () => api.post(`/admin/sync/teams?competitionIdOrCode=${competitionCode}`))}>
-                {loading === 'teams' ? 'Importing…' : 'Import Teams'}
-              </button>
-              <button className="admin-btn" type="button" disabled={loading === 'matches'}
-                onClick={() => run('matches', () => api.post(`/admin/sync/matches?competitionIdOrCode=${competitionCode}`))}>
-                {loading === 'matches' ? 'Importing…' : 'Import Matches'}
-              </button>
-            </div>
-          </AdminSection>
-
-          {/* ── Sportmonks — efbet Liga & other leagues ── */}
-          <AdminSection title="Matches via Sportmonks (efbet Liga, PL, …)">
+          {/* ── Matches via Sportmonks ── */}
+          <AdminSection title="Import Matches (Sportmonks)">
             <div className="admin-row">
               <label className="admin-label">League</label>
               <select className="admin-input" value={smLeague} onChange={e => setSmLeague(e.target.value)}>
-                {SM_LEAGUES.map(l => <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>)}
+                {SM_LEAGUES.map(l => (
+                  <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>
+                ))}
               </select>
             </div>
             <div className="admin-row">
@@ -91,26 +69,26 @@ export default function AdminPage() {
             <p className="admin-hint">Covers 7 days back + selected days ahead. Safe to re-run.</p>
           </AdminSection>
 
-          {/* ── Fantasy Players (football-data.org) ── */}
-          <AdminSection title="Fantasy Players (football-data.org)">
+          {/* ── Dedup matches ── */}
+          <AdminSection title="Fix Duplicate Matches">
             <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sync-players'}
-                onClick={() => run('sync-players', () => api.post('/admin/sync/sync-players'))}>
-                {loading === 'sync-players' ? 'Syncing…' : 'Sync Players from Squads'}
+              <button className="admin-btn" type="button" disabled={loading === 'dedup'}
+                onClick={() => run('dedup', () => api.post('/admin/sync/matches/dedup'))}>
+                {loading === 'dedup' ? 'Cleaning…' : 'Remove Duplicates'}
               </button>
             </div>
-            <p className="admin-hint">Fetches squad data from football-data.org for all teams. Run once per season.</p>
+            <p className="admin-hint">Изтрива дублирани мачове (от стария football-data.org import). Пусни веднъж.</p>
           </AdminSection>
 
-          {/* ── Sync Players via Sportmonks ── */}
-          <AdminSection title="Sync Players via Sportmonks (efbet Liga + all leagues)">
+          {/* ── Players via Sportmonks ── */}
+          <AdminSection title="Sync Players (Sportmonks)">
             <div className="admin-actions">
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sm-players'}
                 onClick={() => run('sm-players', () => api.post('/admin/sync/sync-players/sportmonks'))}>
                 {loading === 'sm-players' ? 'Syncing…' : 'Sync Players from Sportmonks'}
               </button>
             </div>
-            <p className="admin-hint">Синква играчите от Sportmonks за всички отбори. Пускай след Import Matches.</p>
+            <p className="admin-hint">Синква играчите за всички отбори. Пускай след Import Matches.</p>
           </AdminSection>
 
           {/* ── Score Predictions ── */}
