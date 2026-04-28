@@ -4,10 +4,19 @@ import MatchCard from '../components/MatchCard';
 import { useWallet } from '../context/WalletContext';
 
 // ── Enums (string values — backend uses JsonStringEnumConverter) ─
-const WINNER_MAP   = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
-const BET_TYPE     = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder' };
-const OU_LINE_MAP  = { Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
-const OU_PICK_MAP  = { Over: 'Over', Under: 'Under' };
+const BET_TYPE    = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder', Goalscorer: 'Goalscorer', Corners: 'Corners', YellowCards: 'YellowCards', DoubleChance: 'DoubleChance' };
+const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
+const OU_LINE_MAP = { Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const OU_PICK_MAP = { Over: 'Over', Under: 'Under' };
+const DC_PICKS    = [
+  { key: 'HomeOrDraw', label: '1X — Home or Draw' },
+  { key: 'HomeOrAway', label: '12 — Home or Away'  },
+  { key: 'DrawOrAway', label: 'X2 — Draw or Away'  },
+];
+const CORNER_LINES   = [8.5, 9.5, 10.5];
+const YELLOW_LINES   = [2.5, 3.5, 4.5];
+const POS_ORDER      = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+const POS_LABELS     = { GK: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
 
 const parseScore = (v) => {
   if (v === '' || v == null) return null;
@@ -26,117 +35,7 @@ async function fetchOdds(matchId, betType, params = {}) {
   } catch { return null; }
 }
 
-// ── Quick 1/X/2 bet panel ────────────────────────────────────────
-function QuickBetPanel({ match }) {
-  const { refreshBalance } = useWallet();
-  const [pick, setPick]       = useState('');
-  const [amount, setAmount]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-
-  useEffect(() => { setPick(''); setAmount(''); setFeedback(null); }, [match?.id]);
-
-  const oddsMap  = { Home: match.homeOdds, Draw: match.drawOdds, Away: match.awayOdds };
-  const labelMap = { Home: match.homeTeamName, Draw: 'Draw', Away: match.awayTeamName };
-  const selectedOdds = pick ? Number(oddsMap[pick]) : null;
-  const stakeNum = Number(amount);
-  const potential = selectedOdds && stakeNum > 0 ? (selectedOdds * stakeNum).toFixed(2) : null;
-
-  const place = async () => {
-    if (!pick || stakeNum <= 0) return;
-    setLoading(true); setFeedback(null);
-    try {
-      await api.post('/Bet', { matchId: match.id, betType: 'Winner', pick, amount: stakeNum });
-      await refreshBalance();
-      setFeedback({ ok: true, text: 'Bet placed! Check My Bets for details.' });
-      setPick(''); setAmount('');
-    } catch (err) {
-      setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed to place bet.' });
-    } finally { setLoading(false); }
-  };
-
-  const options = [
-    { key: 'Home', label: match.homeTeamName, odds: match.homeOdds },
-    { key: 'Draw', label: 'Draw',             odds: match.drawOdds  },
-    { key: 'Away', label: match.awayTeamName, odds: match.awayOdds  },
-  ];
-
-  return (
-    <div className="quick-bet-panel">
-      <div className="quick-bet-panel__title">Quick Bet — 1 / X / 2</div>
-
-      {/* Pick buttons */}
-      <div className="bet-picks">
-        {options.map(({ key, label, odds }) => (
-          <button key={key} type="button"
-            className={`bet-pick-btn ${pick === key ? 'bet-pick-btn--active' : ''}`}
-            onClick={() => { setPick(pick === key ? '' : key); setFeedback(null); }}>
-            <span className="bet-pick-btn__label">{label}</span>
-            <span className="bet-pick-btn__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Bet slip */}
-      {pick && (
-        <div className="bet-slip">
-          <div className="bet-slip__header">
-            <button className="bet-slip__remove" type="button"
-              onClick={() => { setPick(''); setAmount(''); setFeedback(null); }}
-              title="Remove">✕</button>
-            <div className="bet-slip__info">
-              <span className="bet-slip__pick">{labelMap[pick]}</span>
-              <span className="bet-slip__desc">
-                Match Result · {match.homeTeamName} vs. {match.awayTeamName}
-              </span>
-            </div>
-            <span className="bet-slip__odds">{selectedOdds?.toFixed(2)}</span>
-          </div>
-
-          <div className="bet-slip__stake-row">
-            <div className="bet-slip__stake-wrap">
-              <input
-                type="text" inputMode="numeric" placeholder="0"
-                value={amount}
-                onChange={e => { const v = e.target.value.replace(/\D/g, ''); setAmount(v); }}
-                className="bet-slip__stake-input"
-                onKeyDown={e => e.key === 'Enter' && place()}
-                autoFocus
-              />
-              <span className="bet-slip__stake-coin">€</span>
-            </div>
-            <div className="bet-slip__quick-adds">
-              {[5, 20, 50].map(n => (
-                <button key={n} type="button" className="bet-slip__quick-add"
-                  onClick={() => setAmount(a => String((Number(a) || 0) + n))}>
-                  +{n}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="bet-slip__cta"
-            disabled={stakeNum <= 0 || loading}
-            onClick={place}
-          >
-            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum.toLocaleString() : ''} €`}</span>
-            {potential && <span className="bet-slip__cta-sub">Potential win: {Number(potential).toFixed(2)} €</span>}
-          </button>
-        </div>
-      )}
-
-      {feedback && (
-        <div className={`alert ${feedback.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: 10 }}>
-          {feedback.text}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Shared bet slip stake row + CTA ─────────────────────────────
+// ── Shared: stake row + CTA ──────────────────────────────────────
 function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled }) {
   const stakeNum = Number(amount);
   return (
@@ -162,12 +61,11 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
         </div>
       </div>
       <button
-        type="button"
-        className="bet-slip__cta"
+        type="button" className="bet-slip__cta"
         disabled={disabled || stakeNum <= 0 || loading}
         onClick={onPlace}
       >
-        <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum.toLocaleString() : ''} €`}</span>
+        <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum : ''} €`}</span>
         {potential != null && potential > 0 && (
           <span className="bet-slip__cta-sub">Potential win: {Number(potential).toFixed(2)} €</span>
         )}
@@ -176,31 +74,368 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
   );
 }
 
+// ── Quick 1/X/2 bet panel ────────────────────────────────────────
+function QuickBetPanel({ match }) {
+  const { refreshBalance } = useWallet();
+  const [pick, setPick]       = useState('');
+  const [amount, setAmount]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => { setPick(''); setAmount(''); setFeedback(null); }, [match?.id]);
+
+  const oddsMap  = { Home: match.homeOdds, Draw: match.drawOdds, Away: match.awayOdds };
+  const labelMap = { Home: match.homeTeamName, Draw: 'Draw', Away: match.awayTeamName };
+  const selectedOdds = pick ? Number(oddsMap[pick]) : null;
+  const stakeNum = Number(amount);
+  const potential = selectedOdds && stakeNum > 0 ? (selectedOdds * stakeNum).toFixed(2) : null;
+
+  const place = async () => {
+    if (!pick || stakeNum <= 0) return;
+    setLoading(true); setFeedback(null);
+    try {
+      await api.post('/Bet', { matchId: match.id, betType: 'Winner', pick, amount: stakeNum });
+      await refreshBalance();
+      setFeedback({ ok: true, text: 'Bet placed!' });
+      setPick(''); setAmount('');
+    } catch (err) {
+      setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed.' });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="quick-bet-panel">
+      <div className="quick-bet-panel__title">Quick Bet — 1 / X / 2</div>
+      <div className="bet-picks">
+        {[{ key: 'Home', label: match.homeTeamName, odds: match.homeOdds },
+          { key: 'Draw', label: 'Draw',             odds: match.drawOdds  },
+          { key: 'Away', label: match.awayTeamName, odds: match.awayOdds  },
+        ].map(({ key, label, odds }) => (
+          <button key={key} type="button"
+            className={`bet-pick-btn ${pick === key ? 'bet-pick-btn--active' : ''}`}
+            onClick={() => { setPick(pick === key ? '' : key); setFeedback(null); }}>
+            <span className="bet-pick-btn__label">{label}</span>
+            <span className="bet-pick-btn__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</span>
+          </button>
+        ))}
+      </div>
+
+      {pick && (
+        <div className="bet-slip">
+          <div className="bet-slip__header">
+            <button className="bet-slip__remove" type="button"
+              onClick={() => { setPick(''); setAmount(''); setFeedback(null); }} title="Remove">✕</button>
+            <div className="bet-slip__info">
+              <span className="bet-slip__pick">{labelMap[pick]}</span>
+              <span className="bet-slip__desc">
+                Match Result · {match.homeTeamName} vs. {match.awayTeamName}
+              </span>
+            </div>
+            <span className="bet-slip__odds">{selectedOdds?.toFixed(2)}</span>
+          </div>
+          <div className="bet-slip__stake-row">
+            <div className="bet-slip__stake-wrap">
+              <input type="text" inputMode="numeric" placeholder="0" value={amount}
+                onChange={e => setAmount(e.target.value.replace(/\D/g, ''))}
+                className="bet-slip__stake-input" onKeyDown={e => e.key === 'Enter' && place()} autoFocus />
+              <span className="bet-slip__stake-coin">€</span>
+            </div>
+            <div className="bet-slip__quick-adds">
+              {[5, 20, 50].map(n => (
+                <button key={n} type="button" className="bet-slip__quick-add"
+                  onClick={() => setAmount(a => String((Number(a) || 0) + n))}>+{n}</button>
+              ))}
+            </div>
+          </div>
+          <button type="button" className="bet-slip__cta" disabled={stakeNum <= 0 || loading} onClick={place}>
+            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum : ''} €`}</span>
+            {potential && <span className="bet-slip__cta-sub">Potential win: {Number(potential).toFixed(2)} €</span>}
+          </button>
+        </div>
+      )}
+      {feedback && (
+        <div className={`alert ${feedback.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: 10 }}>
+          {feedback.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Double Chance panel ──────────────────────────────────────────
+function DoubleChancePanel({ match }) {
+  const { refreshBalance } = useWallet();
+  const [dcPick, setDCPick]   = useState('');
+  const [odds, setOdds]       = useState(null);
+  const [amount, setAmount]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => { setDCPick(''); setOdds(null); setAmount(''); setFeedback(null); }, [match?.id]);
+
+  useEffect(() => {
+    if (!dcPick) { setOdds(null); return; }
+    let cancelled = false;
+    fetchOdds(match.id, BET_TYPE.DoubleChance, { dcPick }).then(r => { if (!cancelled) setOdds(r); });
+    return () => { cancelled = true; };
+  }, [match?.id, dcPick]);
+
+  const stakeNum  = Number(amount);
+  const potential = odds && stakeNum > 0 ? stakeNum * Number(odds.odds) : null;
+
+  const place = async () => {
+    if (!dcPick || stakeNum <= 0 || !odds) return;
+    setLoading(true); setFeedback(null);
+    try {
+      await api.post('/Bet', { matchId: match.id, betType: BET_TYPE.DoubleChance, dCPick: dcPick, amount: stakeNum });
+      await refreshBalance();
+      setFeedback({ ok: true, text: 'Bet placed!' });
+      setDCPick(''); setAmount('');
+    } catch (err) {
+      setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed.' });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="special-bet-panel">
+      <div className="bet-picks">
+        {DC_PICKS.map(({ key, label }) => (
+          <button key={key} type="button"
+            className={`bet-pick-btn ${dcPick === key ? 'bet-pick-btn--active' : ''}`}
+            onClick={() => { setDCPick(dcPick === key ? '' : key); setFeedback(null); }}>
+            <span className="bet-pick-btn__label">{label}</span>
+          </button>
+        ))}
+      </div>
+      {dcPick && odds && (
+        <>
+          <div className="mp-odds-row">
+            <span>{DC_PICKS.find(d => d.key === dcPick)?.label}</span>
+            <strong style={{ color: 'var(--amber)' }}>{Number(odds.odds).toFixed(2)}</strong>
+          </div>
+          <BetSlipStake amount={amount} setAmount={setAmount} potential={potential}
+            onPlace={place} loading={loading} disabled={!dcPick || !odds} />
+        </>
+      )}
+      {feedback && (
+        <div className={`alert ${feedback.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: 10 }}>
+          {feedback.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Goalscorer panel ─────────────────────────────────────────────
+function GoalscorerPanel({ match }) {
+  const { refreshBalance } = useWallet();
+  const [players, setPlayers]     = useState([]);
+  const [pLoading, setPLoading]   = useState(false);
+  const [pError, setPError]       = useState('');
+  const [posFilter, setPosFilter] = useState('FWD');
+  const [selected, setSelected]   = useState(null);  // { playerId, name, odds }
+  const [amount, setAmount]       = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [feedback, setFeedback]   = useState(null);
+
+  useEffect(() => {
+    setPlayers([]); setSelected(null); setAmount(''); setFeedback(''); setPError('');
+    setPLoading(true);
+    api.get(`/Match/${match.id}/players`)
+      .then(r => setPlayers(r.data ?? []))
+      .catch(() => setPError('Could not load players. Make sure players are synced via Admin → Sync Players.'))
+      .finally(() => setPLoading(false));
+  }, [match?.id]);
+
+  const positions = [...new Set(players.map(p => p.position))].sort((a, b) => (POS_ORDER[a] ?? 9) - (POS_ORDER[b] ?? 9));
+  const filtered  = players.filter(p => p.position === posFilter);
+
+  const stakeNum  = Number(amount);
+  const potential = selected && stakeNum > 0 ? stakeNum * Number(selected.odds) : null;
+
+  const place = async () => {
+    if (!selected || stakeNum <= 0) return;
+    setLoading(true); setFeedback(null);
+    try {
+      await api.post('/Bet', { matchId: match.id, betType: BET_TYPE.Goalscorer, goalscorerId: selected.playerId, amount: stakeNum });
+      await refreshBalance();
+      setFeedback({ ok: true, text: `Bet placed on ${selected.name} to score!` });
+      setSelected(null); setAmount('');
+    } catch (err) {
+      setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed.' });
+    } finally { setLoading(false); }
+  };
+
+  if (pLoading) return <div className="muted-text" style={{ padding: '12px 0' }}>Loading players...</div>;
+  if (pError)   return <div className="alert alert-error">{pError}</div>;
+  if (!players.length) return <div className="muted-text">No players found for this match.</div>;
+
+  return (
+    <div className="special-bet-panel">
+      {/* Position tabs */}
+      <div className="pos-tabs">
+        {positions.map(pos => (
+          <button key={pos} type="button"
+            className={`pos-tab ${posFilter === pos ? 'pos-tab--active' : ''}`}
+            onClick={() => { setPosFilter(pos); setSelected(null); }}>
+            {POS_LABELS[pos] ?? pos}
+          </button>
+        ))}
+      </div>
+
+      {/* Player grid */}
+      <div className="player-grid">
+        {filtered.map(p => (
+          <button key={p.playerId} type="button"
+            className={`player-card ${selected?.playerId === p.playerId ? 'player-card--active' : ''}`}
+            onClick={() => { setSelected(selected?.playerId === p.playerId ? null : { playerId: p.playerId, name: p.name, odds: p.odds }); setFeedback(null); }}>
+            <span className="player-card__team">{p.isHome ? match.homeTeamName : match.awayTeamName}</span>
+            <span className="player-card__name">{p.name}</span>
+            <span className="player-card__odds">{Number(p.odds).toFixed(2)}</span>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <>
+          <div className="mp-odds-row" style={{ marginTop: 12 }}>
+            <span>{selected.name} to score</span>
+            <strong style={{ color: 'var(--amber)' }}>{Number(selected.odds).toFixed(2)}</strong>
+          </div>
+          <BetSlipStake amount={amount} setAmount={setAmount} potential={potential}
+            onPlace={place} loading={loading} disabled={!selected} />
+        </>
+      )}
+      {feedback && (
+        <div className={`alert ${feedback.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: 10 }}>
+          {feedback.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Corners / Yellow Cards O/U panel ────────────────────────────
+function SpecialOUPanel({ match, betType, lines, label }) {
+  const { refreshBalance } = useWallet();
+  const [line, setLine]     = useState('');
+  const [pick, setPick]     = useState('');  // Over / Under
+  const [odds, setOdds]     = useState(null);
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => { setLine(''); setPick(''); setOdds(null); setAmount(''); setFeedback(null); }, [match?.id, betType]);
+
+  useEffect(() => {
+    if (!line || !pick) { setOdds(null); return; }
+    let cancelled = false;
+    fetchOdds(match.id, betType, { lineValue: line, ouPick: pick }).then(r => { if (!cancelled) setOdds(r); });
+    return () => { cancelled = true; };
+  }, [match?.id, betType, line, pick]);
+
+  const stakeNum  = Number(amount);
+  const potential = odds && stakeNum > 0 ? stakeNum * Number(odds.odds) : null;
+
+  const place = async () => {
+    if (!line || !pick || stakeNum <= 0 || !odds) return;
+    setLoading(true); setFeedback(null);
+    try {
+      await api.post('/Bet', { matchId: match.id, betType, lineValue: Number(line), ouPick: pick, amount: stakeNum });
+      await refreshBalance();
+      setFeedback({ ok: true, text: 'Bet placed!' });
+      setLine(''); setPick(''); setAmount('');
+    } catch (err) {
+      setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed.' });
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="special-bet-panel">
+      <div className="option-card">
+        <span className="option-card__label">{label} line</span>
+        <div className="pick-row">
+          {lines.map(l => (
+            <button key={l} type="button"
+              className={`pick-chip ${line === String(l) ? 'pick-chip--active' : ''}`}
+              onClick={() => { setLine(line === String(l) ? '' : String(l)); setFeedback(null); }}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="option-card option-card--compact">
+        <span className="option-card__label">Over / Under</span>
+        <div className="pick-row">
+          {['Over', 'Under'].map(p => (
+            <button key={p} type="button"
+              className={`pick-chip ${pick === p ? 'pick-chip--active' : ''}`}
+              onClick={() => { setPick(pick === p ? '' : p); setFeedback(null); }}>
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {line && pick && (
+        <>
+          {odds
+            ? (
+              <>
+                <div className="mp-odds-row">
+                  <span>{label} {pick} {line}</span>
+                  <strong style={{ color: 'var(--amber)' }}>{Number(odds.odds).toFixed(2)}</strong>
+                </div>
+                <BetSlipStake amount={amount} setAmount={setAmount} potential={potential}
+                  onPlace={place} loading={loading} disabled={!odds} />
+              </>
+            )
+            : <div className="muted-text" style={{ textAlign: 'center', marginTop: 8 }}>Calculating odds...</div>
+          }
+        </>
+      )}
+      {feedback && (
+        <div className={`alert ${feedback.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: 10 }}>
+          {feedback.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────
+const SPECIAL_TABS = [
+  { key: 'dc',      label: 'Double Chance' },
+  { key: 'scorer',  label: '⚽ Goalscorer'  },
+  { key: 'corners', label: '🚩 Corners'     },
+  { key: 'yellows', label: '🟨 Yellow Cards' },
+];
+
 export default function MatchesPage() {
   const { refreshBalance } = useWallet();
 
   const [matches, setMatches]           = useState([]);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [mode, setMode]                 = useState('');   // '' | 'exact' | 'market'
+  const [specialTab, setSpecialTab]     = useState('');   // '' | 'dc' | 'scorer' | 'corners' | 'yellows'
   const [fields, setFields]             = useState(EMPTY);
   const [amount, setAmount]             = useState('');
   const [loading, setLoading]           = useState(false);
-  const [feedback, setFeedback]         = useState(null); // {type, msg}
+  const [feedback, setFeedback]         = useState(null);
   const [aiPrediction, setAiPrediction] = useState(null);
   const [pageLoading, setPageLoading]   = useState(false);
   const [loadError, setLoadError]       = useState('');
 
   // Live odds
-  const [exactOdds, setExactOdds]       = useState(null);
+  const [exactOdds, setExactOdds]               = useState(null);
   const [exactOddsLoading, setExactOddsLoading] = useState(false);
-  const [mpOdds, setMpOdds]             = useState({ winner: null, btts: null, ou: null });
-  const [mpOddsLoading, setMpOddsLoading] = useState(false);
+  const [mpOdds, setMpOdds]                     = useState({ winner: null, btts: null, ou: null });
+  const [mpOddsLoading, setMpOddsLoading]       = useState(false);
 
   const panelRef = useRef(null);
+  const aiRef    = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Load matches
   useEffect(() => {
     setPageLoading(true);
     api.get('/Match/upcoming?take=20')
@@ -209,21 +444,19 @@ export default function MatchesPage() {
       .finally(() => setPageLoading(false));
   }, []);
 
-  const aiRef = useRef(null);
-
   const resetPanel = useCallback(() => {
-    setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null);
+    setMode(''); setSpecialTab(''); setFields(EMPTY); setAmount(''); setFeedback(null);
     setAiPrediction(null);
     setExactOdds(null); setMpOdds({ winner: null, btts: null, ou: null });
   }, []);
 
   const { homeScore, awayScore, winner, btts, ouLine, ouPick } = fields;
-  const home = parseScore(homeScore);
-  const away = parseScore(awayScore);
-  const hasScore   = home != null && away != null;
-  const isExact    = mode === 'exact';
-  const isMarket   = mode === 'market';
-  const hasBetOdds = selectedMatch?.homeOdds != null;
+  const home        = parseScore(homeScore);
+  const away        = parseScore(awayScore);
+  const hasScore    = home != null && away != null;
+  const isExact     = mode === 'exact';
+  const isMarket    = mode === 'market';
+  const hasBetOdds  = selectedMatch?.homeOdds != null;
 
   // Live odds — Exact Score
   useEffect(() => {
@@ -268,19 +501,16 @@ export default function MatchesPage() {
   const combinedOdds = mpSelected.length
     ? mpSelected.reduce((a, o) => a * Number(o), 1) : null;
 
-  // Potential payout
-  const betAmt = Number(amount);
+  const betAmt          = Number(amount);
   const exactPotential  = exactOdds && betAmt > 0 ? betAmt * Number(exactOdds.odds) : null;
   const marketPotential = combinedOdds && betAmt > 0 ? betAmt * combinedOdds : null;
 
-  // ── Place Bet ─────────────────────────────────────────────────
-  // Any combination of markets is valid (1, 2 or all 3).
+  // ── Place prediction bet ────────────────────────────────────────
   const placeBet = async () => {
     if (!selectedMatch || loading) return;
     setLoading(true); setFeedback(null); setAiPrediction(null);
 
     try {
-      // 1. Save prediction for points (try, but don't abort bets if it fails)
       let ai = null;
       try {
         const predBody = {
@@ -295,38 +525,29 @@ export default function MatchesPage() {
         const predRes = await api.post('/Prediction', predBody);
         ai = predRes.data?.aiPredictionResponseDTO ?? null;
       } catch {
-        // prediction failed (e.g. already predicted, or no winner selected)
-        // fall back to standalone AI analysis
         try {
           const analysisRes = await api.get(`/Prediction/analysis/${selectedMatch.id}`);
           ai = analysisRes.data ?? null;
-        } catch { /* AI unavailable — continue silently */ }
+        } catch { /* AI unavailable */ }
       }
       if (ai) setAiPrediction(ai);
 
-      // 2. Place a bet for each selected market (only what has odds)
       let betsPlaced = 0;
       if (betAmt > 0 && hasBetOdds) {
         if (isExact && home !== null && away !== null) {
-          await api.post('/Bet', {
-            matchId: selectedMatch.id, betType: BET_TYPE.ExactScore,
-            scoreHome: home, scoreAway: away, amount: betAmt,
-          });
+          await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.ExactScore, scoreHome: home, scoreAway: away, amount: betAmt });
           betsPlaced++;
         } else if (isMarket) {
           if (winner && mpOdds.winner != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Winner,
-              pick: WINNER_MAP[winner], amount: betAmt });
+            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Winner, pick: WINNER_MAP[winner], amount: betAmt });
             betsPlaced++;
           }
           if (btts && mpOdds.btts != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.BTTS,
-              bttsPick: btts === 'true', amount: betAmt });
+            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.BTTS, bttsPick: btts === 'true', amount: betAmt });
             betsPlaced++;
           }
           if (ouLine && ouPick && mpOdds.ou != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.OverUnder,
-              ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick], amount: betAmt });
+            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.OverUnder, ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick], amount: betAmt });
             betsPlaced++;
           }
         }
@@ -339,7 +560,6 @@ export default function MatchesPage() {
       setFeedback({ type: 'ok', msg });
 
       if (ai) setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-
     } catch (err) {
       setFeedback({ type: 'err', msg: err?.response?.data?.message || 'Failed to place bet.' });
     } finally {
@@ -394,11 +614,11 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* Mode selector */}
+          {/* ── Prediction modes (Exact / Market) ────────────────────── */}
           {!mode && (
             <div className="premium-mode-grid">
               <button type="button" className="premium-mode-card premium-mode-card--exact"
-                onClick={() => setMode('exact')}>
+                onClick={() => { setMode('exact'); setSpecialTab(''); }}>
                 <div className="premium-mode-card__top">
                   <span className="premium-mode-card__icon">🎯</span>
                   <span className="premium-mode-card__points">5 pts</span>
@@ -407,7 +627,7 @@ export default function MatchesPage() {
                 <div className="premium-mode-card__text">Predict the final score and earn maximum points.</div>
               </button>
               <button type="button" className="premium-mode-card premium-mode-card--market"
-                onClick={() => setMode('market')}>
+                onClick={() => { setMode('market'); setSpecialTab(''); }}>
                 <div className="premium-mode-card__top">
                   <span className="premium-mode-card__icon">📈</span>
                   <span className="premium-mode-card__points">up to 3 pts</span>
@@ -424,14 +644,10 @@ export default function MatchesPage() {
             {isExact && (
               <>
                 <div className="mode-card mode-card--exact">
-                  <div className="mode-card__top">
-                    <span className="mode-badge">EXACT SCORE — 5 PTS</span>
-                  </div>
+                  <div className="mode-card__top"><span className="mode-badge">EXACT SCORE — 5 PTS</span></div>
                   <div className="mode-card__title">Predict the exact final score</div>
                   <button type="button" className="mode-card__button"
-                    onClick={() => { setMode(''); setFields(EMPTY); }}>
-                    Change type
-                  </button>
+                    onClick={() => { setMode(''); setFields(EMPTY); }}>Change type</button>
                 </div>
 
                 <div className="scoreboard-card">
@@ -457,7 +673,6 @@ export default function MatchesPage() {
                   </div>
                 </div>
 
-                {/* Odds + stake for exact score */}
                 {hasBetOdds && hasScore && (
                   <div className="inline-bet-wrapper">
                     {exactOddsLoading && <div className="muted-text" style={{ textAlign: 'center' }}>Calculating odds...</div>}
@@ -469,11 +684,8 @@ export default function MatchesPage() {
                             {Number(exactOdds.odds).toFixed(2)}
                           </strong>
                         </div>
-                        <BetSlipStake
-                          amount={amount} setAmount={setAmount}
-                          potential={exactPotential}
-                          onPlace={placeBet} loading={loading} disabled={!hasScore}
-                        />
+                        <BetSlipStake amount={amount} setAmount={setAmount} potential={exactPotential}
+                          onPlace={placeBet} loading={loading} disabled={!hasScore} />
                       </>
                     )}
                   </div>
@@ -485,18 +697,13 @@ export default function MatchesPage() {
             {isMarket && (
               <>
                 <div className="mode-card mode-card--market">
-                  <div className="mode-card__top">
-                    <span className="mode-badge">MARKET PICK — UP TO 3 PTS</span>
-                  </div>
+                  <div className="mode-card__top"><span className="mode-badge">MARKET PICK — UP TO 3 PTS</span></div>
                   <div className="mode-card__title">Predict Winner, BTTS and Over / Under</div>
                   <button type="button" className="mode-card__button"
-                    onClick={() => { setMode(''); setFields(EMPTY); }}>
-                    Change type
-                  </button>
+                    onClick={() => { setMode(''); setFields(EMPTY); }}>Change type</button>
                 </div>
 
                 <div className="prediction-options">
-                  {/* Winner */}
                   <div className="option-card">
                     <span className="option-card__label">Winner</span>
                     <div className="pick-row">
@@ -510,7 +717,6 @@ export default function MatchesPage() {
                     </div>
                   </div>
 
-                  {/* BTTS */}
                   <div className="option-card">
                     <span className="option-card__label">Both teams to score</span>
                     <div className="pick-row">
@@ -524,7 +730,6 @@ export default function MatchesPage() {
                     </div>
                   </div>
 
-                  {/* O/U Pick */}
                   <div className="option-card option-card--compact">
                     <span className="option-card__label">Over / Under Pick</span>
                     <div className="pick-row">
@@ -538,7 +743,6 @@ export default function MatchesPage() {
                     </div>
                   </div>
 
-                  {/* O/U Line */}
                   <div className="option-card option-card--compact">
                     <span className="option-card__label">Goals line</span>
                     <div className="pick-row">
@@ -553,13 +757,11 @@ export default function MatchesPage() {
                   </div>
                 </div>
 
-                {/* Single combined bet slip */}
                 {hasBetOdds && (winner || btts || (ouLine && ouPick)) && (
                   <div className="inline-bet-wrapper">
                     {mpOddsLoading && <div className="muted-text">Calculating odds...</div>}
                     {!mpOddsLoading && (
                       <div className="bet-slip">
-                        {/* Slip header: all picks + combined odds */}
                         <div className="bet-slip__header">
                           <div className="bet-slip__info">
                             <span className="bet-slip__pick">Market Pick</span>
@@ -591,32 +793,23 @@ export default function MatchesPage() {
 
                         <div className="bet-slip__stake-row">
                           <div className="bet-slip__stake-wrap">
-                            <input
-                              type="text" inputMode="numeric" placeholder="0"
-                              value={amount}
+                            <input type="text" inputMode="numeric" placeholder="0" value={amount}
                               onChange={e => { const v = e.target.value.replace(/\D/g, ''); setAmount(v); }}
                               className="bet-slip__stake-input"
-                              onKeyDown={e => e.key === 'Enter' && placeBet()}
-                            />
+                              onKeyDown={e => e.key === 'Enter' && placeBet()} />
                             <span className="bet-slip__stake-coin">€</span>
                           </div>
                           <div className="bet-slip__quick-adds">
                             {[5, 20, 50].map(n => (
                               <button key={n} type="button" className="bet-slip__quick-add"
-                                onClick={() => setAmount(a => String((Number(a) || 0) + n))}>
-                                +{n}
-                              </button>
+                                onClick={() => setAmount(a => String((Number(a) || 0) + n))}>+{n}</button>
                             ))}
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          className="bet-slip__cta"
-                          disabled={betAmt <= 0 || loading}
-                          onClick={placeBet}
-                        >
-                          <span>{loading ? 'Placing...' : `Place bet ${betAmt > 0 ? betAmt.toLocaleString() : ''} €`}</span>
+                        <button type="button" className="bet-slip__cta"
+                          disabled={betAmt <= 0 || loading} onClick={placeBet}>
+                          <span>{loading ? 'Placing...' : `Place bet ${betAmt > 0 ? betAmt : ''} €`}</span>
                           {marketPotential != null && marketPotential > 0 && (
                             <span className="bet-slip__cta-sub">Potential win: {Number(marketPotential).toFixed(2)} €</span>
                           )}
@@ -629,58 +822,71 @@ export default function MatchesPage() {
             )}
 
             {feedback && (
-              <div className={`alert ${feedback.type === 'ok' ? 'alert-info' : 'alert-error'}`}
-                style={{ marginTop: 12 }}>
+              <div className={`alert ${feedback.type === 'ok' ? 'alert-info' : 'alert-error'}`} style={{ marginTop: 12 }}>
                 {feedback.msg}
               </div>
             )}
           </div>
 
-          {/* AI Prediction card */}
+          {/* AI card */}
           {aiPrediction && (
             <div ref={aiRef} className="ai-card" style={{ marginTop: 16 }}>
               <h3>🤖 AI Prediction</h3>
-              {aiPrediction.aiAnalysis && (
-                <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
-              )}
+              {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
               <div className="ai-grid">
-                <div>
-                  <span className="muted-text">Predicted Score</span>
-                  <div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div>
-                </div>
-                <div>
-                  <span className="muted-text">Pick</span>
-                  <div className="ai-value">{aiPrediction.pick}</div>
-                </div>
-                <div>
-                  <span className="muted-text">Confidence</span>
-                  <div className="ai-value">{aiPrediction.confidence}%</div>
-                </div>
-                <div>
-                  <span className="muted-text">Home Win</span>
-                  <div className="ai-value">{aiPrediction.homeWinProbability}%</div>
-                </div>
-                <div>
-                  <span className="muted-text">Draw</span>
-                  <div className="ai-value">{aiPrediction.drawProbability}%</div>
-                </div>
-                <div>
-                  <span className="muted-text">Away Win</span>
-                  <div className="ai-value">{aiPrediction.awayWinProbability}%</div>
-                </div>
+                <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
+                <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
+                <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
+                <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
+                <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
+                <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
               </div>
             </div>
           )}
 
-          {/* Quick 1/X/2 bet — hidden when a prediction mode is active */}
-          {hasBetOdds && !mode && (
+          {/* Quick 1X2 */}
+          {hasBetOdds && !mode && !specialTab && (
             <>
-              <div className="quick-bet-divider">
-                <span>or place a quick bet</span>
-              </div>
+              <div className="quick-bet-divider"><span>or place a quick bet</span></div>
               <QuickBetPanel match={selectedMatch} />
             </>
           )}
+
+          {/* ── Special Bets ─────────────────────────────────────────── */}
+          {hasBetOdds && (
+            <div className="special-bets-section">
+              <div className="special-bets-header">
+                <span className="special-bets-title">Special Bets</span>
+              </div>
+
+              {/* Tab row */}
+              <div className="special-tabs">
+                {SPECIAL_TABS.map(({ key, label }) => (
+                  <button key={key} type="button"
+                    className={`special-tab ${specialTab === key ? 'special-tab--active' : ''}`}
+                    onClick={() => {
+                      setSpecialTab(specialTab === key ? '' : key);
+                      if (mode) setMode('');
+                    }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Panels */}
+              {specialTab === 'dc'      && <DoubleChancePanel match={selectedMatch} />}
+              {specialTab === 'scorer'  && <GoalscorerPanel   match={selectedMatch} />}
+              {specialTab === 'corners' && (
+                <SpecialOUPanel match={selectedMatch} betType={BET_TYPE.Corners}
+                  lines={CORNER_LINES} label="Corners" />
+              )}
+              {specialTab === 'yellows' && (
+                <SpecialOUPanel match={selectedMatch} betType={BET_TYPE.YellowCards}
+                  lines={YELLOW_LINES} label="Yellow Cards" />
+              )}
+            </div>
+          )}
+
         </section>
       )}
     </div>

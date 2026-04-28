@@ -4855,3 +4855,142 @@ button:focus-visible {
   font-size: 12px;
   font-family: monospace;
 }
+
+/* ── Special Bets Section ─────────────────────────────────────── */
+
+.special-bets-section {
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 20px;
+}
+
+.special-bets-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(220, 255, 230, 0.4);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.special-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.special-tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(220, 255, 230, 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.special-tab:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f0fdf4;
+}
+
+.special-tab--active {
+  background: rgba(59, 222, 124, 0.15);
+  border-color: rgba(59, 222, 124, 0.4);
+  color: #3bde7c;
+}
+
+.special-bet-panel {
+  animation: fadeSlideIn 0.18s ease;
+}
+
+/* Position tabs — Goalscorer */
+.pos-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.pos-tab {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(220, 255, 230, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.pos-tab--active {
+  background: rgba(255, 190, 60, 0.15);
+  border-color: rgba(255, 190, 60, 0.4);
+  color: #ffbe3c;
+}
+
+/* Player grid */
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+}
+
+.player-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.player-card--active {
+  border-color: rgba(59, 222, 124, 0.45);
+  background: rgba(59, 222, 124, 0.08);
+}
+
+.player-card__team {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(220, 255, 230, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.player-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0fdf4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.player-card__odds {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffbe3c;
+}
+
+/* ── end Special Bets ─────────────────────────────────────────── */
+}
