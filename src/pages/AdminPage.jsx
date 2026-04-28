@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import api from '../api/apiClient';
 
-const SM_LEAGUES   = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
-const SEED_LEAGUES = ['BGL', 'PL', 'PD', 'SA', 'BL1', 'FL1', 'CL'];
+const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
 
 function AdminSection({ title, children }) {
   return (
@@ -18,8 +17,6 @@ export default function AdminPage() {
   const [matchId, setMatchId]                 = useState('');
   const [smLeague, setSmLeague]               = useState('BGL');
   const [smDays, setSmDays]                   = useState('30');
-  const [seedLeague, setSeedLeague]           = useState('BGL');
-  const [seedSeason, setSeedSeason]           = useState('2024');
   const [feedback, setFeedback]               = useState(null);
   const [loading, setLoading]                 = useState('');
 
@@ -105,31 +102,15 @@ export default function AdminPage() {
             <p className="admin-hint">Fetches squad data from football-data.org for all teams. Run once per season.</p>
           </AdminSection>
 
-          {/* ── Seed Players via api-sports (efbet Liga + others) ── */}
-          <AdminSection title="Seed Players via api-sports (efbet Liga, PL, …)">
-            <div className="admin-row">
-              <label className="admin-label">League</label>
-              <select className="admin-input" value={seedLeague} onChange={e => setSeedLeague(e.target.value)}>
-                {SEED_LEAGUES.map(l => (
-                  <option key={l} value={l}>
-                    {l === 'BGL' ? 'BGL — efbet Liga' : l}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="admin-row">
-              <label className="admin-label">Season</label>
-              <input className="admin-input" value={seedSeason}
-                onChange={e => setSeedSeason(e.target.value)} placeholder="2024" />
-            </div>
+          {/* ── Sync Players via Sportmonks ── */}
+          <AdminSection title="Sync Players via Sportmonks (efbet Liga + all leagues)">
             <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'seed-players'}
-                onClick={() => run('seed-players', () =>
-                  api.post(`/admin/sync/seed-players?leagueCode=${seedLeague}&season=${seedSeason}`))}>
-                {loading === 'seed-players' ? 'Seeding…' : `Seed ${seedLeague} Players`}
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sm-players'}
+                onClick={() => run('sm-players', () => api.post('/admin/sync/sync-players/sportmonks'))}>
+                {loading === 'sm-players' ? 'Syncing…' : 'Sync Players from Sportmonks'}
               </button>
             </div>
-            <p className="admin-hint">Синква играчите от api-sports. За ефбет Лига избери BGL + сезон 2024.</p>
+            <p className="admin-hint">Синква играчите от Sportmonks за всички отбори. Пускай след Import Matches.</p>
           </AdminSection>
 
           {/* ── Score Predictions ── */}
