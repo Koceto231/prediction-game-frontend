@@ -13,9 +13,11 @@ function AdminSection({ title, children }) {
 }
 
 export default function AdminPage() {
-  const [smLeague, setSmLeague] = useState('BGL');
-  const [smDays, setSmDays]     = useState('30');
-  const [matchId, setMatchId]   = useState('');
+  const [smLeague, setSmLeague]       = useState('BGL');
+  const [smDays, setSmDays]           = useState('30');
+  const [histLeague, setHistLeague]   = useState('BGL');
+  const [histDaysBack, setHistDaysBack] = useState('365');
+  const [matchId, setMatchId]         = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
@@ -67,6 +69,31 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Covers 7 days back + selected days ahead. Safe to re-run.</p>
+          </AdminSection>
+
+          {/* ── Historical match import ── */}
+          <AdminSection title="Import Match History (Sportmonks)">
+            <div className="admin-row">
+              <label className="admin-label">League</label>
+              <select className="admin-input" value={histLeague} onChange={e => setHistLeague(e.target.value)}>
+                {SM_LEAGUES.map(l => (
+                  <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="admin-row">
+              <label className="admin-label">Days back</label>
+              <input className="admin-input" value={histDaysBack}
+                onChange={e => setHistDaysBack(e.target.value)} placeholder="365" />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'history'}
+                onClick={() => run('history', () =>
+                  api.post(`/admin/sync/matches/history?leagueCode=${histLeague}&daysBack=${histDaysBack}`))}>
+                {loading === 'history' ? 'Importing…' : `Import ${histLeague} History`}
+              </button>
+            </div>
+            <p className="admin-hint">Вкарва свършените мачове за последните N дни. Пусни веднъж за коректни коефиценти.</p>
           </AdminSection>
 
           {/* ── Dedup matches ── */}
