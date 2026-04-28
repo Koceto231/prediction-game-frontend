@@ -45,9 +45,11 @@ export default function FantasyDraftPage() {
       // Players are always loaded — not dependent on gameweek
       try {
         const playersRes = await api.get('/Fantasy/players');
-        setAllPlayers(playersRes.data);
-      } catch {
-        setError('Could not load players.');
+        setAllPlayers(playersRes.data ?? []);
+      } catch (err) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.message || err?.message || 'Unknown error';
+        setError(`Could not load players (${status ?? 'network'}: ${msg})`);
       }
 
       // Gameweek + existing team — optional, failures are silent
