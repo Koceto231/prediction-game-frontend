@@ -39,31 +39,36 @@ export default function FantasyDraftPage() {
   const [error, setError]          = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Pre-load current selection if user already has a squad
+  // Pre-load players + gameweek independently so a missing gameweek doesn't block the list
   useEffect(() => {
     const load = async () => {
+      // Players are always loaded — not dependent on gameweek
       try {
-        const [gwRes, playersRes] = await Promise.all([
-          api.get('/Fantasy/gameweek/current'),
-          api.get('/Fantasy/players'),
-        ]);
-        setGameweek(gwRes.data);
+        const playersRes = await api.get('/Fantasy/players');
         setAllPlayers(playersRes.data);
+      } catch {
+        setError('Could not load players.');
+      }
 
-        // Load existing selection
+      // Gameweek + existing team — optional, failures are silent
+      try {
+        const gwRes = await api.get('/Fantasy/gameweek/current');
+        setGameweek(gwRes.data);
+
         const teamRes = await api.get('/Fantasy/team');
         if (teamRes.data?.players?.length) {
           const existingIds = new Set(teamRes.data.players.map(p => p.fantasyPlayerId));
-          const existing = playersRes.data.filter(p => existingIds.has(p.id));
+          const playersRes2 = await api.get('/Fantasy/players');
+          const existing = playersRes2.data.filter(p => existingIds.has(p.id));
           setSelected(existing);
           const cap = teamRes.data.players.find(p => p.isCaptain);
           if (cap) setCaptain(cap.fantasyPlayerId);
         }
       } catch {
-        // ignore — user may not have team yet
-      } finally {
-        setLoading(false);
+        // No active gameweek yet — that's fine, players still shown
       }
+
+      setLoading(false);
     };
     load();
   }, []);
