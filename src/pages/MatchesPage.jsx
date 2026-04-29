@@ -269,15 +269,18 @@ export default function MatchesPage() {
   }, [isMarket, selectedMatch?.id, yellowsLine, yellowsOU]);
 
   // All selected odds (for combined slip)
+  // Only include a market's odds if that market is actually chosen AND the odds value
+  // is a valid positive number. Empty-string fields from EMPTY ('') would otherwise
+  // survive the old `!= null && !== false` filter and turn into Number('')=0.
   const allSelectedOdds = [
-    winner && mpOdds.winner,
-    btts    && mpOdds.btts,
-    ouLine  && ouPick  && mpOdds.ou,
-    dcPick  && mpOdds.dc,
-    cornersLine && cornersOU  && mpOdds.corners,
-    yellowsLine && yellowsOU  && mpOdds.yellows,
-    scorerPlayer?.odds,
-  ].filter(v => v != null && v !== false);
+    winner                       ? mpOdds.winner  : null,
+    btts                         ? mpOdds.btts    : null,
+    (ouLine && ouPick)           ? mpOdds.ou      : null,
+    dcPick                       ? mpOdds.dc      : null,
+    (cornersLine && cornersOU)   ? mpOdds.corners : null,
+    (yellowsLine && yellowsOU)   ? mpOdds.yellows : null,
+    scorerPlayer                 ? scorerPlayer.odds : null,
+  ].filter(v => v != null && Number(v) > 0);
 
   const combinedOdds    = allSelectedOdds.length ? allSelectedOdds.reduce((a, o) => a * Number(o), 1) : null;
   const betAmt          = Number(amount);
