@@ -118,6 +118,17 @@ export default function AdminPage() {
             <p className="admin-hint">Синква играчите за всички отбори. Пускай след Import Matches.</p>
           </AdminSection>
 
+          {/* ── Recalculate Prices ── */}
+          <AdminSection title="Recalculate Player Prices">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'recalc-prices'}
+                onClick={() => run('recalc-prices', () => api.post('/Fantasy/admin/recalc-prices'))}>
+                {loading === 'recalc-prices' ? 'Calculating…' : 'Recalculate Prices'}
+              </button>
+            </div>
+            <p className="admin-hint">Изчислява цените на играчите по сила на отбора (от историята на мачовете). Пускай след Import History.</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions">
             <div className="admin-row">
