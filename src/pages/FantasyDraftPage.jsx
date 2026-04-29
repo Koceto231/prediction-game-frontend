@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/apiClient';
 
-const ROWS     = ['FWD', 'MID', 'DEF', 'GK'];
+// GK at top → DEF → MID → FWD at bottom  (same as FPL)
+const ROWS     = ['GK', 'DEF', 'MID', 'FWD'];
 const REQUIRED = { GK: 1, DEF: 3, MID: 3, FWD: 4 };
 const BUDGET   = 100;
 
@@ -14,11 +15,11 @@ const POS_COLORS = {
 };
 
 const LEAGUES = {
-  PL:  { label: 'Premier League',   flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  BGL: { label: 'efbet Liga',       flag: '🇧🇬' },
-  BL1: { label: 'Bundesliga',       flag: '🇩🇪' },
-  SA:  { label: 'Serie A',          flag: '🇮🇹' },
-  PD:  { label: 'La Liga',          flag: '🇪🇸' },
+  PL:  { label: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  BGL: { label: 'efbet Liga',     flag: '🇧🇬' },
+  BL1: { label: 'Bundesliga',     flag: '🇩🇪' },
+  SA:  { label: 'Serie A',        flag: '🇮🇹' },
+  PD:  { label: 'La Liga',        flag: '🇪🇸' },
 };
 
 const RULES = [
@@ -35,8 +36,6 @@ const RULES = [
   { icon: '🟥', text: 'Red card: −3 pts' },
 ];
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -51,20 +50,19 @@ function PosBadge({ pos }) {
   );
 }
 
-// ── Player avatar (photo + initials fallback) ─────────────────────────────────
+// ── Player photo circle (FPL style) ───────────────────────────────────────────
 
-function Avatar({ player, isCaptain, size = 56 }) {
-  const [imgErr, setImgErr] = useState(false);
+function FpPhoto({ player, isCaptain }) {
+  const [err, setErr] = useState(false);
   const c = POS_COLORS[player.position] ?? {};
   return (
     <div
-      className={`pitch-avatar${isCaptain ? ' pitch-avatar--captain' : ''}`}
-      style={{ width: size, height: size, background: c.bg, border: `2.5px solid ${c.border}`, overflow: 'hidden', color: c.text }}
+      className={`fp-photo${isCaptain ? ' fp-photo--captain' : ''}`}
+      style={{ borderColor: c.border }}
     >
-      {player.photoUrl && !imgErr
-        ? <img src={player.photoUrl} alt="" onError={() => setImgErr(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : <span style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.29 }}>
+      {player.photoUrl && !err
+        ? <img src={player.photoUrl} alt={player.name} onError={() => setErr(true)} />
+        : <span className="fp-photo__initials" style={{ color: c.text }}>
             {initials(player.name)}
           </span>
       }
@@ -72,16 +70,75 @@ function Avatar({ player, isCaptain, size = 56 }) {
   );
 }
 
-function EmptySlot({ pos, onClick }) {
+// ── Filled player slot ────────────────────────────────────────────────────────
+
+function FpPlayer({ player, isCaptain, onCaptain, onRemove }) {
+  const lastName = player.name.split(' ').slice(-1)[0];
+  return (
+    <div className="fp-player">
+      <FpPhoto player={player} isCaptain={isCaptain} />
+      <div className="fp-label">
+        <span className="fp-label__name">{lastName}</span>
+        <span className="fp-label__sub">£{Number(player.price).toFixed(1)}</span>
+      </div>
+      <div className="fp-actions">
+        <button
+          type="button"
+          className={`fp-btn fp-btn--captain${isCaptain ? ' active' : ''}`}
+          onClick={onCaptain}
+          title="Captain (2× pts)"
+        >C</button>
+        <button type="button" className="fp-btn fp-btn--remove" onClick={onRemove}>×</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty slot ────────────────────────────────────────────────────────────────
+
+function FpEmpty({ pos, onClick }) {
   const c = POS_COLORS[pos] ?? {};
   return (
-    <div className="pitch-player" style={{ cursor: 'pointer' }} onClick={onClick}>
-      <div className="pitch-avatar" style={{
-        width: 56, height: 56, background: 'rgba(0,0,0,0.28)',
-        border: `2px dashed ${c.border}`, color: c.text, fontSize: '1.4rem',
-      }}>+</div>
-      <span className="pitch-player__name" style={{ color: c.text, opacity: 0.75 }}>{pos}</span>
+    <div className="fp-empty" onClick={onClick}>
+      <div className="fp-empty__circle" style={{ borderColor: c.border, color: c.text }}>+</div>
+      <span className="fp-empty__label" style={{ color: c.text }}>{pos}</span>
     </div>
+  );
+}
+
+// ── SVG pitch markings ────────────────────────────────────────────────────────
+
+function PitchLines() {
+  return (
+    <svg className="fp-pitch__svg" viewBox="0 0 400 560" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.5">
+        {/* Outer border */}
+        <rect x="2" y="2" width="396" height="556" rx="8" />
+        {/* Halfway line */}
+        <line x1="2" y1="280" x2="398" y2="280" />
+        {/* Center circle */}
+        <circle cx="200" cy="280" r="55" />
+        {/* Center spot */}
+        <circle cx="200" cy="280" r="2.5" fill="rgba(255,255,255,0.55)" />
+        {/* Top penalty box */}
+        <rect x="100" y="2" width="200" height="95" />
+        {/* Top goal area */}
+        <rect x="150" y="2" width="100" height="42" />
+        {/* Top penalty spot */}
+        <circle cx="200" cy="75" r="2.5" fill="rgba(255,255,255,0.55)" />
+        {/* Bottom penalty box */}
+        <rect x="100" y="463" width="200" height="95" />
+        {/* Bottom goal area */}
+        <rect x="150" y="516" width="100" height="42" />
+        {/* Bottom penalty spot */}
+        <circle cx="200" cy="485" r="2.5" fill="rgba(255,255,255,0.55)" />
+        {/* Corner arcs */}
+        <path d="M2,2 a8,8 0 0 1 8,8" />
+        <path d="M398,2 a8,8 0 0 0 -8,8" />
+        <path d="M2,558 a8,8 0 0 0 8,-8" />
+        <path d="M398,558 a8,8 0 0 1 -8,-8" />
+      </g>
+    </svg>
   );
 }
 
@@ -90,18 +147,18 @@ function EmptySlot({ pos, onClick }) {
 export default function FantasyDraftPage() {
   const navigate = useNavigate();
 
-  const [gameweek, setGameweek]     = useState(null);
-  const [allPlayers, setAllPlayers] = useState([]);
-  const [selected, setSelected]     = useState([]);
-  const [captain, setCaptain]       = useState(null);
+  const [gameweek, setGameweek]         = useState(null);
+  const [allPlayers, setAllPlayers]     = useState([]);
+  const [selected, setSelected]         = useState([]);
+  const [captain, setCaptain]           = useState(null);
   const [filterLeague, setFilterLeague] = useState('All');
-  const [filterPos, setFilterPos]   = useState('All');
-  const [search, setSearch]         = useState('');
-  const [loading, setLoading]       = useState(true);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [showRules, setShowRules]   = useState(false);
+  const [filterPos, setFilterPos]       = useState('All');
+  const [search, setSearch]             = useState('');
+  const [loading, setLoading]           = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [error, setError]               = useState('');
+  const [successMsg, setSuccessMsg]     = useState('');
+  const [showRules, setShowRules]       = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -124,7 +181,7 @@ export default function FantasyDraftPage() {
           const cap = teamRes.data.players.find(p => p.isCaptain);
           if (cap) setCaptain(cap.fantasyPlayerId);
         }
-      } catch { /* no gameweek yet */ }
+      } catch { /* no gameweek */ }
       setLoading(false);
     };
     load();
@@ -144,7 +201,6 @@ export default function FantasyDraftPage() {
     && captain != null;
   const selectedIds = useMemo(() => new Set(selected.map(p => p.id)), [selected]);
 
-  // Unique leagues present in the player pool
   const presentLeagues = useMemo(() => {
     const codes = new Set(allPlayers.map(p => p.leagueCode).filter(Boolean));
     return ['All', ...Object.keys(LEAGUES).filter(k => codes.has(k))];
@@ -203,22 +259,20 @@ export default function FantasyDraftPage() {
   return (
     <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '0 8px', minHeight: '80vh' }}>
 
-      {/* ══ Left: Football Pitch ══ */}
+      {/* ══ Left: Pitch ══ */}
       <div style={{ flex: '1 1 0', minWidth: 0 }}>
         <div className="shell-card" style={{ padding: 20 }}>
 
-          {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
             <div>
               <h2 style={{ margin: 0 }}>Your XI</h2>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.83rem' }}>{selected.length}/11 selected</p>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {/* Formation badges */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {Object.entries(REQUIRED).map(([pos, req]) => (
-                <div key={pos} className={`fantasy-formation-slot ${counts[pos] === req ? 'fantasy-formation-slot--done' : ''}`} style={{ minWidth: 60 }}>
-                  <PosBadge pos={pos} />
-                  <span>{counts[pos]}/{req}</span>
+                <div key={pos} className={`fantasy-formation-slot ${counts[pos] === req ? 'fantasy-formation-slot--done' : ''}`}>
+                  <PosBadge pos={pos} /><span>{counts[pos]}/{req}</span>
                 </div>
               ))}
             </div>
@@ -239,51 +293,44 @@ export default function FantasyDraftPage() {
             <div className="fantasy-budget-bar__detail">£{spent.toFixed(1)} of £{BUDGET} used</div>
           </div>
 
-          {/* ── Pitch ── */}
-          <div className="fantasy-pitch" style={{ minHeight: 520 }}>
-            <div className="fantasy-pitch__lines" aria-hidden="true">
-              <div className="fantasy-pitch__midline" />
-              <div className="fantasy-pitch__circle" />
-              <div className="fantasy-pitch__box fantasy-pitch__box--top" />
-              <div className="fantasy-pitch__box fantasy-pitch__box--bottom" />
-            </div>
+          {/* ── FPL-style pitch ── */}
+          <div className="fp-pitch">
+            <PitchLines />
 
+            {/* Top goal */}
+            <div className="fp-goal fp-goal--top" />
+
+            {/* Player rows: GK → DEF → MID → FWD */}
             {ROWS.map(pos => {
               const group      = selected.filter(p => p.position === pos);
               const emptyCount = REQUIRED[pos] - group.length;
               return (
-                <div key={pos} className="fantasy-pitch__row">
+                <div key={pos} className="fp-row">
                   {group.map(p => (
-                    <div key={p.id} className="pitch-player">
-                      <Avatar player={p} isCaptain={captain === p.id} size={58} />
-                      <span className="pitch-player__name">{p.name.split(' ').slice(-1)[0]}</span>
-                      <span className="pitch-player__pts">£{Number(p.price).toFixed(1)}</span>
-                      <div style={{ display: 'flex', gap: 3, justifyContent: 'center', marginTop: 2 }}>
-                        <button type="button" onClick={() => setCaptain(prev => prev === p.id ? null : p.id)}
-                          style={{
-                            fontSize: '0.58rem', padding: '1px 5px', borderRadius: 8, cursor: 'pointer',
-                            fontWeight: 800,
-                            background: captain === p.id ? '#ffd700' : 'rgba(255,215,0,0.12)',
-                            border: '1px solid #ffd700',
-                            color: captain === p.id ? '#1a0e00' : '#ffd700',
-                          }} title="Captain (2× pts)">C</button>
-                        <button type="button" onClick={() => togglePlayer(p)}
-                          style={{
-                            fontSize: '0.58rem', padding: '1px 5px', borderRadius: 8, cursor: 'pointer',
-                            background: 'rgba(255,80,80,0.12)', border: '1px solid #ff6060', color: '#ff6060',
-                          }}>×</button>
-                      </div>
-                    </div>
+                    <FpPlayer
+                      key={p.id}
+                      player={p}
+                      isCaptain={captain === p.id}
+                      onCaptain={() => setCaptain(prev => prev === p.id ? null : p.id)}
+                      onRemove={() => togglePlayer(p)}
+                    />
                   ))}
                   {Array.from({ length: emptyCount }).map((_, i) => (
-                    <EmptySlot key={i} pos={pos} onClick={() => { setFilterPos(pos); setFilterLeague('All'); }} />
+                    <FpEmpty
+                      key={i}
+                      pos={pos}
+                      onClick={() => { setFilterPos(pos); setFilterLeague('All'); }}
+                    />
                   ))}
                 </div>
               );
             })}
+
+            {/* Bottom goal */}
+            <div className="fp-goal fp-goal--bottom" />
           </div>
 
-          {/* Captain info + validation */}
+          {/* Captain + validation */}
           {captain != null && (
             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 10 }}>
               👑 Captain: <strong style={{ color: 'var(--accent)' }}>{selected.find(p => p.id === captain)?.name}</strong> (2× pts)
@@ -297,27 +344,25 @@ export default function FantasyDraftPage() {
           {error      && <div className="alert alert-error" style={{ marginTop: 8 }}>{error}</div>}
           {successMsg && <div className="alert alert-info"  style={{ marginTop: 8 }}>{successMsg}</div>}
 
-          <button type="button" className="primary-button" style={{ marginTop: 14, width: '100%' }}
-            disabled={!isComplete || saving || !gameweek} onClick={saveSelection}
+          <button type="button" className="primary-button"
+            style={{ marginTop: 14, width: '100%' }}
+            disabled={!isComplete || saving || !gameweek}
+            onClick={saveSelection}
             title={!gameweek ? 'No active gameweek yet' : undefined}>
             {saving ? 'Saving…' : !gameweek ? 'No active gameweek' : 'Save Squad ✅'}
           </button>
         </div>
       </div>
 
-      {/* ══ Right: Player picker + Rules ══ */}
+      {/* ══ Right: Picker + Rules ══ */}
       <div style={{ width: 380, flexShrink: 0 }}>
 
-        {/* ── Rules card ── */}
+        {/* Rules */}
         <div className="shell-card" style={{ padding: 16, marginBottom: 12 }}>
-          <button type="button"
-            style={{
-              width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          <button type="button" onClick={() => setShowRules(v => !v)}
+            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer',
-              fontSize: '0.95rem', fontWeight: 700, padding: 0,
-            }}
-            onClick={() => setShowRules(v => !v)}
-          >
+              fontSize: '0.95rem', fontWeight: 700, padding: 0 }}>
             <span>📖 Rules</span>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{showRules ? '▲ hide' : '▼ show'}</span>
           </button>
@@ -325,19 +370,18 @@ export default function FantasyDraftPage() {
             <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
               {RULES.map((r, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, fontSize: '0.82rem', color: 'var(--text-muted)', alignItems: 'center' }}>
-                  <span style={{ fontSize: '1rem' }}>{r.icon}</span>
-                  <span>{r.text}</span>
+                  <span style={{ fontSize: '1rem' }}>{r.icon}</span><span>{r.text}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── Player picker ── */}
+        {/* Player picker */}
         <div className="shell-card" style={{ padding: 16 }}>
           <h3 style={{ margin: '0 0 10px' }}>📋 Pick Your Squad</h3>
 
-          {/* League filter */}
+          {/* League tabs */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
             {presentLeagues.map(code => {
               const meta = LEAGUES[code];
@@ -345,23 +389,20 @@ export default function FantasyDraftPage() {
                 <button key={code} type="button"
                   className={`bet-type-tab ${filterLeague === code ? 'bet-type-tab--active' : ''}`}
                   onClick={() => setFilterLeague(code)}
-                  style={{ fontSize: '0.75rem' }}
-                >
+                  style={{ fontSize: '0.75rem' }}>
                   {meta ? `${meta.flag} ${code}` : 'All'}
                 </button>
               );
             })}
           </div>
 
-          {/* Position filter + search */}
+          {/* Position tabs + search */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {['All', 'GK', 'DEF', 'MID', 'FWD'].map(pos => (
               <button key={pos} type="button"
                 className={`bet-type-tab ${filterPos === pos ? 'bet-type-tab--active' : ''}`}
                 onClick={() => setFilterPos(pos)}
-                style={{ fontSize: '0.75rem' }}>
-                {pos}
-              </button>
+                style={{ fontSize: '0.75rem' }}>{pos}</button>
             ))}
             <input type="text" className="bet-amount-input" placeholder="Search…"
               value={search} onChange={e => setSearch(e.target.value)}
@@ -379,18 +420,8 @@ export default function FantasyDraftPage() {
                   className={`fantasy-list-row ${isSel ? 'fantasy-list-row--selected' : ''} ${!isSel && !addable ? 'fantasy-list-row--disabled' : ''}`}
                   onClick={() => togglePlayer(player)}>
 
-                  {/* Mini avatar */}
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                    overflow: 'hidden', border: `2px solid ${c.border}`,
-                    background: c.bg, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '0.65rem', fontWeight: 800, color: c.text,
-                  }}>
-                    {player.photoUrl
-                      ? <img src={player.photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={e => { e.currentTarget.style.display = 'none'; }} />
-                      : initials(player.name)}
-                  </div>
+                  {/* Mini photo */}
+                  <MiniPhoto player={player} />
 
                   <PosBadge pos={player.position} />
 
@@ -398,9 +429,8 @@ export default function FantasyDraftPage() {
                     <span className="fantasy-list-row__name">{player.name}</span>
                     <span className="fantasy-list-row__club">
                       {player.teamName}
-                      {player.leagueCode && LEAGUES[player.leagueCode]
-                        ? <span style={{ marginLeft: 4, opacity: 0.7 }}>{LEAGUES[player.leagueCode].flag}</span>
-                        : null}
+                      {player.leagueCode && LEAGUES[player.leagueCode] &&
+                        <span style={{ marginLeft: 4, opacity: 0.7 }}>{LEAGUES[player.leagueCode].flag}</span>}
                     </span>
                   </div>
 
@@ -411,12 +441,30 @@ export default function FantasyDraftPage() {
                 </div>
               );
             })}
-            {filtered.length === 0 && (
-              <div className="empty-box">No players match your filter.</div>
-            )}
+            {filtered.length === 0 && <div className="empty-box">No players match your filter.</div>}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Mini photo for list rows ───────────────────────────────────────────────────
+
+function MiniPhoto({ player }) {
+  const [err, setErr] = useState(false);
+  const c = POS_COLORS[player.position] ?? {};
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+      overflow: 'hidden', border: `2px solid ${c.border}`,
+      background: c.bg, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontSize: '0.65rem', fontWeight: 800, color: c.text,
+    }}>
+      {player.photoUrl && !err
+        ? <img src={player.photoUrl} alt="" onError={() => setErr(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : initials(player.name)}
     </div>
   );
 }
