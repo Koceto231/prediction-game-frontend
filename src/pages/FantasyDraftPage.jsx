@@ -244,7 +244,11 @@ export default function FantasyDraftPage() {
       setSuccessMsg('Squad saved! ✅');
       setTimeout(() => navigate('/fantasy'), 1200);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to save selection.');
+      const msg = err?.response?.data?.message
+               || err?.response?.data
+               || err?.message
+               || 'Failed to save selection.';
+      setError(`Save failed (${err?.response?.status ?? 'network'}): ${JSON.stringify(msg)}`);
     } finally {
       setSaving(false);
     }
