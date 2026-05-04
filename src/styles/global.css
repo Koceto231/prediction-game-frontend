@@ -1266,6 +1266,9 @@ select:focus {
   font-size: 0.9rem;
   font-weight: 700;
   color: rgba(230, 255, 237, 0.72);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .pick-row {
@@ -1305,6 +1308,19 @@ select:focus {
   box-shadow:
     0 8px 24px rgba(39, 199, 111, 0.24),
     0 0 0 1px rgba(89, 255, 147, 0.12);
+}
+
+.option-card__locked {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 160, 80, 0.75);
+  letter-spacing: 0;
+}
+
+.pick-chip--locked {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .pick-chip:disabled {

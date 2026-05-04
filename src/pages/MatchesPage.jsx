@@ -482,11 +482,16 @@ export default function MatchesPage() {
 
                   {/* Winner */}
                   <div className="option-card">
-                    <span className="option-card__label">Winner</span>
+                    <span className="option-card__label">
+                      Winner
+                      {dcPick && <span className="option-card__locked">🔒 locked — deselect Double Chance first</span>}
+                    </span>
                     <div className="pick-row">
                       {['Home', 'Draw', 'Away'].map(w => (
-                        <button key={w} type="button" className={`pick-chip ${winner === w ? 'pick-chip--active' : ''}`}
-                          onClick={() => setField('winner', winner === w ? '' : w)}>
+                        <button key={w} type="button"
+                          className={`pick-chip ${winner === w ? 'pick-chip--active' : ''} ${dcPick ? 'pick-chip--locked' : ''}`}
+                          disabled={!!dcPick}
+                          onClick={() => { setField('winner', winner === w ? '' : w); }}>
                           {w === 'Home' ? selectedMatch.homeTeamName : w === 'Away' ? selectedMatch.awayTeamName : 'Draw'}
                         </button>
                       ))}
@@ -495,10 +500,15 @@ export default function MatchesPage() {
 
                   {/* Double Chance */}
                   <div className="option-card">
-                    <span className="option-card__label">Double Chance</span>
+                    <span className="option-card__label">
+                      Double Chance
+                      {winner && <span className="option-card__locked">🔒 locked — deselect Winner first</span>}
+                    </span>
                     <div className="pick-row">
                       {DC_OPTIONS.map(({ key, label }) => (
-                        <button key={key} type="button" className={`pick-chip ${dcPick === key ? 'pick-chip--active' : ''}`}
+                        <button key={key} type="button"
+                          className={`pick-chip ${dcPick === key ? 'pick-chip--active' : ''} ${winner ? 'pick-chip--locked' : ''}`}
+                          disabled={!!winner}
                           onClick={() => setDCPick(dcPick === key ? '' : key)}>
                           {label}
                         </button>
