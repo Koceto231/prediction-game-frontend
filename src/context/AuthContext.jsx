@@ -3,107 +3,64 @@ import api from '../api/apiClient';
 
 const AuthContext = createContext(null);
 
-function parseJwt(token) {
+// Load persisted user info (id, username, email, role) — NOT the token
+function loadUser() {
   try {
-    if (!token) return null;
-
-    const payload = JSON.parse(atob(token.split('.')[1]));
-
-    const role =
-      payload.role ||
-      payload.Role ||
-      payload.roles ||
-      payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-      '';
-
-    const username =
-      payload.unique_name ||
-      payload.name ||
-      payload.username ||
-      payload.sub ||
-      'User';
-
-    return {
-      ...payload,
-      role,
-      username
-    };
+    const raw = localStorage.getItem('bpfl_user');
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem('bpfl_token') || '');
+  const [user, setUser] = useState(loadUser);
 
-  const isAuthenticated = !!token;
-  const user = parseJwt(token);
-  const isAdmin = user?.role === 'Admin';
+  const isAuthenticated = !!user;
+  const isAdmin         = user?.role === 'Admin';
 
- const login = async (email, password) => {
-  const response = await api.post('/Auth/login', { email, password });
+  // ── Login ──────────────────────────────────────────────────────────
+  const login = async (email, password) => {
+    // Server sets access_token + refresh_token as HttpOnly cookies.
+    // Response body contains only user info (id, username, email, role).
+    const response = await api.post('/Auth/login', { email, password });
+    const userInfo  = response.data;
 
-  const { accessToken, refreshToken } = response.data;
+    localStorage.setItem('bpfl_user', JSON.stringify(userInfo));
+    setUser(userInfo);
+  };
 
-  if (!accessToken || !refreshToken) {
-    throw new Error('Tokens not returned');
-  }
+  // ── Google login ───────────────────────────────────────────────────
+  const loginWithGoogle = async (idToken) => {
+    const response = await api.post('/Auth/google', { idToken });
+    const userInfo  = response.data;
 
-  localStorage.setItem('bpfl_token', accessToken);
-  localStorage.setItem('bpfl_refresh', refreshToken);
+    localStorage.setItem('bpfl_user', JSON.stringify(userInfo));
+    setUser(userInfo);
+  };
 
-  setToken(accessToken);
-};
-
- const loginWithGoogle = async (idToken) => {
-  const response = await api.post('/Auth/google', { idToken });
-
-  const { accessToken, refreshToken } = response.data;
-
-  if (!accessToken || !refreshToken) {
-    throw new Error('Tokens not returned');
-  }
-
-  localStorage.setItem('bpfl_token', accessToken);
-  localStorage.setItem('bpfl_refresh', refreshToken);
-
-  setToken(accessToken);
-};
-
+  // ── Register ───────────────────────────────────────────────────────
   const register = async (username, email, password) => {
     const response = await api.post('/Auth/register', { username, email, password });
     return response.data;
   };
 
+  // ── Logout ─────────────────────────────────────────────────────────
   const logout = async () => {
-  const refreshToken = localStorage.getItem('bpfl_refresh');
-
-  try {
-    if (refreshToken) {
-      await api.post('/Auth/logout', {
-        refreshToken
-      });
+    try {
+      // Server revokes the refresh_token cookie and clears both cookies
+      await api.post('/Auth/logout');
+    } catch {
+      // Even if the request fails, clear local state
     }
-  } catch {}
-
-  localStorage.removeItem('bpfl_token');
-  localStorage.removeItem('bpfl_refresh');
-  setToken('');
-};
+    localStorage.removeItem('bpfl_user');
+    setUser(null);
+  };
 
   const value = useMemo(
-  () => ({
-    token,
-    isAuthenticated,
-    login,
-    loginWithGoogle,
-    register,
-    logout,
-    user,
-    isAdmin
-  }),
-  [token, isAuthenticated, user, isAdmin]
-);
+    () => ({ user, isAuthenticated, isAdmin, login, loginWithGoogle, register, logout }),
+    [user, isAuthenticated, isAdmin]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
