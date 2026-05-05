@@ -16,6 +16,7 @@ const BET_TYPE_LABELS = {
   Corners:      'Corners',
   YellowCards:  'Yellow Cards',
   Goalscorer:   'Goalscorer',
+  Accumulator:  'Accumulator',
 };
 
 export default function ProfilePage() {
@@ -27,7 +28,8 @@ export default function ProfilePage() {
   const [balance, setBalance]   = useState(null);
   const [topping, setTopping]   = useState(false);
   const [topUpMsg, setTopUpMsg] = useState('');
-  const [betFilter, setBetFilter] = useState('All'); // All | Won | Lost
+  const [betFilter, setBetFilter]   = useState('All'); // All | Won | Lost
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,19 +230,29 @@ export default function ProfilePage() {
 
         <div className="bets-list">
           {filteredBets.map(bet => {
-            const status    = STATUS_LABELS[bet.status] ?? { label: bet.status, cls: '' };
-            const typeLabel = BET_TYPE_LABELS[bet.betType] ?? bet.betType;
-            const isWon     = bet.status === 'Won';
-            const maxPts    = bet.maxPoints ?? 0;
+            const status     = STATUS_LABELS[bet.status] ?? { label: bet.status, cls: '' };
+            const typeLabel  = BET_TYPE_LABELS[bet.betType] ?? bet.betType;
+            const isWon      = bet.status === 'Won';
+            const maxPts     = bet.maxPoints ?? 0;
+            const isAccum    = bet.betType === 'Accumulator';
+            const legs       = bet.accumulatorLegs ?? [];
+            const isExpanded = expandedId === bet.id;
 
             return (
-              <div key={bet.id} className="bet-card shell-card">
+              <div key={bet.id}
+                className={`bet-card shell-card ${isAccum ? 'bet-card--expandable' : ''}`}
+                onClick={() => isAccum && setExpandedId(isExpanded ? null : bet.id)}>
+
                 <div className="bet-card__header">
                   <div>
                     <span className="bet-card__fixture">{bet.homeTeam} vs {bet.awayTeam}</span>
                     <span className="bet-card__type-badge">{typeLabel}</span>
+                    {isAccum && <span className="bet-card__type-badge" style={{ marginLeft: 4 }}>{legs.length} legs</span>}
                   </div>
                   <span className={`bet-status ${status.cls}`}>{status.label}</span>
+                  {isAccum && (
+                    <span className={`bet-card__chevron ${isExpanded ? 'bet-card__chevron--open' : ''}`}>▼</span>
+                  )}
                 </div>
 
                 <div className="bet-card__date">
@@ -259,9 +271,22 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Expanded accumulator legs */}
+                {isAccum && isExpanded && legs.length > 0 && (
+                  <div className="bet-card__legs">
+                    {legs.map((leg, i) => (
+                      <div key={i} className="bet-card__leg">
+                        <span className="bet-card__leg-desc">{leg.description}</span>
+                        <span className="bet-card__leg-type">{BET_TYPE_LABELS[leg.betType] ?? leg.betType}</span>
+                        <span className="bet-card__leg-odds">× {Number(leg.odds).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {maxPts > 0 && (
                   <div className="bet-card__points">
-                    <span className="bet-card__points-label">Points</span>
+                    <span className="bet-card__points-label">POINTS</span>
                     <span className="bet-card__points-value">
                       {isWon
                         ? <strong style={{ color: 'var(--accent)' }}>+{maxPts} pts earned</strong>

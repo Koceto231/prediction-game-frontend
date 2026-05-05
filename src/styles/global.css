@@ -3284,6 +3284,64 @@ select:focus {
 .bet-status--lost { background: rgba(255,70,70,0.12); color: #ff6060; }
 .bet-status--void { background: var(--surface-2); color: var(--text-muted); }
 
+/* ── Expandable bet card ────────────────────────────────────────────── */
+.bet-card--expandable {
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.bet-card--expandable:hover { box-shadow: 0 0 0 1px var(--border-soft); }
+
+.bet-card__chevron {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.bet-card__chevron--open { transform: rotate(180deg); }
+
+.bet-card__legs {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-softer);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bet-card__leg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 0.88rem;
+}
+
+.bet-card__leg-desc {
+  color: var(--text);
+  font-weight: 500;
+  flex: 1;
+}
+
+.bet-card__leg-type {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--surface-3, rgba(255,255,255,0.04));
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--border-softer);
+}
+
+.bet-card__leg-odds {
+  color: var(--amber, #ffb400);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 .text-won { color: var(--accent); }
 
 /* ── Extended bet panel ──────────────────────────────── */
