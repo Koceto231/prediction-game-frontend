@@ -321,45 +321,44 @@ export default function MatchesPage() {
       }
       if (ai) setAiPrediction(ai);
 
-      let betsPlaced = 0;
+      let betPlaced = false;
       if (betAmt > 0 && hasBetOdds) {
         if (isExact && home !== null && away !== null) {
           await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.ExactScore, scoreHome: home, scoreAway: away, amount: betAmt });
-          betsPlaced++;
+          betPlaced = true;
         } else if (isMarket) {
-          if (winner && mpOdds.winner != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Winner, pick: WINNER_MAP[winner], amount: betAmt });
-            betsPlaced++;
-          }
-          if (btts && mpOdds.btts != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.BTTS, bttsPick: btts === 'true', amount: betAmt });
-            betsPlaced++;
-          }
-          if (ouLine && ouPick && mpOdds.ou != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.OverUnder, ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick], amount: betAmt });
-            betsPlaced++;
-          }
-          if (dcPick && mpOdds.dc != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.DoubleChance, dCPick: dcPick, amount: betAmt });
-            betsPlaced++;
-          }
-          if (cornersLine && cornersOU && mpOdds.corners != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Corners, lineValue: Number(cornersLine), ouPick: cornersOU, amount: betAmt });
-            betsPlaced++;
-          }
-          if (yellowsLine && yellowsOU && mpOdds.yellows != null) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.YellowCards, lineValue: Number(yellowsLine), ouPick: yellowsOU, amount: betAmt });
-            betsPlaced++;
-          }
-          if (scorerPlayer) {
-            await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.Goalscorer, goalscorerId: scorerPlayer.playerId, amount: betAmt });
-            betsPlaced++;
+          // Build legs array — one entry per selected market
+          const legs = [];
+          if (winner && mpOdds.winner != null)
+            legs.push({ betType: BET_TYPE.Winner, pick: WINNER_MAP[winner] });
+          if (dcPick && mpOdds.dc != null)
+            legs.push({ betType: BET_TYPE.DoubleChance, dCPick: dcPick });
+          if (btts && mpOdds.btts != null)
+            legs.push({ betType: BET_TYPE.BTTS, bTTSPick: btts === 'true' });
+          if (ouLine && ouPick && mpOdds.ou != null)
+            legs.push({ betType: BET_TYPE.OverUnder, oULine: OU_LINE_MAP[ouLine], oUPick: OU_PICK_MAP[ouPick] });
+          if (cornersLine && cornersOU && mpOdds.corners != null)
+            legs.push({ betType: BET_TYPE.Corners, lineValue: Number(cornersLine), oUPick: cornersOU });
+          if (yellowsLine && yellowsOU && mpOdds.yellows != null)
+            legs.push({ betType: BET_TYPE.YellowCards, lineValue: Number(yellowsLine), oUPick: yellowsOU });
+          if (scorerPlayer)
+            legs.push({ betType: BET_TYPE.Goalscorer, goalscorerId: scorerPlayer.playerId });
+
+          if (legs.length === 1) {
+            // Single market — use normal endpoint
+            const leg = legs[0];
+            await api.post('/Bet', { matchId: selectedMatch.id, ...leg, amount: betAmt });
+            betPlaced = true;
+          } else if (legs.length > 1) {
+            // Multi-market — accumulator endpoint
+            await api.post('/Bet/accumulator', { matchId: selectedMatch.id, legs, amount: betAmt });
+            betPlaced = true;
           }
         }
-        if (betsPlaced > 0) await refreshBalance();
+        if (betPlaced) await refreshBalance();
       }
 
-      setFeedback({ type: 'ok', msg: betsPlaced > 0 ? `✅ ${betsPlaced} bet${betsPlaced > 1 ? 's' : ''} placed!` : '✅ Prediction saved!' });
+      setFeedback({ type: 'ok', msg: betPlaced ? '✅ Bet placed!' : '✅ Prediction saved!' });
       if (ai) setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
     } catch (err) {
       setFeedback({ type: 'err', msg: err?.response?.data?.message || 'Failed to place bet.' });
