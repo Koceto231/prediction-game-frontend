@@ -45,6 +45,7 @@ export default function Navbar() {
         <NavLink to="/leaderboard">Leaderboard</NavLink>
         <NavLink to="/leagues">Leagues</NavLink>
         <NavLink to="/fantasy">Fantasy</NavLink>
+        <NavLink to="/news">News</NavLink>
         {isAdmin && <NavLink to="/admin">Admin</NavLink>}
       </nav>
 
