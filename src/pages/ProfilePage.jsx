@@ -238,10 +238,16 @@ export default function ProfilePage() {
             const legs       = bet.accumulatorLegs ?? [];
             const isExpanded = expandedId === bet.id;
 
+            const displayLegs = isAccum ? legs : [{
+              description: bet.betDescription,
+              betType:     bet.betType,
+              odds:        bet.oddsAtBetTime,
+            }];
+
             return (
               <div key={bet.id}
-                className={`bet-card shell-card ${isAccum ? 'bet-card--expandable' : ''}`}
-                onClick={() => isAccum && setExpandedId(isExpanded ? null : bet.id)}>
+                className="bet-card shell-card bet-card--expandable"
+                onClick={() => setExpandedId(isExpanded ? null : bet.id)}>
 
                 <div className="bet-card__header">
                   <div>
@@ -250,9 +256,7 @@ export default function ProfilePage() {
                     {isAccum && <span className="bet-card__type-badge" style={{ marginLeft: 4 }}>{legs.length} legs</span>}
                   </div>
                   <span className={`bet-status ${status.cls}`}>{status.label}</span>
-                  {isAccum && (
-                    <span className={`bet-card__chevron ${isExpanded ? 'bet-card__chevron--open' : ''}`}>▼</span>
-                  )}
+                  <span className={`bet-card__chevron ${isExpanded ? 'bet-card__chevron--open' : ''}`}>▼</span>
                 </div>
 
                 <div className="bet-card__date">
@@ -271,10 +275,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Expanded accumulator legs */}
-                {isAccum && isExpanded && legs.length > 0 && (
+                {isExpanded && (
                   <div className="bet-card__legs">
-                    {legs.map((leg, i) => (
+                    {displayLegs.map((leg, i) => (
                       <div key={i} className="bet-card__leg">
                         <span className="bet-card__leg-desc">{leg.description}</span>
                         <span className="bet-card__leg-type">{BET_TYPE_LABELS[leg.betType] ?? leg.betType}</span>
