@@ -129,6 +129,17 @@ export default function AdminPage() {
             <p className="admin-hint">Изчислява цените на играчите по сила на отбора (от историята на мачовете). Пускай след Import History.</p>
           </AdminSection>
 
+          {/* ── News: Generate images ── */}
+          <AdminSection title="News — Generate Cover Images">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'backfill-images'}
+                onClick={() => run('backfill-images', () => api.post('/News/backfill-images'))}>
+                {loading === 'backfill-images' ? 'Generating…' : '🖼 Generate Missing Images'}
+              </button>
+            </div>
+            <p className="admin-hint">Генерира cover снимки за статии без изображение (Stability AI → Cloudinary). ~2 сек. на статия.</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions">
             <div className="admin-row">
