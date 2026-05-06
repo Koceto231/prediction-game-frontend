@@ -136,8 +136,12 @@ export default function AdminPage() {
                 onClick={() => run('backfill-images', () => api.post('/News/backfill-images'))}>
                 {loading === 'backfill-images' ? 'Generating…' : '🖼 Generate Missing Images'}
               </button>
+              <button className="admin-btn" type="button" disabled={loading === 'backfill-force'}
+                onClick={() => run('backfill-force', () => api.post('/News/backfill-images?force=true'))}>
+                {loading === 'backfill-force' ? 'Regenerating…' : '🔄 Regenerate All Images'}
+              </button>
             </div>
-            <p className="admin-hint">Генерира cover снимки за статии без изображение (Stability AI → Cloudinary). ~2 сек. на статия.</p>
+            <p className="admin-hint">Generate Missing — само статии без снимка. Regenerate All — презаписва всички (Stability AI → Cloudinary).</p>
           </AdminSection>
 
           {/* ── Score Predictions ── */}
