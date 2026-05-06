@@ -88,6 +88,17 @@ export default function NewsPage() {
                   <span className="news-card__time">{timeAgo(article.generatedAt)}</span>
                 </div>
 
+                {article.imageUrl && (
+                  <div className="news-card__image-wrap">
+                    <img
+                      src={article.imageUrl}
+                      alt={article.title}
+                      className="news-card__image"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
                 <h3 className="news-card__title">{article.title}</h3>
 
                 {article.homeTeam && article.awayTeam && (
