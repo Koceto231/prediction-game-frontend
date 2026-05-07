@@ -378,6 +378,16 @@ export default function MatchesPage() {
         {pageLoading && <div className="empty-box">Loading matches...</div>}
         {!pageLoading && !matches.length && !loadError && <div className="empty-box">No upcoming matches found.</div>}
         <div className="cards-grid">
+          {matches.length > 0 && (
+            <div className="matches-table-head">
+              <span>TIME</span>
+              <span>FIXTURE</span>
+              <span style={{ textAlign: 'center' }}>SCORE</span>
+              <span style={{ textAlign: 'center' }}>1</span>
+              <span style={{ textAlign: 'center' }}>X</span>
+              <span style={{ textAlign: 'center' }}>2</span>
+            </div>
+          )}
           {matches.map(match => (
             <MatchCard key={match.id} match={match} selected={selectedMatch?.id === match.id}
               onSelect={() => {

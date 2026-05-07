@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import OddsTicker from './components/OddsTicker';
 import { useAuth } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -42,9 +43,10 @@ function AppLayout() {
   return (
     <div className="app-shell">
       <div className="pitch-overlay" />
+      <Navbar />
+      <OddsTicker />
       <div className="container">
-        <Navbar />
-        <main className="main-content">
+        <main className="main-content" style={{ marginTop: 20 }}>
           <Routes>
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
@@ -71,6 +73,7 @@ function AppLayout() {
       </div>
     </div>
   );
+
 }
 
 export default function App() {

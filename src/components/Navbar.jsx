@@ -36,13 +36,13 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <Link to="/matches" className="brand-link">
-        <div className="brand">Match Predictor</div>
+        <div className="brand">PRED.TERMINAL</div>
       </Link>
 
       <nav className="nav-links">
         <NavLink to="/matches">Matches</NavLink>
         <NavLink to="/bets">My Bets</NavLink>
-        <NavLink to="/leaderboard">Leaderboard</NavLink>
+        <NavLink to="/leaderboard">Board</NavLink>
         <NavLink to="/leagues">Leagues</NavLink>
         <NavLink to="/fantasy">Fantasy</NavLink>
         <NavLink to="/news">News</NavLink>
