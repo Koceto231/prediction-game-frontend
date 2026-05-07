@@ -3,6 +3,11 @@ import api from '../api/apiClient';
 
 const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
 
+// Format a Date as yyyy-MM-dd for <input type="date">
+function toDateInput(d) {
+  return d.toISOString().slice(0, 10);
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -18,6 +23,7 @@ export default function AdminPage() {
   const [histLeague, setHistLeague]   = useState('BGL');
   const [histDaysBack, setHistDaysBack] = useState('365');
   const [matchId, setMatchId]         = useState('');
+  const [gwAnchorDate, setGwAnchorDate] = useState(toDateInput(new Date()));
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
@@ -123,10 +129,24 @@ export default function AdminPage() {
             <div className="admin-actions">
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'advance-gw'}
                 onClick={() => run('advance-gw', () => api.post('/Fantasy/admin/gameweek/advance'))}>
-                {loading === 'advance-gw' ? 'Creating…' : '⏭ Create Next Gameweek'}
+                {loading === 'advance-gw' ? 'Creating…' : '⏭ Auto-Create Next GW'}
               </button>
             </div>
-            <p className="admin-hint">Създава следващия кръг: Вторник 10:00 (отваря) → Петък 10:00 (заключва) → Вторник 10:00 следващата седмица (приключва).</p>
+            <p className="admin-hint">Търси предстоящи мачове в DB и им създава GW прозорец. Пускай след Import Matches.</p>
+
+            <div className="admin-row" style={{ marginTop: 10 }}>
+              <label className="admin-label">Anchor date</label>
+              <input type="date" className="admin-input" value={gwAnchorDate}
+                onChange={e => setGwAnchorDate(e.target.value)} />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'force-gw' || !gwAnchorDate}
+                onClick={() => run('force-gw', () =>
+                  api.post(`/Fantasy/admin/gameweek/force?anchorDate=${gwAnchorDate}`))}>
+                {loading === 'force-gw' ? 'Creating…' : '📅 Force Create GW (no matches needed)'}
+              </button>
+            </div>
+            <p className="admin-hint">Създава GW от избраната дата дори без мачове в DB. Петък 10:00 → следващ Вторник 10:00.</p>
           </AdminSection>
 
           {/* ── Recalculate Prices ── */}
