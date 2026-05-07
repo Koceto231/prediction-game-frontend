@@ -8,6 +8,69 @@ function toDateInput(d) {
   return d.toISOString().slice(0, 10);
 }
 
+function GwRow({ gw, loading, onComplete, onEdit }) {
+  const [editNum, setEditNum]   = useState('');
+  const [editDl,  setEditDl]    = useState('');
+  const [open,    setOpen]      = useState(false);
+
+  const statusColor = gw.isCompleted ? 'var(--text-soft)'
+                    : gw.isLocked    ? '#ff6060'
+                    :                  'var(--accent)';
+  const statusBg    = gw.isCompleted ? 'rgba(255,255,255,0.06)'
+                    : gw.isLocked    ? 'rgba(255,96,96,0.15)'
+                    :                  'rgba(240,197,25,0.15)';
+  const statusLabel = gw.isCompleted ? 'DONE' : gw.isLocked ? 'LOCKED' : 'ACTIVE';
+
+  return (
+    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.80rem' }}>
+        <span style={{ minWidth: 40, fontWeight: 700, color: 'var(--accent)' }}>GW{gw.gameWeek}</span>
+        <span style={{ flex: 1, color: 'var(--text-soft)' }}>
+          {new Date(gw.deadline).toLocaleDateString()} {new Date(gw.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+        <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: 3, letterSpacing: '0.06em', background: statusBg, color: statusColor }}>
+          {statusLabel}
+        </span>
+        <button className="admin-btn" type="button"
+          style={{ padding: '2px 8px', fontSize: '0.70rem' }}
+          onClick={() => setOpen(v => !v)}>
+          {open ? '▲' : '✎ Edit'}
+        </button>
+        {!gw.isCompleted && (
+          <button className="admin-btn" type="button"
+            style={{ padding: '2px 8px', fontSize: '0.70rem' }}
+            disabled={loading === `complete-${gw.id}`}
+            onClick={onComplete}>
+            {loading === `complete-${gw.id}` ? '…' : '✓'}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 6, marginTop: 6, alignItems: 'end' }}>
+          <div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-soft)', marginBottom: 2 }}>GW номер</div>
+            <input className="admin-input" type="number" placeholder={gw.gameWeek}
+              value={editNum} onChange={e => setEditNum(e.target.value)}
+              style={{ padding: '4px 8px', fontSize: '0.78rem' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-soft)', marginBottom: 2 }}>Deadline</div>
+            <input className="admin-input" type="datetime-local"
+              value={editDl} onChange={e => setEditDl(e.target.value)}
+              style={{ padding: '4px 8px', fontSize: '0.78rem' }} />
+          </div>
+          <button className="admin-btn admin-btn--accent" type="button"
+            disabled={(!editNum && !editDl) || loading === `edit-${gw.id}`}
+            style={{ padding: '4px 12px', fontSize: '0.78rem', alignSelf: 'end' }}
+            onClick={() => { onEdit(editNum, editDl); setOpen(false); }}>
+            {loading === `edit-${gw.id}` ? '…' : 'Save'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -167,43 +230,34 @@ export default function AdminPage() {
             <p className="admin-hint">GW номер и Deadline са незадължителни. Ако зададеш Deadline, датите се изчисляват около него (±3/4 дни).</p>
           </AdminSection>
 
-          {/* ── Fantasy: Complete Gameweek ── */}
+          {/* ── Fantasy: Gameweek Status + Edit ── */}
           <AdminSection title="Fantasy — Gameweek Status">
             {gameweeks.length === 0 ? (
               <p className="admin-hint">No gameweeks found.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[...gameweeks].reverse().slice(0, 5).map(gw => (
-                  <div key={gw.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.80rem' }}>
-                    <span style={{ minWidth: 40, fontWeight: 700, color: 'var(--accent)' }}>GW{gw.gameWeek}</span>
-                    <span style={{ flex: 1, color: 'var(--text-soft)' }}>
-                      {new Date(gw.deadline).toLocaleDateString()}
-                    </span>
-                    <span style={{
-                      fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px',
-                      borderRadius: 3, letterSpacing: '0.06em',
-                      background: gw.isCompleted ? 'rgba(255,255,255,0.06)' : gw.isLocked ? 'rgba(255,96,96,0.15)' : 'rgba(240,197,25,0.15)',
-                      color: gw.isCompleted ? 'var(--text-soft)' : gw.isLocked ? '#ff6060' : 'var(--accent)',
-                    }}>
-                      {gw.isCompleted ? 'DONE' : gw.isLocked ? 'LOCKED' : 'ACTIVE'}
-                    </span>
-                    {!gw.isCompleted && (
-                      <button className="admin-btn" type="button"
-                        style={{ padding: '3px 10px', fontSize: '0.72rem' }}
-                        disabled={loading === `complete-${gw.id}`}
-                        onClick={() => run(`complete-${gw.id}`, async () => {
-                          const r = await api.post(`/Fantasy/admin/gameweek/${gw.id}/complete`);
-                          setGameweeks(prev => prev.map(g => g.id === gw.id ? { ...g, isCompleted: true, isLocked: true } : g));
-                          return r;
-                        })}>
-                        {loading === `complete-${gw.id}` ? '…' : '✓ Complete'}
-                      </button>
-                    )}
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[...gameweeks].reverse().slice(0, 8).map(gw => (
+                  <GwRow key={gw.id} gw={gw} loading={loading}
+                    onComplete={() => run(`complete-${gw.id}`, async () => {
+                      const r = await api.post(`/Fantasy/admin/gameweek/${gw.id}/complete`);
+                      setGameweeks(prev => prev.map(g => g.id === gw.id ? { ...g, isCompleted: true, isLocked: true } : g));
+                      return r;
+                    })}
+                    onEdit={(num, dl) => run(`edit-${gw.id}`, async () => {
+                      const params = new URLSearchParams();
+                      if (num) params.set('gwNumber', num);
+                      if (dl)  params.set('deadline', new Date(dl).toISOString());
+                      const r = await api.patch(`/Fantasy/admin/gameweek/${gw.id}?${params}`);
+                      setGameweeks(prev => prev.map(g => g.id === gw.id
+                        ? { ...g, gameWeek: num ? Number(num) : g.gameWeek, deadline: dl ? new Date(dl).toISOString() : g.deadline }
+                        : g));
+                      return r;
+                    })}
+                  />
                 ))}
               </div>
             )}
-            <p className="admin-hint" style={{ marginTop: 8 }}>Mark a GW as completed to unlock the next one for users.</p>
+            <p className="admin-hint" style={{ marginTop: 8 }}>✓ Complete = lock forever. Edit = fix GW number or deadline.</p>
           </AdminSection>
 
           {/* ── Recalculate Prices ── */}
