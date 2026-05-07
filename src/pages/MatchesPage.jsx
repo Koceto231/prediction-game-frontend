@@ -453,7 +453,6 @@ export default function MatchesPage() {
             <div className="matches-table-head">
               <span>TIME</span>
               <span>FIXTURE</span>
-              <span style={{ textAlign: 'center' }}>SCORE</span>
               <span style={{ textAlign: 'center' }}>1</span>
               <span style={{ textAlign: 'center' }}>X</span>
               <span style={{ textAlign: 'center' }}>2</span>

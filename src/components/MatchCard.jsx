@@ -33,15 +33,6 @@ export default function MatchCard({ match, selected, onSelect }) {
         )}
       </div>
 
-      {/* SCORE / STATUS */}
-      <div className="match-card__col match-card__col--score">
-        {match.status === 'FINISHED'
-          ? `${match.homeScore ?? 0}–${match.awayScore ?? 0}`
-          : match.status === 'IN_PLAY' || match.status === 'LIVE'
-            ? <span style={{ color: '#ff6060', fontSize: '0.68rem', letterSpacing: '0.06em' }}>● LIVE</span>
-            : '—'}
-      </div>
-
       {/* ODDS */}
       {hasOdds ? (
         <>
@@ -59,7 +50,7 @@ export default function MatchCard({ match, selected, onSelect }) {
           </div>
         </>
       ) : (
-        <div className="match-card__col" style={{ gridColumn: '4 / 7', opacity: 0.35, fontSize: '0.72rem', justifyContent: 'center' }}>
+        <div className="match-card__col" style={{ gridColumn: '3 / 6', opacity: 0.35, fontSize: '0.72rem', justifyContent: 'center' }}>
           NO ODDS
         </div>
       )}
