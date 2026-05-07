@@ -126,7 +126,7 @@ export default function AdminPage() {
                 {loading === 'advance-gw' ? 'Creating…' : '⏭ Create Next Gameweek'}
               </button>
             </div>
-            <p className="admin-hint">Създава следващия кръг автоматично: Петък 12:00 UTC (отваря) → Петък 19:00 UTC (краен срок) → Вторник 05:00 UTC (приключва).</p>
+            <p className="admin-hint">Създава следващия кръг: Вторник 10:00 (отваря) → Петък 10:00 (заключва) → Вторник 10:00 следващата седмица (приключва).</p>
           </AdminSection>
 
           {/* ── Recalculate Prices ── */}
