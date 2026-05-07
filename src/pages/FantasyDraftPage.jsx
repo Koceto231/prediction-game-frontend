@@ -163,34 +163,39 @@ export default function FantasyDraftPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await api.get('/Fantasy/players');
-        setAllPlayers(res.data ?? []);
+        // 1. Load all available players
+        const playersRes = await api.get('/Fantasy/players');
+        const allP = playersRes.data ?? [];
+        setAllPlayers(allP);
+
+        // 2. Load current gameweek
+        try {
+          const gwRes = await api.get('/Fantasy/gameweek/current');
+          setGameweek(gwRes.data);
+        } catch { /* no active GW yet */ }
+
+        // 3. Load latest squad (carries over from previous GW if current GW is empty)
+        //    Endpoint returns { players: [...], captainId: int|null }
+        try {
+          const squadRes = await api.get('/Fantasy/team/squad');
+          const { players: squadPlayers, captainId } = squadRes.data ?? {};
+
+          if (squadPlayers?.length) {
+            // Match squad players to full player objects from allPlayers (to get price etc.)
+            const squadIds = new Set(squadPlayers.map(p => p.id));
+            const preSelected = allP.filter(p => squadIds.has(p.id));
+            setSelected(preSelected);
+            if (captainId != null) setCaptain(captainId);
+          }
+        } catch { /* no existing squad */ }
+
       } catch (err) {
         const status = err?.response?.status;
         const msg    = err?.response?.data?.message || err?.message || 'Unknown error';
         setError(`Could not load players (${status ?? 'network'}: ${msg})`);
+      } finally {
+        setLoading(false);
       }
-      try {
-        const gwRes = await api.get('/Fantasy/gameweek/current');
-        setGameweek(gwRes.data);
-        const teamRes = await api.get('/Fantasy/team');
-        if (teamRes.data?.players?.length) {
-          // fantasyPlayerId from team endpoint == id from players endpoint
-          const ids = new Set(teamRes.data.players.map(p => p.fantasyPlayerId));
-          const pr2 = await api.get('/Fantasy/players');
-          const preSelected = pr2.data.filter(p => ids.has(p.id) || ids.has(p.fantasyPlayerId));
-          setSelected(preSelected);
-          const cap = teamRes.data.players.find(p => p.isCaptain);
-          if (cap) {
-            // find the matching player in allPlayers to get the correct id
-            const capPlayer = preSelected.find(p =>
-              p.id === cap.fantasyPlayerId || p.fantasyPlayerId === cap.fantasyPlayerId
-            );
-            setCaptain(capPlayer?.id ?? cap.fantasyPlayerId);
-          }
-        }
-      } catch { /* no gameweek */ }
-      setLoading(false);
     };
     load();
   }, []);
