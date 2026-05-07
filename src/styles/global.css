@@ -5544,6 +5544,85 @@ select:focus {
   color: var(--accent) !important;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MODE PICKER CARDS — terminal flat redesign
+   ═══════════════════════════════════════════════════════════ */
+
+/* Grid */
+.premium-mode-grid {
+  gap: 10px !important;
+}
+
+/* Base card — override everything green/rounded */
+.premium-mode-card {
+  padding: 18px 20px !important;
+  border-radius: var(--radius-md) !important;
+  background: #0e0e0e !important;
+  border: 1px solid rgba(240, 197, 25, 0.15) !important;
+  border-left: 3px solid var(--accent) !important;
+  color: var(--text-main) !important;
+  transition: background 0.15s, border-color 0.15s !important;
+}
+.premium-mode-card::before {
+  display: none !important;
+}
+.premium-mode-card:hover {
+  transform: none !important;
+  background: rgba(240, 197, 25, 0.05) !important;
+  border-color: rgba(240, 197, 25, 0.45) !important;
+  border-left-color: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+/* Top row: icon + points */
+.premium-mode-card__top {
+  margin-bottom: 12px !important;
+  align-items: center !important;
+}
+
+/* Icon box → flat yellow-border box */
+.premium-mode-card__icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: var(--radius-sm) !important;
+  background: rgba(240, 197, 25, 0.10) !important;
+  border: 1px solid rgba(240, 197, 25, 0.30) !important;
+  font-size: 0.95rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Points badge */
+.premium-mode-card__points {
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: #0a0a0a !important;
+  background: var(--accent) !important;
+  padding: 2px 9px !important;
+  border-radius: 3px !important;
+  line-height: 1.6 !important;
+}
+
+/* Title */
+.premium-mode-card__title {
+  font-size: 1.10rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--text-main) !important;
+  margin-bottom: 6px !important;
+}
+
+/* Body text */
+.premium-mode-card__text {
+  font-size: 0.76rem !important;
+  color: var(--text-soft) !important;
+  line-height: 1.55 !important;
+}
+
 /* Active mode switch option */
 .prediction-mode-switch__option--active {
   background: var(--accent) !important;
