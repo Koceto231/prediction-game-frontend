@@ -25,6 +25,8 @@ export default function AdminPage() {
   const [histDaysBack, setHistDaysBack] = useState('365');
   const [matchId, setMatchId]         = useState('');
   const [gwAnchorDate, setGwAnchorDate] = useState(toDateInput(new Date()));
+  const [gwNumber, setGwNumber]         = useState('');
+  const [gwDeadline, setGwDeadline]     = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
@@ -139,19 +141,30 @@ export default function AdminPage() {
             </div>
             <p className="admin-hint">Търси предстоящи мачове в DB и им създава GW прозорец. Пускай след Import Matches.</p>
 
-            <div className="admin-row" style={{ marginTop: 10 }}>
-              <label className="admin-label">Anchor date</label>
-              <input type="date" className="admin-input" value={gwAnchorDate}
-                onChange={e => setGwAnchorDate(e.target.value)} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+              <div className="admin-row">
+                <label className="admin-label">GW номер</label>
+                <input className="admin-input" type="number" min="1" placeholder="auto"
+                  value={gwNumber} onChange={e => setGwNumber(e.target.value)} />
+              </div>
+              <div className="admin-row">
+                <label className="admin-label">Deadline (дата+час)</label>
+                <input className="admin-input" type="datetime-local"
+                  value={gwDeadline} onChange={e => setGwDeadline(e.target.value)} />
+              </div>
             </div>
             <div className="admin-actions">
-              <button className="admin-btn" type="button" disabled={loading === 'force-gw' || !gwAnchorDate}
-                onClick={() => run('force-gw', () =>
-                  api.post(`/Fantasy/admin/gameweek/force?anchorDate=${gwAnchorDate}`))}>
-                {loading === 'force-gw' ? 'Creating…' : '📅 Force Create GW (no matches needed)'}
+              <button className="admin-btn" type="button" disabled={loading === 'force-gw'}
+                onClick={() => {
+                  const params = new URLSearchParams({ anchorDate: gwAnchorDate });
+                  if (gwNumber) params.set('gwNumber', gwNumber);
+                  if (gwDeadline) params.set('deadline', new Date(gwDeadline).toISOString());
+                  run('force-gw', () => api.post(`/Fantasy/admin/gameweek/force?${params}`));
+                }}>
+                {loading === 'force-gw' ? 'Creating…' : '📅 Force Create GW'}
               </button>
             </div>
-            <p className="admin-hint">Създава GW от избраната дата дори без мачове в DB. Петък 10:00 → следващ Вторник 10:00.</p>
+            <p className="admin-hint">GW номер и Deadline са незадължителни. Ако зададеш Deadline, датите се изчисляват около него (±3/4 дни).</p>
           </AdminSection>
 
           {/* ── Fantasy: Complete Gameweek ── */}
