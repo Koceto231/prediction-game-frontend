@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/apiClient';
 
 const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
@@ -18,6 +18,7 @@ function AdminSection({ title, children }) {
 }
 
 export default function AdminPage() {
+  const [gameweeks, setGameweeks]     = useState([]);
   const [smLeague, setSmLeague]       = useState('BGL');
   const [smDays, setSmDays]           = useState('30');
   const [histLeague, setHistLeague]   = useState('BGL');
@@ -26,6 +27,10 @@ export default function AdminPage() {
   const [gwAnchorDate, setGwAnchorDate] = useState(toDateInput(new Date()));
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
+
+  useEffect(() => {
+    api.get('/Fantasy/admin/gameweeks').then(r => setGameweeks(r.data ?? [])).catch(() => {});
+  }, []);
 
   const run = async (key, fn) => {
     setLoading(key);
@@ -147,6 +152,45 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Създава GW от избраната дата дори без мачове в DB. Петък 10:00 → следващ Вторник 10:00.</p>
+          </AdminSection>
+
+          {/* ── Fantasy: Complete Gameweek ── */}
+          <AdminSection title="Fantasy — Gameweek Status">
+            {gameweeks.length === 0 ? (
+              <p className="admin-hint">No gameweeks found.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[...gameweeks].reverse().slice(0, 5).map(gw => (
+                  <div key={gw.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.80rem' }}>
+                    <span style={{ minWidth: 40, fontWeight: 700, color: 'var(--accent)' }}>GW{gw.gameWeek}</span>
+                    <span style={{ flex: 1, color: 'var(--text-soft)' }}>
+                      {new Date(gw.deadline).toLocaleDateString()}
+                    </span>
+                    <span style={{
+                      fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px',
+                      borderRadius: 3, letterSpacing: '0.06em',
+                      background: gw.isCompleted ? 'rgba(255,255,255,0.06)' : gw.isLocked ? 'rgba(255,96,96,0.15)' : 'rgba(240,197,25,0.15)',
+                      color: gw.isCompleted ? 'var(--text-soft)' : gw.isLocked ? '#ff6060' : 'var(--accent)',
+                    }}>
+                      {gw.isCompleted ? 'DONE' : gw.isLocked ? 'LOCKED' : 'ACTIVE'}
+                    </span>
+                    {!gw.isCompleted && (
+                      <button className="admin-btn" type="button"
+                        style={{ padding: '3px 10px', fontSize: '0.72rem' }}
+                        disabled={loading === `complete-${gw.id}`}
+                        onClick={() => run(`complete-${gw.id}`, async () => {
+                          const r = await api.post(`/Fantasy/admin/gameweek/${gw.id}/complete`);
+                          setGameweeks(prev => prev.map(g => g.id === gw.id ? { ...g, isCompleted: true, isLocked: true } : g));
+                          return r;
+                        })}>
+                        {loading === `complete-${gw.id}` ? '…' : '✓ Complete'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="admin-hint" style={{ marginTop: 8 }}>Mark a GW as completed to unlock the next one for users.</p>
           </AdminSection>
 
           {/* ── Recalculate Prices ── */}
