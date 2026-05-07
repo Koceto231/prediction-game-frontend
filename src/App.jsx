@@ -44,7 +44,6 @@ function AppLayout() {
     <div className="app-shell">
       <div className="pitch-overlay" />
       <Navbar />
-      <OddsTicker />
       <div className="container">
         <main className="main-content" style={{ marginTop: 20 }}>
           <Routes>
@@ -71,6 +70,7 @@ function AppLayout() {
           </Routes>
         </main>
       </div>
+      <OddsTicker />
     </div>
   );
 
