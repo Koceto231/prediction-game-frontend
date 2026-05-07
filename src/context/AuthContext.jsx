@@ -1,17 +1,18 @@
 import { createContext, useContext, useMemo, useState } from 'react';
-import api from '../api/apiClient';
+import api, { setAccessToken, clearAccessToken } from '../api/apiClient';
 
 const AuthContext = createContext(null);
 
-// Load persisted user info (id, username, email, role) — NOT the token
 function loadUser() {
   try {
     const raw = localStorage.getItem('bpfl_user');
     return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
+
+// On startup: restore token from localStorage into axios (for cookie-blocked browsers)
+const _savedToken = localStorage.getItem('bpfl_token');
+if (_savedToken) setAccessToken(_savedToken);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser);
@@ -19,24 +20,29 @@ export function AuthProvider({ children }) {
   const isAuthenticated = !!user;
   const isAdmin         = user?.role === 'Admin';
 
-  // ── Login ──────────────────────────────────────────────────────────
-  const login = async (email, password) => {
-    // Server sets access_token + refresh_token as HttpOnly cookies.
-    // Response body contains only user info (id, username, email, role).
-    const response = await api.post('/Auth/login', { email, password });
-    const userInfo  = response.data;
+  const _applyAuth = (data) => {
+    // Response shape: { user: {...}, accessToken: '...' }  OR legacy { id, username, ... }
+    const userInfo    = data.user ?? data;
+    const accessToken = data.accessToken ?? null;
 
     localStorage.setItem('bpfl_user', JSON.stringify(userInfo));
+    if (accessToken) {
+      localStorage.setItem('bpfl_token', accessToken);
+      setAccessToken(accessToken);
+    }
     setUser(userInfo);
+  };
+
+  // ── Login ──────────────────────────────────────────────────────────
+  const login = async (email, password) => {
+    const response = await api.post('/Auth/login', { email, password });
+    _applyAuth(response.data);
   };
 
   // ── Google login ───────────────────────────────────────────────────
   const loginWithGoogle = async (idToken) => {
     const response = await api.post('/Auth/google', { idToken });
-    const userInfo  = response.data;
-
-    localStorage.setItem('bpfl_user', JSON.stringify(userInfo));
-    setUser(userInfo);
+    _applyAuth(response.data);
   };
 
   // ── Register ───────────────────────────────────────────────────────
@@ -47,13 +53,10 @@ export function AuthProvider({ children }) {
 
   // ── Logout ─────────────────────────────────────────────────────────
   const logout = async () => {
-    try {
-      // Server revokes the refresh_token cookie and clears both cookies
-      await api.post('/Auth/logout');
-    } catch {
-      // Even if the request fails, clear local state
-    }
+    try { await api.post('/Auth/logout'); } catch { /* ignore */ }
     localStorage.removeItem('bpfl_user');
+    localStorage.removeItem('bpfl_token');
+    clearAccessToken();
     setUser(null);
   };
 

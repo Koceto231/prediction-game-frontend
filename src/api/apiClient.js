@@ -8,6 +8,27 @@ const api = axios.create({
   withCredentials: true, // send HttpOnly cookies automatically on every request
 });
 
+// ── In-memory token store ─────────────────────────────────────────────────────
+// Used as fallback when cross-origin HttpOnly cookies are blocked
+// (Safari ITP, Brave shields, Chrome strict privacy mode).
+let _accessToken = null;
+
+export function setAccessToken(token) {
+  _accessToken = token;
+}
+
+export function clearAccessToken() {
+  _accessToken = null;
+}
+
+// ── Request interceptor: attach Bearer header when cookie may be blocked ──────
+api.interceptors.request.use((config) => {
+  if (_accessToken && !config.headers['Authorization']) {
+    config.headers['Authorization'] = `Bearer ${_accessToken}`;
+  }
+  return config;
+});
+
 let isRefreshing = false;
 let failedQueue  = [];
 
@@ -42,14 +63,27 @@ api.interceptors.response.use(
 
       try {
         // Browser sends refresh_token cookie automatically (Path=/api/Auth)
-        await axios.post(`${API_BASE_URL}/Auth/refresh`, {}, { withCredentials: true });
+        const refreshRes = await axios.post(
+          `${API_BASE_URL}/Auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+
+        // Update in-memory token + localStorage for cookie-blocked browsers
+        const newToken = refreshRes.data?.accessToken;
+        if (newToken) {
+          _accessToken = newToken;
+          localStorage.setItem('bpfl_token', newToken);
+        }
 
         processQueue(null);
-        return api(originalRequest); // retry original — browser now has new access_token cookie
+        return api(originalRequest); // retry original request
       } catch (err) {
         processQueue(err);
-        // Refresh failed — clear user info and redirect to login
+        // Refresh failed — clear auth state and redirect to login
         localStorage.removeItem('bpfl_user');
+        localStorage.removeItem('bpfl_token');
+        _accessToken = null;
         window.location.href = '/login';
         return Promise.reject(err);
       } finally {
