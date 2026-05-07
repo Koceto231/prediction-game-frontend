@@ -118,6 +118,17 @@ export default function AdminPage() {
             <p className="admin-hint">Синква играчите за всички отбори. Пускай след Import Matches.</p>
           </AdminSection>
 
+          {/* ── Fantasy: Advance Gameweek ── */}
+          <AdminSection title="Fantasy — Advance Gameweek">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'advance-gw'}
+                onClick={() => run('advance-gw', () => api.post('/Fantasy/admin/gameweek/advance'))}>
+                {loading === 'advance-gw' ? 'Creating…' : '⏭ Create Next Gameweek'}
+              </button>
+            </div>
+            <p className="admin-hint">Създава следващия кръг автоматично: Петък 12:00 UTC (отваря) → Петък 19:00 UTC (краен срок) → Вторник 05:00 UTC (приключва).</p>
+          </AdminSection>
+
           {/* ── Recalculate Prices ── */}
           <AdminSection title="Recalculate Player Prices">
             <div className="admin-actions">
