@@ -165,10 +165,18 @@ export default function MatchesPage() {
   const [yellowsLine, setYellowsLine]         = useState('');
   const [yellowsOU, setYellowsOU]             = useState('');
   const [scorerPlayer, setScorerPlayer]       = useState(null);  // { playerId, name, odds }
-  const [showScorer, setShowScorer]           = useState(false);
   const [scorerPlayers, setScorerPlayers]     = useState([]);
   const [scorerLoading, setScorerLoading]     = useState(false);
   const [scorerPosFilter, setScorerPosFilter] = useState('FWD');
+
+  // Market table — pre-fetched odds + collapse state
+  const [preOdds, setPreOdds]               = useState({});
+  const [preOddsLoading, setPreOddsLoading] = useState(false);
+  const [cornersPreOdds, setCornersPreOdds] = useState({});
+  const [yellowsPreOdds, setYellowsPreOdds] = useState({});
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true };
+  const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
+  const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
   const panelRef = useRef(null);
   const aiRef    = useRef(null);
@@ -187,7 +195,9 @@ export default function MatchesPage() {
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
-    setScorerPlayer(null); setShowScorer(false); setScorerPlayers([]); setScorerPosFilter('FWD');
+    setScorerPlayer(null); setScorerPlayers([]); setScorerPosFilter('FWD');
+    setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({});
+    setCollapsed(INIT_COLLAPSED);
   }, []);
 
   const { homeScore, awayScore, winner, btts, ouLine, ouPick } = fields;
@@ -198,15 +208,15 @@ export default function MatchesPage() {
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
 
-  // Load players when entering Market Pick
+  // Load players when scorer section is expanded
   useEffect(() => {
-    if (!isMarket || !selectedMatch) return;
+    if (collapsed.scorer || !isMarket || !selectedMatch) return;
     setScorerPlayers([]); setScorerLoading(true);
     api.get(`/Match/${selectedMatch.id}/players`)
       .then(r => setScorerPlayers(r.data ?? []))
       .catch(() => {})
       .finally(() => setScorerLoading(false));
-  }, [isMarket, selectedMatch?.id]);
+  }, [collapsed.scorer, isMarket, selectedMatch?.id]);
 
   // Live odds — Exact Score
   useEffect(() => {
@@ -267,6 +277,67 @@ export default function MatchesPage() {
       .then(r => { if (!cancelled) setMpOdds(p => ({ ...p, yellows: r?.odds ?? null })); });
     return () => { cancelled = true; };
   }, [isMarket, selectedMatch?.id, yellowsLine, yellowsOU]);
+
+  // Pre-fetch all market odds for display when market pick opens
+  useEffect(() => {
+    if (!isMarket || !selectedMatch || !hasBetOdds) return;
+    let cancelled = false;
+    setPreOddsLoading(true);
+    const mid = selectedMatch.id;
+    Promise.all([
+      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'HomeOrDraw' }),
+      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'DrawOrAway' }),
+      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'HomeOrAway' }),
+      fetchOdds(mid, BET_TYPE.BTTS, { btts: 'true' }),
+      fetchOdds(mid, BET_TYPE.BTTS, { btts: 'false' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line15', ouPick: 'Over' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line15', ouPick: 'Under' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line25', ouPick: 'Over' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line25', ouPick: 'Under' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line35', ouPick: 'Over' }),
+      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line35', ouPick: 'Under' }),
+    ]).then(([dcHD, dcDA, dcHA, bttsY, bttsN, ou15o, ou15u, ou25o, ou25u, ou35o, ou35u]) => {
+      if (cancelled) return;
+      setPreOdds({
+        dc:   { HomeOrDraw: dcHD?.odds ?? null, DrawOrAway: dcDA?.odds ?? null, HomeOrAway: dcHA?.odds ?? null },
+        btts: { true: bttsY?.odds ?? null, false: bttsN?.odds ?? null },
+        ou:   {
+          Line15: { Over: ou15o?.odds ?? null, Under: ou15u?.odds ?? null },
+          Line25: { Over: ou25o?.odds ?? null, Under: ou25u?.odds ?? null },
+          Line35: { Over: ou35o?.odds ?? null, Under: ou35u?.odds ?? null },
+        },
+      });
+    }).finally(() => { if (!cancelled) setPreOddsLoading(false); });
+    return () => { cancelled = true; };
+  }, [isMarket, selectedMatch?.id, hasBetOdds]);
+
+  // Fetch corners odds when section is expanded
+  useEffect(() => {
+    if (collapsed.corners || !isMarket || !selectedMatch) return;
+    const mid = selectedMatch.id;
+    Promise.all(CORNER_LINES.flatMap(l => [
+      fetchOdds(mid, BET_TYPE.Corners, { lineValue: l, ouPick: 'Over' }),
+      fetchOdds(mid, BET_TYPE.Corners, { lineValue: l, ouPick: 'Under' }),
+    ])).then(results => {
+      const obj = {};
+      CORNER_LINES.forEach((l, i) => { obj[l] = { Over: results[i*2]?.odds ?? null, Under: results[i*2+1]?.odds ?? null }; });
+      setCornersPreOdds(obj);
+    });
+  }, [collapsed.corners, isMarket, selectedMatch?.id]);
+
+  // Fetch yellow cards odds when section is expanded
+  useEffect(() => {
+    if (collapsed.yellows || !isMarket || !selectedMatch) return;
+    const mid = selectedMatch.id;
+    Promise.all(YELLOW_LINES.flatMap(l => [
+      fetchOdds(mid, BET_TYPE.YellowCards, { lineValue: l, ouPick: 'Over' }),
+      fetchOdds(mid, BET_TYPE.YellowCards, { lineValue: l, ouPick: 'Under' }),
+    ])).then(results => {
+      const obj = {};
+      YELLOW_LINES.forEach((l, i) => { obj[l] = { Over: results[i*2]?.odds ?? null, Under: results[i*2+1]?.odds ?? null }; });
+      setYellowsPreOdds(obj);
+    });
+  }, [collapsed.yellows, isMarket, selectedMatch?.id]);
 
   // All selected odds (for combined slip)
   // Only include a market's odds if that market is actually chosen AND the odds value
@@ -487,159 +558,225 @@ export default function MatchesPage() {
                   <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU(''); setScorerPlayer(null); setShowScorer(false); }}>Change type</button>
                 </div>
 
-                <div className="prediction-options">
+                <div className="market-table">
 
-                  {/* Winner */}
-                  <div className="option-card">
-                    <span className="option-card__label">
-                      Winner
-                      {dcPick && <span className="option-card__locked">🔒 locked — deselect Double Chance first</span>}
-                    </span>
-                    <div className="pick-row">
-                      {['Home', 'Draw', 'Away'].map(w => (
-                        <button key={w} type="button"
-                          className={`pick-chip ${winner === w ? 'pick-chip--active' : ''} ${dcPick ? 'pick-chip--locked' : ''}`}
-                          disabled={!!dcPick}
-                          onClick={() => { setField('winner', winner === w ? '' : w); }}>
-                          {w === 'Home' ? selectedMatch.homeTeamName : w === 'Away' ? selectedMatch.awayTeamName : 'Draw'}
-                        </button>
-                      ))}
+                  {/* Match Result */}
+                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('winner')}>
+                      <span className="market-section__name">Match Result</span>
+                      {dcPick && <span className="market-section__lock">🔒 Double Chance active</span>}
+                      <span className="market-section__toggle">{collapsed.winner ? '▼' : '▲'}</span>
                     </div>
+                    {!collapsed.winner && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { key: 'Home', label: selectedMatch.homeTeamName, odds: selectedMatch.homeOdds },
+                          { key: 'Draw', label: 'Draw',                    odds: selectedMatch.drawOdds  },
+                          { key: 'Away', label: selectedMatch.awayTeamName, odds: selectedMatch.awayOdds  },
+                        ].map(({ key, label, odds }) => (
+                          <button key={key} type="button"
+                            className={`market-option ${winner === key ? 'market-option--active' : ''} ${dcPick ? 'market-option--disabled' : ''}`}
+                            disabled={!!dcPick}
+                            onClick={() => setField('winner', winner === key ? '' : key)}>
+                            <div className="market-option__label">{label}</div>
+                            <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Double Chance */}
-                  <div className="option-card">
-                    <span className="option-card__label">
-                      Double Chance
-                      {winner && <span className="option-card__locked">🔒 locked — deselect Winner first</span>}
-                    </span>
-                    <div className="pick-row">
-                      {DC_OPTIONS.map(({ key, label }) => (
-                        <button key={key} type="button"
-                          className={`pick-chip ${dcPick === key ? 'pick-chip--active' : ''} ${winner ? 'pick-chip--locked' : ''}`}
-                          disabled={!!winner}
-                          onClick={() => setDCPick(dcPick === key ? '' : key)}>
-                          {label}
-                        </button>
-                      ))}
+                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('dc')}>
+                      <span className="market-section__name">Double Chance</span>
+                      {winner && <span className="market-section__lock">🔒 Match Result active</span>}
+                      <span className="market-section__toggle">{collapsed.dc ? '▼' : '▲'}</span>
                     </div>
-                  </div>
-
-                  {/* BTTS */}
-                  <div className="option-card">
-                    <span className="option-card__label">Both Teams to Score</span>
-                    <div className="pick-row">
-                      {[['true', 'Yes'], ['false', 'No']].map(([val, lbl]) => (
-                        <button key={val} type="button" className={`pick-chip ${btts === val ? 'pick-chip--active' : ''}`}
-                          onClick={() => setField('btts', btts === val ? '' : val)}>
-                          {lbl}
-                        </button>
-                      ))}
-                    </div>
+                    {!collapsed.dc && (
+                      <div className="market-options market-options--3">
+                        {DC_OPTIONS.map(({ key, label }) => {
+                          const lbl = key === 'HomeOrDraw' ? `${selectedMatch.homeTeamName} or Draw`
+                                    : key === 'DrawOrAway' ? `Draw or ${selectedMatch.awayTeamName}`
+                                    : `${selectedMatch.homeTeamName} or ${selectedMatch.awayTeamName}`;
+                          return (
+                            <button key={key} type="button"
+                              className={`market-option ${dcPick === key ? 'market-option--active' : ''} ${winner ? 'market-option--disabled' : ''}`}
+                              disabled={!!winner}
+                              onClick={() => setDCPick(dcPick === key ? '' : key)}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">
+                                {preOdds.dc?.[key] != null ? Number(preOdds.dc[key]).toFixed(2) : preOddsLoading ? '…' : '—'}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Goals O/U */}
-                  <div className="option-card">
-                    <span className="option-card__label">Goals — Over / Under</span>
-                    <div className="pick-row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                      {['Over', 'Under'].map(p => (
-                        <button key={p} type="button" className={`pick-chip ${ouPick === p ? 'pick-chip--active' : ''}`}
-                          onClick={() => setField('ouPick', ouPick === p ? '' : p)}>{p}</button>
-                      ))}
-                      {['Line15', 'Line25', 'Line35'].map(line => (
-                        <button key={line} type="button" className={`pick-chip ${ouLine === line ? 'pick-chip--active' : ''}`}
-                          onClick={() => setField('ouLine', ouLine === line ? '' : line)}>
-                          {line.replace('Line', '').replace(/(\d)(\d)/, '$1.$2')}
-                        </button>
-                      ))}
+                  <div className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('goals')}>
+                      <span className="market-section__name">Goals — Over / Under</span>
+                      {ouLine && ouPick && <span className="market-section__badge">{ouPick} {ouLine.replace('Line','').replace(/(\d)(\d)/,'$1.$2')}</span>}
+                      <span className="market-section__toggle">{collapsed.goals ? '▼' : '▲'}</span>
                     </div>
+                    {!collapsed.goals && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => (
+                          <div key={line} className="ou-table__row">
+                            <span className="ou-table__line">{label}</span>
+                            {['Over', 'Under'].map(pick => (
+                              <button key={pick} type="button"
+                                className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
+                                onClick={() => {
+                                  if (ouLine === line && ouPick === pick) { setField('ouLine',''); setField('ouPick',''); }
+                                  else { setField('ouLine', line); setField('ouPick', pick); }
+                                }}>
+                                {preOdds.ou?.[line]?.[pick] != null ? Number(preOdds.ou[line][pick]).toFixed(2) : preOddsLoading ? '…' : '—'}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Corners O/U */}
-                  <div className="option-card">
-                    <span className="option-card__label">🚩 Corners — Over / Under</span>
-                    <div className="pick-row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                      {['Over', 'Under'].map(p => (
-                        <button key={p} type="button" className={`pick-chip ${cornersOU === p ? 'pick-chip--active' : ''}`}
-                          onClick={() => setCornersOU(cornersOU === p ? '' : p)}>{p}</button>
-                      ))}
-                      {CORNER_LINES.map(l => (
-                        <button key={l} type="button" className={`pick-chip ${cornersLine === String(l) ? 'pick-chip--active' : ''}`}
-                          onClick={() => setCornersLine(cornersLine === String(l) ? '' : String(l))}>{l}</button>
-                      ))}
+                  {/* BTTS */}
+                  <div className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('btts')}>
+                      <span className="market-section__name">Both Teams to Score</span>
+                      {btts && <span className="market-section__badge">{btts === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{collapsed.btts ? '▼' : '▲'}</span>
                     </div>
+                    {!collapsed.btts && (
+                      <div className="market-options market-options--2">
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
+                          <button key={val} type="button"
+                            className={`market-option ${btts === val ? 'market-option--active' : ''}`}
+                            onClick={() => setField('btts', btts === val ? '' : val)}>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">
+                              {preOdds.btts?.[val] != null ? Number(preOdds.btts[val]).toFixed(2) : preOddsLoading ? '…' : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Yellow Cards O/U */}
-                  <div className="option-card">
-                    <span className="option-card__label">🟨 Yellow Cards — Over / Under</span>
-                    <div className="pick-row" style={{ flexWrap: 'wrap', gap: 6 }}>
-                      {['Over', 'Under'].map(p => (
-                        <button key={p} type="button" className={`pick-chip ${yellowsOU === p ? 'pick-chip--active' : ''}`}
-                          onClick={() => setYellowsOU(yellowsOU === p ? '' : p)}>{p}</button>
-                      ))}
-                      {YELLOW_LINES.map(l => (
-                        <button key={l} type="button" className={`pick-chip ${yellowsLine === String(l) ? 'pick-chip--active' : ''}`}
-                          onClick={() => setYellowsLine(yellowsLine === String(l) ? '' : String(l))}>{l}</button>
-                      ))}
+                  {/* Corners */}
+                  <div className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('corners')}>
+                      <span className="market-section__name">🚩 Corners — Over / Under</span>
+                      {cornersLine && cornersOU && <span className="market-section__badge">{cornersOU} {cornersLine}</span>}
+                      <span className="market-section__toggle">{collapsed.corners ? '▼' : '▲'}</span>
                     </div>
+                    {!collapsed.corners && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                        {CORNER_LINES.map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].map(pick => (
+                              <button key={pick} type="button"
+                                className={`ou-cell ${cornersLine === String(l) && cornersOU === pick ? 'ou-cell--active' : ''}`}
+                                onClick={() => {
+                                  if (cornersLine === String(l) && cornersOU === pick) { setCornersLine(''); setCornersOU(''); }
+                                  else { setCornersLine(String(l)); setCornersOU(pick); }
+                                }}>
+                                {cornersPreOdds[l]?.[pick] != null ? Number(cornersPreOdds[l][pick]).toFixed(2) : '—'}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Yellow Cards */}
+                  <div className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('yellows')}>
+                      <span className="market-section__name">🟨 Yellow Cards — Over / Under</span>
+                      {yellowsLine && yellowsOU && <span className="market-section__badge">{yellowsOU} {yellowsLine}</span>}
+                      <span className="market-section__toggle">{collapsed.yellows ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.yellows && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                        {YELLOW_LINES.map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].map(pick => (
+                              <button key={pick} type="button"
+                                className={`ou-cell ${yellowsLine === String(l) && yellowsOU === pick ? 'ou-cell--active' : ''}`}
+                                onClick={() => {
+                                  if (yellowsLine === String(l) && yellowsOU === pick) { setYellowsLine(''); setYellowsOU(''); }
+                                  else { setYellowsLine(String(l)); setYellowsOU(pick); }
+                                }}>
+                                {yellowsPreOdds[l]?.[pick] != null ? Number(yellowsPreOdds[l][pick]).toFixed(2) : '—'}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Goalscorer */}
-                  <div className="option-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="option-card__label">⚽ Goalscorer</span>
-                      {scorerPlayer && (
-                        <button type="button" style={{ fontSize: 11, color: 'rgba(220,255,230,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}
-                          onClick={() => { setScorerPlayer(null); setShowScorer(false); }}>✕ Clear</button>
-                      )}
+                  <div className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('scorer')}>
+                      <span className="market-section__name">⚽ Goalscorer</span>
+                      {scorerPlayer && <span className="market-section__badge">{scorerPlayer.name} · {Number(scorerPlayer.odds).toFixed(2)}</span>}
+                      <span className="market-section__toggle">{collapsed.scorer ? '▼' : '▲'}</span>
                     </div>
-
-                    {scorerPlayer ? (
-                      <div className="mp-odds-row" style={{ marginTop: 8 }}>
-                        <span>{scorerPlayer.name} to score</span>
-                        <strong style={{ color: 'var(--amber)' }}>{Number(scorerPlayer.odds).toFixed(2)}</strong>
-                      </div>
-                    ) : (
-                      <button type="button" className={`pick-chip ${showScorer ? 'pick-chip--active' : ''}`}
-                        style={{ marginTop: 6 }}
-                        onClick={() => setShowScorer(s => !s)}>
-                        {showScorer ? 'Hide players' : 'Pick a scorer'}
-                      </button>
-                    )}
-
-                    {showScorer && !scorerPlayer && (
-                      <div style={{ marginTop: 10 }}>
-                        {scorerLoading && <div className="muted-text">Loading players...</div>}
-                        {!scorerLoading && scorerPlayers.length === 0 && (
-                          <div className="muted-text" style={{ fontSize: 12 }}>No players found — sync via Admin → Sync Players.</div>
-                        )}
-                        {!scorerLoading && scorerPlayers.length > 0 && (
+                    {!collapsed.scorer && (
+                      <div style={{ padding: '12px 16px' }}>
+                        {scorerPlayer ? (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: '0.88rem' }}>{scorerPlayer.name} to score</span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{Number(scorerPlayer.odds).toFixed(2)}</span>
+                            <button type="button" onClick={() => setScorerPlayer(null)}
+                              style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'none', border: '1px solid rgba(255,255,255,0.1)', padding: '3px 8px', cursor: 'pointer', borderRadius: 3 }}>
+                              Clear
+                            </button>
+                          </div>
+                        ) : (
                           <>
-                            <div className="pos-tabs">
-                              {scorerPositions.map(pos => (
-                                <button key={pos} type="button"
-                                  className={`pos-tab ${scorerPosFilter === pos ? 'pos-tab--active' : ''}`}
-                                  onClick={() => setScorerPosFilter(pos)}>{pos}</button>
-                              ))}
-                            </div>
-                            <div className="player-grid">
-                              {scorerFiltered.map(p => (
-                                <button key={p.playerId} type="button" className="player-card"
-                                  onClick={() => { setScorerPlayer({ playerId: p.playerId, name: p.name, odds: p.odds }); setShowScorer(false); }}>
-                                  <span className="player-card__team">{p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>
-                                  <span className="player-card__name">{p.name}</span>
-                                  <span className="player-card__odds">{Number(p.odds).toFixed(2)}</span>
-                                </button>
-                              ))}
-                            </div>
+                            {scorerLoading && <div className="muted-text" style={{ fontSize: '0.82rem' }}>Loading players...</div>}
+                            {!scorerLoading && scorerPlayers.length === 0 && (
+                              <div className="muted-text" style={{ fontSize: '0.78rem' }}>No players found — sync via Admin → Sync Players.</div>
+                            )}
+                            {!scorerLoading && scorerPlayers.length > 0 && (
+                              <>
+                                <div className="pos-tabs">
+                                  {scorerPositions.map(pos => (
+                                    <button key={pos} type="button"
+                                      className={`pos-tab ${scorerPosFilter === pos ? 'pos-tab--active' : ''}`}
+                                      onClick={() => setScorerPosFilter(pos)}>{pos}</button>
+                                  ))}
+                                </div>
+                                <div className="player-grid">
+                                  {scorerFiltered.map(p => (
+                                    <button key={p.playerId} type="button" className="player-card"
+                                      onClick={() => setScorerPlayer({ playerId: p.playerId, name: p.name, odds: p.odds })}>
+                                      <span className="player-card__team">{p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>
+                                      <span className="player-card__name">{p.name}</span>
+                                      <span className="player-card__odds">{Number(p.odds).toFixed(2)}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
                     )}
                   </div>
 
-                </div>{/* end prediction-options */}
+                </div>{/* end market-table */}
 
                 {/* Combined slip */}
                 {hasBetOdds && anyMarketSelected && (

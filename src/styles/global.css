@@ -5915,3 +5915,200 @@ select:focus {
 
 /* ===== END TERMINAL OVERRIDES ===== */
 
+/* ═══════════════════════════════════════════════════════════
+   MARKET TABLE — sportsbook-style collapsible sections
+   ═══════════════════════════════════════════════════════════ */
+
+.market-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ── Section ── */
+.market-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.market-section:last-child {
+  border-bottom: none;
+}
+
+/* ── Header ── */
+.market-section__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.market-section__header:hover {
+  background: rgba(240, 197, 25, 0.07);
+}
+
+.market-section__name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.market-section__badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  background: var(--accent);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.market-section__lock {
+  font-size: 0.68rem;
+  color: var(--text-soft);
+  opacity: 0.6;
+}
+
+.market-section__toggle {
+  font-size: 0.70rem;
+  color: var(--text-soft);
+  transition: transform 0.2s;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ── Options grid ── */
+.market-options {
+  display: grid;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.market-options--2 {
+  grid-template-columns: 1fr 1fr;
+}
+.market-options--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.market-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 10px;
+  background: #0e0e0e;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+.market-option:hover:not(:disabled) {
+  background: rgba(240, 197, 25, 0.08);
+}
+.market-option--active {
+  background: rgba(240, 197, 25, 0.14) !important;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.market-option--disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.market-option__label {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  letter-spacing: 0.04em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.market-option__odds {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.market-option--active .market-option__odds {
+  color: var(--accent);
+}
+
+/* ── Over / Under table ── */
+.ou-table {
+  display: flex;
+  flex-direction: column;
+  background: #0e0e0e;
+}
+
+.ou-table__subheader {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.ou-table__subheader span {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  text-align: center;
+}
+.ou-table__subheader span:first-child {
+  text-align: left;
+}
+
+.ou-table__row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: stretch;
+}
+.ou-table__row:last-child {
+  border-bottom: none;
+}
+
+.ou-table__line {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.ou-cell {
+  padding: 13px 8px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: inherit;
+  text-align: center;
+  transition: background 0.15s;
+}
+.ou-cell:hover {
+  background: rgba(240, 197, 25, 0.09);
+}
+.ou-cell--active {
+  background: rgba(240, 197, 25, 0.16) !important;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  color: var(--accent);
+}
+
+
