@@ -214,8 +214,12 @@ export default function FantasyPage() {
       <section className="shell-card panel">
         <div className="section-head">
           <div>
-            <h2>⚽ {teamData.teamName}</h2>
-            <p>Gameweek {teamData.gameWeek} · {teamData.isLocked ? '🔒 Locked' : '✏️ Open'}</p>
+            <h2 style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '1rem' }}>
+              {teamData.teamName}
+            </h2>
+            <p style={{ fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              GW{teamData.gameWeek} · {teamData.isLocked ? '⬛ LOCKED' : '✏️ OPEN'}
+            </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link to="/fantasy/leaderboard" className="ghost-button">Leaderboard</Link>

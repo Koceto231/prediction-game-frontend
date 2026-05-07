@@ -175,11 +175,19 @@ export default function FantasyDraftPage() {
         setGameweek(gwRes.data);
         const teamRes = await api.get('/Fantasy/team');
         if (teamRes.data?.players?.length) {
+          // fantasyPlayerId from team endpoint == id from players endpoint
           const ids = new Set(teamRes.data.players.map(p => p.fantasyPlayerId));
           const pr2 = await api.get('/Fantasy/players');
-          setSelected(pr2.data.filter(p => ids.has(p.id)));
+          const preSelected = pr2.data.filter(p => ids.has(p.id) || ids.has(p.fantasyPlayerId));
+          setSelected(preSelected);
           const cap = teamRes.data.players.find(p => p.isCaptain);
-          if (cap) setCaptain(cap.fantasyPlayerId);
+          if (cap) {
+            // find the matching player in allPlayers to get the correct id
+            const capPlayer = preSelected.find(p =>
+              p.id === cap.fantasyPlayerId || p.fantasyPlayerId === cap.fantasyPlayerId
+            );
+            setCaptain(capPlayer?.id ?? cap.fantasyPlayerId);
+          }
         }
       } catch { /* no gameweek */ }
       setLoading(false);
