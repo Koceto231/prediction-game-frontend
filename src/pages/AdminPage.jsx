@@ -91,6 +91,7 @@ export default function AdminPage() {
   const [gwNumber, setGwNumber]         = useState('');
   const [gwDeadline, setGwDeadline]     = useState('');
   const [reResolveBetId, setReResolveBetId] = useState('');
+  const [fdTeamSearch, setFdTeamSearch]     = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
@@ -263,6 +264,22 @@ export default function AdminPage() {
           {/* ── Purge football-data.org players ── */}
           <AdminSection title="Purge Football-Data.org Players">
             <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'fd-debug'}
+                onClick={() => run('fd-debug', () => api.get('/admin/sync/players/footballdata-debug'))}>
+                {loading === 'fd-debug' ? 'Loading…' : '🔍 Debug — виж team имена'}
+              </button>
+            </div>
+            <div className="admin-row" style={{ marginTop: 8 }}>
+              <label className="admin-label">Търси отбор</label>
+              <input className="admin-input" value={fdTeamSearch} onChange={e => setFdTeamSearch(e.target.value)} placeholder="напр. Barcelona" />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'fd-team' || !fdTeamSearch}
+                onClick={() => run('fd-team', () => api.get(`/admin/sync/players/footballdata-debug?team=${encodeURIComponent(fdTeamSearch)}`))}>
+                {loading === 'fd-team' ? 'Търсене…' : '🔍 Виж играчи на отбора'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn" type="button" disabled={loading === 'fd-dry'}
                 onClick={() => run('fd-dry', () => api.delete('/admin/sync/players/footballdata?dryRun=true'))}>
                 {loading === 'fd-dry' ? 'Checking…' : '🔍 Preview (dry-run)'}
