@@ -62,7 +62,6 @@ export default function LeaderboardPage() {
             <span>#</span>
             <span>Player</span>
             <span>Points</span>
-            <span>Correct</span>
           </div>
 
           {rows.map((row, index) => {
@@ -85,12 +84,10 @@ export default function LeaderboardPage() {
                   </div>
                   <div className="leaderboard-mobile-stats">
                     <span>{row.totalPoints} pts</span>
-                    <span>{row.correctResults} correct</span>
                   </div>
                 </div>
 
                 <div className="leaderboard-points">{row.totalPoints}</div>
-                <div className="leaderboard-correct">{row.correctResults}</div>
               </div>
             );
           })}
