@@ -138,6 +138,9 @@ export default function ResultsPage() {
                   {/* Goal scorers — shown on expand */}
                   {expanded && (
                     <div className="result-card__goals">
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-soft)', opacity: 0.5, marginBottom: 4 }}>
+                        Match ID: {m.id}
+                      </div>
                       {goals.length > 0 ? (
                         <>
                           <GoalList goals={goals} team="home" />
