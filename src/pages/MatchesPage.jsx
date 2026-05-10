@@ -53,7 +53,7 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
 }
 
 // ── Quick 1/X/2 ──────────────────────────────────────────────────
-function QuickBetPanel({ match }) {
+function QuickBetPanel({ match, onBetPlaced }) {
   const { refreshBalance } = useWallet();
   const [pick, setPick]       = useState('');
   const [amount, setAmount]   = useState('');
@@ -76,6 +76,8 @@ function QuickBetPanel({ match }) {
       await refreshBalance();
       setFeedback({ ok: true, text: 'Bet placed!' });
       setPick(''); setAmount('');
+      // Fetch AI prediction and scroll to it
+      onBetPlaced?.(match.id);
     } catch (err) {
       setFeedback({ ok: false, text: err?.response?.data?.message || 'Failed.' });
     } finally { setLoading(false); }
@@ -181,6 +183,15 @@ export default function MatchesPage() {
   const panelRef = useRef(null);
   const aiRef    = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
+
+  // Shared AI fetch — called after any bet (main or quick)
+  const fetchAndShowAI = useCallback(async (matchId) => {
+    try {
+      const r = await api.get(`/Prediction/analysis/${matchId}`);
+      if (r.data) setAiPrediction(r.data);
+    } catch { /* AI unavailable */ }
+    setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+  }, []);
 
   useEffect(() => {
     setPageLoading(true);
@@ -895,7 +906,7 @@ export default function MatchesPage() {
           {hasBetOdds && !mode && (
             <>
               <div className="quick-bet-divider"><span>or place a quick bet</span></div>
-              <QuickBetPanel match={selectedMatch} />
+              <QuickBetPanel match={selectedMatch} onBetPlaced={fetchAndShowAI} />
             </>
           )}
 
