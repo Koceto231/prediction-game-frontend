@@ -531,7 +531,7 @@ export default function MatchesPage() {
 
           {/* AI card — loading / ready / error */}
           <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            <div className="ai-card" style={{ marginTop: 16 }}>
+            <div className="ai-card" style={{ marginTop: 16, marginBottom: 24 }}>
               <h3>🤖 AI Prediction</h3>
               {aiLoading && (
                 <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing match...</p>
