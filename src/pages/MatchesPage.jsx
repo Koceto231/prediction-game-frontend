@@ -517,18 +517,10 @@ export default function MatchesPage() {
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Analysing match…</div>
               </div>
             )}
-            {!aiLoading && aiPrediction && (
+            {!aiLoading && aiPrediction?.aiAnalysis && (
               <div className="ai-card" style={{ marginTop: 16 }}>
                 <h3>🤖 AI Prediction</h3>
-                {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
-                <div className="ai-grid">
-                  <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
-                  <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
-                  <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
-                  <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
-                  <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
-                  <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
-                </div>
+                <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
               </div>
             )}
           </div>
