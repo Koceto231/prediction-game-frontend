@@ -305,13 +305,13 @@ export default function FantasyPage() {
           }}>
             <span style={{ fontSize: '1rem' }}>🕐</span>
             <span>
-              Следващ GW отваря след:{' '}
+              Next GW opens:{' '}
               <strong style={{ color: 'var(--text-main)' }}>
-                {new Date(gameweek.endDate).toLocaleDateString('bg-BG', {
+                {new Date(gameweek.endDate).toLocaleDateString('en-GB', {
                   weekday: 'long', day: 'numeric', month: 'long',
                 })}
                 {' '}·{' '}
-                {new Date(gameweek.endDate).toLocaleTimeString('bg-BG', {
+                {new Date(gameweek.endDate).toLocaleTimeString('en-GB', {
                   hour: '2-digit', minute: '2-digit',
                 })}
               </strong>

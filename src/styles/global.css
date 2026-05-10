@@ -1863,8 +1863,9 @@ select:focus {
 
 .auth-switch button.active,
 .auth-tabs button.active {
-  background: rgba(66, 255, 135, 0.14);
-  border-color: rgba(66, 255, 135, 0.26);
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--amber);
 }
 
 .auth-form {
@@ -4617,9 +4618,9 @@ select:focus {
 
 .auth-tabs button.active,
 .auth-switch button.active {
-  background: rgba(59, 222, 124, 0.12);
-  color: var(--accent);
-  border-color: rgba(59, 222, 124, 0.2);
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--amber);
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 /* Field wrapper with label */
