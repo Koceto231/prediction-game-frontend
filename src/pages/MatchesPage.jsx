@@ -151,6 +151,7 @@ export default function MatchesPage() {
   const [loading, setLoading]             = useState(false);
   const [feedback, setFeedback]           = useState(null);
   const [aiPrediction, setAiPrediction]   = useState(null);
+  const [aiLoading, setAiLoading]         = useState(false);
   const [pageLoading, setPageLoading]     = useState(false);
   const [loadError, setLoadError]         = useState('');
 
@@ -184,7 +185,18 @@ export default function MatchesPage() {
   const aiRef    = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Shared AI fetch — called after any bet (main or quick)
+  // Load AI analysis when a match is selected (no scroll — shown inline)
+  useEffect(() => {
+    if (!selectedMatch) return;
+    setAiPrediction(null);
+    setAiLoading(true);
+    api.get(`/Prediction/analysis/${selectedMatch.id}`)
+      .then(r => { if (r.data) setAiPrediction(r.data); })
+      .catch(() => {})
+      .finally(() => setAiLoading(false));
+  }, [selectedMatch?.id]);
+
+  // Called after any bet — refreshes AI and scrolls to it
   const fetchAndShowAI = useCallback(async (matchId) => {
     try {
       const r = await api.get(`/Prediction/analysis/${matchId}`);
@@ -495,6 +507,30 @@ export default function MatchesPage() {
             <div className="match-hero__meta">
               <span className="match-hero__date">{new Date(selectedMatch.matchDate).toLocaleString()}</span>
             </div>
+          </div>
+
+          {/* AI card — shown immediately when match is selected */}
+          <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
+            {aiLoading && (
+              <div className="ai-card" style={{ marginTop: 16, opacity: 0.5 }}>
+                <h3>🤖 AI Prediction</h3>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Analysing match…</div>
+              </div>
+            )}
+            {!aiLoading && aiPrediction && (
+              <div className="ai-card" style={{ marginTop: 16 }}>
+                <h3>🤖 AI Prediction</h3>
+                {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
+                <div className="ai-grid">
+                  <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
+                  <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
+                  <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
+                  <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
+                  <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
+                  <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mode selector */}
@@ -880,24 +916,6 @@ export default function MatchesPage() {
             {feedback && (
               <div className={`alert ${feedback.type === 'ok' ? 'alert-info' : 'alert-error'}`} style={{ marginTop: 12 }}>
                 {feedback.msg}
-              </div>
-            )}
-          </div>
-
-          {/* AI card — ref always exists so scroll always works */}
-          <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            {aiPrediction && (
-              <div className="ai-card" style={{ marginTop: 16 }}>
-                <h3>🤖 AI Prediction</h3>
-                {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
-                <div className="ai-grid">
-                  <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
-                  <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
-                  <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
-                  <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
-                  <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
-                  <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
-                </div>
               </div>
             )}
           </div>
