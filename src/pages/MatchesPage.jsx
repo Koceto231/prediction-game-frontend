@@ -152,6 +152,7 @@ export default function MatchesPage() {
   const [feedback, setFeedback]           = useState(null);
   const [aiPrediction, setAiPrediction]   = useState(null);
   const [aiLoading, setAiLoading]         = useState(false);
+  const [aiError, setAiError]             = useState(false);
   const [pageLoading, setPageLoading]     = useState(false);
   const [loadError, setLoadError]         = useState('');
 
@@ -186,34 +187,41 @@ export default function MatchesPage() {
   const aiCache   = useRef({});   // matchId → AIPredictionResponseDTO
   const setField  = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Load AI analysis when a match is selected — uses cache, no loading skeleton
+  // Load AI analysis when a match is selected — uses cache
   useEffect(() => {
     if (!selectedMatch) return;
     const cached = aiCache.current[selectedMatch.id];
-    if (cached) { setAiPrediction(cached); setAiLoading(false); return; }
+    if (cached) { setAiPrediction(cached); setAiError(false); setAiLoading(false); return; }
 
     setAiPrediction(null);
+    setAiError(false);
     setAiLoading(true);
     api.get(`/Prediction/analysis/${selectedMatch.id}`)
       .then(r => {
         if (r.data) {
           aiCache.current[selectedMatch.id] = r.data;
           setAiPrediction(r.data);
+        } else {
+          setAiError(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setAiError(true))
       .finally(() => setAiLoading(false));
   }, [selectedMatch?.id]);
 
   // Called after any bet — updates cache, scrolls to AI card
   const fetchAndShowAI = useCallback(async (matchId) => {
+    setAiLoading(true); setAiError(false);
     try {
       const r = await api.get(`/Prediction/analysis/${matchId}`);
       if (r.data) {
         aiCache.current[matchId] = r.data;
         setAiPrediction(r.data);
+      } else {
+        setAiError(true);
       }
-    } catch { /* AI unavailable */ }
+    } catch { setAiError(true); }
+    finally { setAiLoading(false); }
     setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
   }, []);
 
@@ -226,7 +234,7 @@ export default function MatchesPage() {
   }, []);
 
   const resetPanel = useCallback(() => {
-    setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null);
+    setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
@@ -521,20 +529,23 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* AI card — loading or ready */}
+          {/* AI card — loading / ready / error */}
           <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            {aiLoading && (
-              <div className="ai-card" style={{ marginTop: 16 }}>
-                <h3>🤖 AI Prediction</h3>
+            <div className="ai-card" style={{ marginTop: 16 }}>
+              <h3>🤖 AI Prediction</h3>
+              {aiLoading && (
                 <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing match...</p>
-              </div>
-            )}
-            {!aiLoading && aiPrediction?.aiAnalysis && (
-              <div className="ai-card" style={{ marginTop: 16 }}>
-                <h3>🤖 AI Prediction</h3>
+              )}
+              {!aiLoading && aiPrediction?.aiAnalysis && (
                 <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
-              </div>
-            )}
+              )}
+              {!aiLoading && !aiPrediction?.aiAnalysis && !aiError && (
+                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No analysis available for this match.</p>
+              )}
+              {!aiLoading && aiError && (
+                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Could not load analysis.</p>
+              )}
+            </div>
           </div>
 
           {/* Mode selector */}
