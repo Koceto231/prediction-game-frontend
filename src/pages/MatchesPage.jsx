@@ -181,26 +181,38 @@ export default function MatchesPage() {
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
-  const panelRef = useRef(null);
-  const aiRef    = useRef(null);
-  const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
+  const panelRef  = useRef(null);
+  const aiRef     = useRef(null);
+  const aiCache   = useRef({});   // matchId → AIPredictionResponseDTO
+  const setField  = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Load AI analysis when a match is selected (no scroll — shown inline)
+  // Load AI analysis when a match is selected — uses cache, no loading skeleton
   useEffect(() => {
     if (!selectedMatch) return;
+    const cached = aiCache.current[selectedMatch.id];
+    if (cached) { setAiPrediction(cached); setAiLoading(false); return; }
+
     setAiPrediction(null);
     setAiLoading(true);
     api.get(`/Prediction/analysis/${selectedMatch.id}`)
-      .then(r => { if (r.data) setAiPrediction(r.data); })
+      .then(r => {
+        if (r.data) {
+          aiCache.current[selectedMatch.id] = r.data;
+          setAiPrediction(r.data);
+        }
+      })
       .catch(() => {})
       .finally(() => setAiLoading(false));
   }, [selectedMatch?.id]);
 
-  // Called after any bet — refreshes AI and scrolls to it
+  // Called after any bet — updates cache, scrolls to AI card
   const fetchAndShowAI = useCallback(async (matchId) => {
     try {
       const r = await api.get(`/Prediction/analysis/${matchId}`);
-      if (r.data) setAiPrediction(r.data);
+      if (r.data) {
+        aiCache.current[matchId] = r.data;
+        setAiPrediction(r.data);
+      }
     } catch { /* AI unavailable */ }
     setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
   }, []);
@@ -509,15 +521,9 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* AI card — shown immediately when match is selected */}
+          {/* AI card — appears silently once analysis is ready */}
           <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            {aiLoading && (
-              <div className="ai-card" style={{ marginTop: 16, opacity: 0.5 }}>
-                <h3>🤖 AI Prediction</h3>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Analysing match…</div>
-              </div>
-            )}
-            {!aiLoading && aiPrediction?.aiAnalysis && (
+            {aiPrediction?.aiAnalysis && (
               <div className="ai-card" style={{ marginTop: 16 }}>
                 <h3>🤖 AI Prediction</h3>
                 <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
