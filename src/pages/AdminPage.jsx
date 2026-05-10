@@ -98,17 +98,24 @@ export default function AdminPage() {
     api.get('/Fantasy/admin/gameweeks').then(r => setGameweeks(r.data ?? [])).catch(() => {});
   }, []);
 
+  const toStr = (val) => {
+    if (val == null) return '';
+    if (typeof val === 'string') return val;
+    try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+  };
+
   const run = async (key, fn) => {
     setLoading(key);
     setFeedback(null);
     try {
       const res = await fn();
-      let text = typeof res.data === 'object' ? JSON.stringify(res.data, null, 2) : String(res.data);
-      // Truncate very large responses to avoid freezing the browser
-      if (text.length > 4000) text = text.slice(0, 4000) + '\n\n… (truncated, see Render logs for full output)';
+      let text = toStr(res.data);
+      if (text.length > 4000) text = text.slice(0, 4000) + '\n\n… (truncated)';
       setFeedback({ ok: true, text });
     } catch (err) {
-      setFeedback({ ok: false, text: err?.response?.data?.message || err?.response?.data || 'Failed.' });
+      let text = toStr(err?.response?.data?.message) || toStr(err?.response?.data) || err?.message || 'Request failed.';
+      if (text.length > 4000) text = text.slice(0, 4000) + '\n\n… (truncated)';
+      setFeedback({ ok: false, text });
     } finally {
       setLoading('');
     }
