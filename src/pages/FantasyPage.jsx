@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/apiClient';
 
@@ -41,7 +41,6 @@ function PlayerAvatar({ name, position, isCaptain, points, price, small = false 
 }
 
 // ── Pitch formation view ─────────────────────────────────────────
-// Formation rows: FWD → MID → DEF → GK (attack at top, GK at bottom)
 function PitchView({ players }) {
   const byPos = { GK: [], DEF: [], MID: [], FWD: [] };
   players.forEach(p => { if (byPos[p.position]) byPos[p.position].push(p); });
@@ -55,7 +54,6 @@ function PitchView({ players }) {
 
   return (
     <div className="fantasy-pitch">
-      {/* Pitch markings */}
       <div className="fantasy-pitch__lines">
         <div className="fantasy-pitch__circle" />
         <div className="fantasy-pitch__midline" />
@@ -63,7 +61,7 @@ function PitchView({ players }) {
         <div className="fantasy-pitch__box fantasy-pitch__box--bottom" />
       </div>
 
-      {rows.map(({ pos, label }) => (
+      {rows.map(({ pos }) => (
         <div key={pos} className="fantasy-pitch__row">
           {byPos[pos].map(p => (
             <PlayerAvatar
@@ -84,28 +82,66 @@ function PitchView({ players }) {
 export default function FantasyPage() {
   const navigate = useNavigate();
 
-  const [gameweek, setGameweek] = useState(null);
-  const [teamData, setTeamData] = useState(null);   // null = loading, false = no team
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [pitchView, setPitchView] = useState(true); // toggle pitch / list view
+  const [gameweek, setGameweek]           = useState(null);
+  const [teamData, setTeamData]           = useState(null);   // null=loading, false=no team
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState('');
+  const [pitchView, setPitchView]         = useState(true);
+  const [autoSubmitting, setAutoSubmitting] = useState(false);
+  const [autoSubmitMsg, setAutoSubmitMsg]   = useState('');
 
   // Create team form
-  const [teamName, setTeamName] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [teamName, setTeamName]   = useState('');
+  const [creating, setCreating]   = useState(false);
   const [createError, setCreateError] = useState('');
+
+  // Guard: run auto-submit only once per page load
+  const autoSubmitAttempted = useRef(false);
 
   useEffect(() => {
     const load = async () => {
       try {
         const gwRes = await api.get('/Fantasy/gameweek/current');
-        setGameweek(gwRes.data);
+        const gw = gwRes.data;
+        setGameweek(gw);
 
         const teamRes = await api.get('/Fantasy/team');
-        if (teamRes.data?.hasTeam === false || !teamRes.data?.fantasyTeamId) {
+        const td = teamRes.data;
+
+        if (td?.hasTeam === false || !td?.fantasyTeamId) {
           setTeamData(false);
-        } else {
-          setTeamData(teamRes.data);
+          return;
+        }
+
+        setTeamData(td);
+
+        // ── Auto-submit carry-over squad when deadline has passed ─────────────
+        // Conditions: carry-over (not submitted) + deadline past + 11 players + captain
+        if (
+          !autoSubmitAttempted.current &&
+          td.isCarryOver &&
+          new Date(gw.deadline) < new Date() &&
+          td.players?.length === 11 &&
+          td.players.some(p => p.isCaptain)
+        ) {
+          autoSubmitAttempted.current = true;
+          setAutoSubmitting(true);
+          try {
+            const captain = td.players.find(p => p.isCaptain);
+            await api.post('/Fantasy/selection', {
+              fantasyGameweekId: gw.id,
+              selectedPlayerIds:  td.players.map(p => p.fantasyPlayerId),
+              captainPlayerId:    captain.fantasyPlayerId,
+            });
+            setAutoSubmitMsg('✅ Отборът ти беше автоматично субмитнат преди крайния срок.');
+            // Reload to get fresh non-carry-over data
+            const refreshed = await api.get('/Fantasy/team');
+            setTeamData(refreshed.data?.hasTeam === false ? false : refreshed.data);
+          } catch {
+            setAutoSubmitMsg('⚠️ Автоматичният submit не успя — опитай ръчно.');
+          } finally {
+            setAutoSubmitting(false);
+          }
         }
       } catch (err) {
         if (err?.response?.status === 404) {
@@ -135,10 +171,14 @@ export default function FantasyPage() {
     }
   };
 
-  if (loading) {
+  if (loading || autoSubmitting) {
     return (
       <div className="page-grid">
-        <div className="shell-card panel"><div className="empty-box">Loading fantasy...</div></div>
+        <div className="shell-card panel">
+          <div className="empty-box">
+            {autoSubmitting ? 'Auto-submitting your squad…' : 'Loading fantasy...'}
+          </div>
+        </div>
       </div>
     );
   }
@@ -151,7 +191,6 @@ export default function FantasyPage() {
     );
   }
 
-  // No active gameweek
   if (!gameweek) {
     return (
       <div className="page-grid">
@@ -204,10 +243,19 @@ export default function FantasyPage() {
     );
   }
 
-  // Has team — show squad
+  // ── Derived state ────────────────────────────────────────────────────────────
   const players = [...(teamData.players ?? [])].sort(
     (a, b) => (POSITION_ORDER[a.position] ?? 9) - (POSITION_ORDER[b.position] ?? 9)
   );
+
+  // isCarryOver = true  → squad shown from previous GW, NOT yet submitted for this GW
+  // isCarryOver = false → squad is the actual submission for the current GW
+  const isCarryOver   = teamData.isCarryOver ?? false;
+  const hasSubmitted  = !isCarryOver && players.length > 0;
+  const deadlinePassed = new Date(gameweek.deadline) < new Date();
+
+  // Edit is allowed only when: not yet submitted AND deadline has not passed
+  const canEdit = !hasSubmitted && !deadlinePassed;
 
   return (
     <div className="page-grid">
@@ -218,16 +266,40 @@ export default function FantasyPage() {
               {teamData.teamName}
             </h2>
             <p style={{ fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              GW{teamData.gameWeek} · {teamData.isLocked ? '⬛ LOCKED' : '✏️ OPEN'}
+              GW{teamData.gameWeek} · {teamData.isLocked ? '⬛ LOCKED' : hasSubmitted ? '✅ SUBMITTED' : '✏️ OPEN'}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <Link to="/fantasy/leaderboard" className="ghost-button">Leaderboard</Link>
-            {!teamData.isLocked && (
-              <Link to="/fantasy/draft" className="primary-button">Edit Squad</Link>
+            {canEdit && (
+              <Link to="/fantasy/draft" className="primary-button">
+                {isCarryOver ? 'Pick Squad' : 'Edit Squad'}
+              </Link>
             )}
           </div>
         </div>
+
+        {/* Auto-submit notification */}
+        {autoSubmitMsg && (
+          <div className={`alert ${autoSubmitMsg.startsWith('✅') ? 'alert-success' : 'alert-error'}`}
+               style={{ marginBottom: 12 }}>
+            {autoSubmitMsg}
+          </div>
+        )}
+
+        {/* Carry-over notice */}
+        {isCarryOver && !deadlinePassed && (
+          <div className="alert alert-info" style={{ marginBottom: 12 }}>
+            ℹ️ Показва се предишният ти отбор. Натисни <strong>Pick Squad</strong> за да субмитнеш за GW{gameweek.gameWeek}.
+          </div>
+        )}
+
+        {/* Submitted / locked notice */}
+        {hasSubmitted && !teamData.isLocked && (
+          <div className="alert alert-success" style={{ marginBottom: 12 }}>
+            ✅ Отборът е субмитнат за GW{teamData.gameWeek}. Редактирането е заключено до края на gameweek-а.
+          </div>
+        )}
 
         {/* Points banner */}
         <div className="fantasy-points-banner">
@@ -241,6 +313,7 @@ export default function FantasyPage() {
         {/* Deadline bar */}
         <div className="fantasy-deadline-bar">
           <span>Deadline: {new Date(gameweek.deadline).toLocaleString()}</span>
+          {deadlinePassed && <span style={{ color: '#ff6060', marginLeft: 8, fontSize: '0.72rem', fontWeight: 700 }}>PASSED</span>}
         </div>
 
         {/* View toggle */}
@@ -267,12 +340,11 @@ export default function FantasyPage() {
         {players.length === 0 ? (
           <div className="empty-box">
             No players selected yet.{' '}
-            <Link to="/fantasy/draft" className="link-accent">Pick your squad →</Link>
+            {canEdit && <Link to="/fantasy/draft" className="link-accent">Pick your squad →</Link>}
           </div>
         ) : pitchView ? (
           <PitchView players={players} />
         ) : (
-          /* List view */
           <div className="fantasy-squad">
             {['GK', 'DEF', 'MID', 'FWD'].map(pos => {
               const posPlayers = players.filter(p => p.position === pos);
@@ -291,7 +363,6 @@ export default function FantasyPage() {
                     {posPlayers.map(p => (
                       <div key={p.fantasyPlayerId} className={`fantasy-player-card ${p.isCaptain ? 'fantasy-player-card--captain' : ''}`}>
                         {p.isCaptain && <div className="fantasy-player-card__captain">C</div>}
-                        {/* Mini avatar */}
                         <div className="fantasy-player-card__avatar" style={{
                           background: POSITION_COLORS[p.position]?.bg,
                           color: POSITION_COLORS[p.position]?.text,

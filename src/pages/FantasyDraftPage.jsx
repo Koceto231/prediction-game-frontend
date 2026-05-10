@@ -160,6 +160,10 @@ export default function FantasyDraftPage() {
   const [successMsg, setSuccessMsg]     = useState('');
   const [showRules, setShowRules]       = useState(false);
 
+  // Lock state: set when user has already submitted or deadline has passed
+  const [isLocked, setIsLocked]         = useState(false);
+  const [lockReason, setLockReason]     = useState('');
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -169,19 +173,38 @@ export default function FantasyDraftPage() {
         setAllPlayers(allP);
 
         // 2. Load current gameweek
+        let gw = null;
         try {
           const gwRes = await api.get('/Fantasy/gameweek/current');
-          setGameweek(gwRes.data);
+          gw = gwRes.data;
+          setGameweek(gw);
         } catch { /* no active GW yet */ }
 
-        // 3. Load latest squad (carries over from previous GW if current GW is empty)
-        //    Endpoint returns { players: [...], captainId: int|null }
+        // 3. Check if already submitted for current GW or deadline passed
+        //    GET /Fantasy/team returns isCarryOver=false when squad is the real submission
+        if (gw) {
+          try {
+            const teamRes = await api.get('/Fantasy/team');
+            const td = teamRes.data;
+            const hasRealSubmission = td && td.fantasyTeamId && !td.isCarryOver && (td.players?.length ?? 0) > 0;
+            const deadlinePast = new Date(gw.deadline) < new Date();
+
+            if (hasRealSubmission) {
+              setIsLocked(true);
+              setLockReason('submitted');
+            } else if (deadlinePast) {
+              setIsLocked(true);
+              setLockReason('deadline');
+            }
+          } catch { /* no team yet — not locked */ }
+        }
+
+        // 4. Load latest squad for carry-over pre-fill (only if not locked)
         try {
           const squadRes = await api.get('/Fantasy/team/squad');
           const { players: squadPlayers, captainId } = squadRes.data ?? {};
 
           if (squadPlayers?.length) {
-            // Match squad players to full player objects from allPlayers (to get price etc.)
             const squadIds = new Set(squadPlayers.map(p => p.id));
             const preSelected = allP.filter(p => squadIds.has(p.id));
             setSelected(preSelected);
@@ -270,6 +293,32 @@ export default function FantasyDraftPage() {
   if (loading) return (
     <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading players…</div>
   );
+
+  // ── Locked state ─────────────────────────────────────────────────────────
+  if (isLocked) {
+    return (
+      <div className="page-grid">
+        <section className="shell-card panel" style={{ textAlign: 'center', padding: 48 }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔒</div>
+          <h2 style={{ marginBottom: 8 }}>
+            {lockReason === 'submitted' ? 'Squad Submitted' : 'Deadline Passed'}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 24, maxWidth: 380, margin: '0 auto 24px' }}>
+            {lockReason === 'submitted'
+              ? 'Вече си субмитнал отбора за този gameweek. Редактирането е заключено до края на GW-а.'
+              : 'Крайният срок за субмитване е изтекъл. Отборът ти е заключен до края на GW-а.'}
+          </p>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => navigate('/fantasy')}
+          >
+            ← Към отбора
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
