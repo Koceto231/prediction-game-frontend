@@ -45,7 +45,7 @@ export default function FantasyLeaderboardPage() {
           <div>
             <h2>🏆 Fantasy Leaderboard</h2>
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {tab === 'alltime' ? 'Общо точки' : `Gameweek ${gwNumber ?? '—'}`}
+              {tab === 'alltime' ? 'Total Points' : `Gameweek ${gwNumber ?? '—'}`}
             </p>
           </div>
           <Link to="/fantasy" className="ghost-button">My Team</Link>
@@ -75,8 +75,8 @@ export default function FantasyLeaderboardPage() {
         {!error && (!rows || rows.length === 0) && (
           <div className="empty-box">
             {tab === 'gw'
-              ? 'Все още няма точки за този gameweek.'
-              : 'Все още няма изиграни gameweek-ове.'}
+              ? 'No points yet for this gameweek.'
+              : 'No gameweeks played yet.'}
           </div>
         )}
 
