@@ -521,9 +521,15 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* AI card — appears silently once analysis is ready */}
+          {/* AI card — loading or ready */}
           <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            {aiPrediction?.aiAnalysis && (
+            {aiLoading && (
+              <div className="ai-card" style={{ marginTop: 16 }}>
+                <h3>🤖 AI Prediction</h3>
+                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing match...</p>
+              </div>
+            )}
+            {!aiLoading && aiPrediction?.aiAnalysis && (
               <div className="ai-card" style={{ marginTop: 16 }}>
                 <h3>🤖 AI Prediction</h3>
                 <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
