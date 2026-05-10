@@ -48,6 +48,7 @@ export default function ResultsPage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -91,15 +92,22 @@ export default function ResultsPage() {
         {!loading && results.length > 0 && (
           <div className="results-list">
             {results.map(m => {
-              const isDraw = m.homeScore === m.awayScore;
-              const goals  = m.goalScorers ?? [];
-              const date   = new Date(m.matchDate);
+              const isDraw   = m.homeScore === m.awayScore;
+              const goals    = m.goalScorers ?? [];
+              const date     = new Date(m.matchDate);
+              const expanded = expandedId === m.id;
 
               return (
-                <div key={m.id} className="result-card shell-card">
+                <div key={m.id} className="result-card shell-card"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setExpandedId(expanded ? null : m.id)}>
+
                   <div className="result-card__date">
                     {date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {m.matchDay ? <span className="result-card__round">Round {m.matchDay}</span> : null}
+                    <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--text-soft)', opacity: 0.6 }}>
+                      {expanded ? '▲' : '▼'}
+                    </span>
                   </div>
 
                   <div className="result-card__row">
@@ -127,11 +135,19 @@ export default function ResultsPage() {
                     </div>
                   </div>
 
-                  {/* Goal scorers */}
-                  {goals.length > 0 && (
+                  {/* Goal scorers — shown on expand */}
+                  {expanded && (
                     <div className="result-card__goals">
-                      <GoalList goals={goals} team="home" />
-                      <GoalList goals={goals} team="away" />
+                      {goals.length > 0 ? (
+                        <>
+                          <GoalList goals={goals} team="home" />
+                          <GoalList goals={goals} team="away" />
+                        </>
+                      ) : (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-soft)', textAlign: 'center', padding: '6px 0' }}>
+                          Няма записани голмайстори за този мач.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
