@@ -437,7 +437,7 @@ export default function AdminPage() {
           </AdminSection>
 
           {/* ── Score Predictions ── */}
-          <AdminSection title="Score Predictions">
+          <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
               <label className="admin-label">Match ID</label>
               <input className="admin-input" value={matchId}
@@ -449,6 +449,13 @@ export default function AdminPage() {
                 {loading === 'score' ? 'Scoring…' : 'Score Predictions'}
               </button>
             </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'force-stats' || !matchId}
+                onClick={() => run('force-stats', () => api.post(`/admin/sync/matches/${matchId}/force-sync-stats`))}>
+                {loading === 'force-stats' ? 'Syncing…' : '⚡ Force Re-sync Stats + Re-resolve Bets'}
+              </button>
+            </div>
+            <p className="admin-hint">Force Re-sync — изтрива старите статистики и ги дърпа наново от Sportmonks, после пренасмята всички залози за мача (включително изгубени голмайстори).</p>
           </AdminSection>
 
         </div>

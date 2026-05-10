@@ -145,7 +145,7 @@ export default function ResultsPage() {
                         </>
                       ) : (
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-soft)', textAlign: 'center', padding: '6px 0' }}>
-                          Няма записани голмайстори за този мач.
+                          No goal scorers recorded for this match.
                         </div>
                       )}
                     </div>
