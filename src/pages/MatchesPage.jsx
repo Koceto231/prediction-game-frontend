@@ -430,7 +430,8 @@ export default function MatchesPage() {
       }
 
       setFeedback({ type: 'ok', msg: betPlaced ? '✅ Bet placed!' : '✅ Prediction saved!' });
-      if (ai) setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+      // Always scroll to AI section after submit (ref exists regardless of aiPrediction)
+      setTimeout(() => aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
     } catch (err) {
       setFeedback({ type: 'err', msg: err?.response?.data?.message || 'Failed to place bet.' });
     } finally { setLoading(false); }
@@ -462,7 +463,7 @@ export default function MatchesPage() {
             <MatchCard key={match.id} match={match} selected={selectedMatch?.id === match.id}
               onSelect={() => {
                 if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
-                else { setSelectedMatch(match); resetPanel(); setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 140); }
+                else { setSelectedMatch(match); resetPanel(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
               }} />
           ))}
         </div>
@@ -872,21 +873,23 @@ export default function MatchesPage() {
             )}
           </div>
 
-          {/* AI card */}
-          {aiPrediction && (
-            <div ref={aiRef} className="ai-card" style={{ marginTop: 16 }}>
-              <h3>🤖 AI Prediction</h3>
-              {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
-              <div className="ai-grid">
-                <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
-                <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
-                <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
-                <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
-                <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
-                <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
+          {/* AI card — ref always exists so scroll always works */}
+          <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
+            {aiPrediction && (
+              <div className="ai-card" style={{ marginTop: 16 }}>
+                <h3>🤖 AI Prediction</h3>
+                {aiPrediction.aiAnalysis && <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>}
+                <div className="ai-grid">
+                  <div><span className="muted-text">Predicted Score</span><div className="ai-value">{aiPrediction.predictedHomeScore} – {aiPrediction.predictedAwayScore}</div></div>
+                  <div><span className="muted-text">Pick</span><div className="ai-value">{aiPrediction.pick}</div></div>
+                  <div><span className="muted-text">Confidence</span><div className="ai-value">{aiPrediction.confidence}%</div></div>
+                  <div><span className="muted-text">Home Win</span><div className="ai-value">{aiPrediction.homeWinProbability}%</div></div>
+                  <div><span className="muted-text">Draw</span><div className="ai-value">{aiPrediction.drawProbability}%</div></div>
+                  <div><span className="muted-text">Away Win</span><div className="ai-value">{aiPrediction.awayWinProbability}%</div></div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Quick 1X2 */}
           {hasBetOdds && !mode && (
