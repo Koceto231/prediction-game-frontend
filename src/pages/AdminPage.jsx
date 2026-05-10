@@ -103,7 +103,10 @@ export default function AdminPage() {
     setFeedback(null);
     try {
       const res = await fn();
-      setFeedback({ ok: true, text: typeof res.data === 'object' ? JSON.stringify(res.data, null, 2) : String(res.data) });
+      let text = typeof res.data === 'object' ? JSON.stringify(res.data, null, 2) : String(res.data);
+      // Truncate very large responses to avoid freezing the browser
+      if (text.length > 4000) text = text.slice(0, 4000) + '\n\n… (truncated, see Render logs for full output)';
+      setFeedback({ ok: true, text });
     } catch (err) {
       setFeedback({ ok: false, text: err?.response?.data?.message || err?.response?.data || 'Failed.' });
     } finally {
