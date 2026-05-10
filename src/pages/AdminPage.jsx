@@ -202,6 +202,12 @@ export default function AdminPage() {
               </button>
             </div>
             <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'bgl-status'}
+                onClick={() => run('bgl-status', () => api.get('/admin/sync/debug/bgl-status'))}>
+                {loading === 'bgl-status' ? 'Checking…' : '🔍 Check BGL Match Status'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn" type="button" disabled={loading === 'standings-check'}
                 onClick={() => run('standings-check', () => api.get('/admin/sync/debug/standings-check'))}>
                 {loading === 'standings-check' ? 'Checking…' : '🔍 Check Standings Data'}
