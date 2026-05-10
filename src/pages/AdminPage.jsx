@@ -461,6 +461,12 @@ export default function AdminPage() {
                 onChange={e => setMatchId(e.target.value)} placeholder="Match ID" />
             </div>
             <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'debug-match-stats' || !matchId}
+                onClick={() => run('debug-match-stats', () => api.get(`/admin/sync/debug/match-stats/${matchId}`))}>
+                {loading === 'debug-match-stats' ? 'Checking…' : '🔍 Debug — виж Sportmonks events за мача'}
+              </button>
+            </div>
+            <div className="admin-actions">
               <button className="admin-btn" type="button" disabled={loading === 'score' || !matchId}
                 onClick={() => run('score', () => api.post(`/admin/sync/score/predictions/${matchId}`))}>
                 {loading === 'score' ? 'Scoring…' : 'Score Predictions'}
