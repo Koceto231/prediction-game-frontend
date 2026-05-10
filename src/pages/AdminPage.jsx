@@ -176,6 +176,13 @@ export default function AdminPage() {
                 {loading === 'history' ? 'Importing…' : `Import ${histLeague} History`}
               </button>
             </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'debug-between'}
+                onClick={() => run('debug-between', () =>
+                  api.get(`/admin/sync/debug/between?leagueCode=${histLeague}&daysBack=${histDaysBack}`))}>
+                {loading === 'debug-between' ? 'Checking…' : `🔍 Test API (${histLeague})`}
+              </button>
+            </div>
             <p className="admin-hint">Imports finished matches for the past N days. Run once to populate standings. Runs in background — check logs.</p>
           </AdminSection>
 
