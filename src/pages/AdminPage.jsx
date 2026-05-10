@@ -189,12 +189,18 @@ export default function AdminPage() {
           {/* ── Standings debug ── */}
           <AdminSection title="Debug Standings Data">
             <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-leagues'}
+                onClick={() => run('fix-leagues', () => api.post('/admin/sync/matches/fix-league-codes'))}>
+                {loading === 'fix-leagues' ? 'Fixing…' : '🔧 Fix League Codes on Old Matches'}
+              </button>
+            </div>
+            <p className="admin-hint">One-time fix: copies LeagueCode from team onto all matches that are missing it (~1587 old matches). Run once.</p>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn" type="button" disabled={loading === 'standings-check'}
                 onClick={() => run('standings-check', () => api.get('/admin/sync/debug/standings-check'))}>
                 {loading === 'standings-check' ? 'Checking…' : '🔍 Check Standings Data'}
               </button>
             </div>
-            <p className="admin-hint">Shows how many finished matches with scores exist per league in the DB.</p>
           </AdminSection>
 
           {/* ── Dedup matches ── */}
