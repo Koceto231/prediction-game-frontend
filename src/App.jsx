@@ -18,6 +18,7 @@ import FantasyPage from './pages/FantasyPage';
 import FantasyDraftPage from './pages/FantasyDraftPage';
 import FantasyLeaderboardPage from './pages/FantasyLeaderboardPage';
 import NewsPage from './pages/NewsPage';
+import StandingsPage from './pages/StandingsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -58,6 +59,7 @@ function AppLayout() {
             <Route path="/fantasy/draft" element={<FantasyDraftPage />} />
             <Route path="/fantasy/leaderboard" element={<FantasyLeaderboardPage />} />
             <Route path="/news" element={<NewsPage />} />
+            <Route path="/standings" element={<StandingsPage />} />
             <Route
               path="/admin"
               element={
