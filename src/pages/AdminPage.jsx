@@ -264,6 +264,13 @@ export default function AdminPage() {
           {/* ── Purge football-data.org players ── */}
           <AdminSection title="Purge Football-Data.org Players">
             <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fd-stamp'}
+                onClick={() => run('fd-stamp', () => api.post('/admin/sync/players/stamp-sources'))}>
+                {loading === 'fd-stamp' ? 'Stamping…' : '🏷 Стъпка 1 — Маркирай Sources'}
+              </button>
+            </div>
+            <p className="admin-hint" style={{ marginBottom: 8 }}>Пусни ПЪРВО — маркира всеки играч като "sportmonks" или "footballdata" по PhotoUrl. Еднократно.</p>
+            <div className="admin-actions">
               <button className="admin-btn" type="button" disabled={loading === 'fd-debug'}
                 onClick={() => run('fd-debug', () => api.get('/admin/sync/players/footballdata-debug'))}>
                 {loading === 'fd-debug' ? 'Loading…' : '🔍 Debug — виж team имена'}
