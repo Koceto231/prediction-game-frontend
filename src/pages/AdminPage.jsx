@@ -260,6 +260,23 @@ export default function AdminPage() {
             <p className="admin-hint">Keeps the player with the longer (more complete) name, reassigns all bets + fantasy stats to it, deletes the shorter-name duplicate. Run dry-run first to preview.</p>
           </AdminSection>
 
+          {/* ── Purge football-data.org players ── */}
+          <AdminSection title="Purge Football-Data.org Players">
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'fd-dry'}
+                onClick={() => run('fd-dry', () => api.delete('/admin/sync/players/footballdata?dryRun=true'))}>
+                {loading === 'fd-dry' ? 'Checking…' : '🔍 Preview (dry-run)'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fd-purge'}
+                onClick={() => run('fd-purge', () => api.delete('/admin/sync/players/footballdata?dryRun=false'))}>
+                {loading === 'fd-purge' ? 'Deleting…' : '🗑 Delete football-data.org Players'}
+              </button>
+            </div>
+            <p className="admin-hint">Изтрива всички играчи от старото API (football-data.org) и пренасочва залозите/статистиките към съответния Sportmonks играч. Пусни Preview първо.</p>
+          </AdminSection>
+
           {/* ── Players via Sportmonks ── */}
           <AdminSection title="Sync Players (Sportmonks)">
             <div className="admin-actions">
