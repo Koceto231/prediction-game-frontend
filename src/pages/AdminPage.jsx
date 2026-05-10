@@ -227,6 +227,29 @@ export default function AdminPage() {
             <p className="admin-hint">Изтрива дублирани мачове (от стария football-data.org import). Пусни веднъж.</p>
           </AdminSection>
 
+          {/* ── Player dedup ── */}
+          <AdminSection title="Fix Duplicate Players">
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'dup-check'}
+                onClick={() => run('dup-check', () => api.get('/admin/sync/players/duplicates'))}>
+                {loading === 'dup-check' ? 'Checking…' : '🔍 Find Duplicate Players'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'dup-dry'}
+                onClick={() => run('dup-dry', () => api.post('/admin/sync/players/dedup?dryRun=true'))}>
+                {loading === 'dup-dry' ? 'Checking…' : '🔍 Dry-run Merge (preview only)'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'dup-merge'}
+                onClick={() => run('dup-merge', () => api.post('/admin/sync/players/dedup?dryRun=false'))}>
+                {loading === 'dup-merge' ? 'Merging…' : '⚡ Merge Duplicates'}
+              </button>
+            </div>
+            <p className="admin-hint">Keeps the player with the longer (more complete) name, reassigns all bets + fantasy stats to it, deletes the shorter-name duplicate. Run dry-run first to preview.</p>
+          </AdminSection>
+
           {/* ── Players via Sportmonks ── */}
           <AdminSection title="Sync Players (Sportmonks)">
             <div className="admin-actions">
