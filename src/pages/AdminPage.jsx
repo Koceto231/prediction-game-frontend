@@ -186,6 +186,17 @@ export default function AdminPage() {
             <p className="admin-hint">Imports finished matches for the past N days. Run once to populate standings. Runs in background — check logs.</p>
           </AdminSection>
 
+          {/* ── Standings debug ── */}
+          <AdminSection title="Debug Standings Data">
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'standings-check'}
+                onClick={() => run('standings-check', () => api.get('/admin/sync/debug/standings-check'))}>
+                {loading === 'standings-check' ? 'Checking…' : '🔍 Check Standings Data'}
+              </button>
+            </div>
+            <p className="admin-hint">Shows how many finished matches with scores exist per league in the DB.</p>
+          </AdminSection>
+
           {/* ── Dedup matches ── */}
           <AdminSection title="Fix Duplicate Matches">
             <div className="admin-actions">
