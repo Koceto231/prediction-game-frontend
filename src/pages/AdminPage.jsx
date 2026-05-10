@@ -436,6 +436,23 @@ export default function AdminPage() {
             <p className="admin-hint">Resets a wrongly-settled bet to Pending and re-scores it with the current final match score. Find the Bet ID in My Bets → History tab.</p>
           </AdminSection>
 
+          {/* ── Bulk stats sync ── */}
+          <AdminSection title="Sync Goal Scorers (Bulk)">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'bulk-stats-7'}
+                onClick={() => run('bulk-stats-7', () => api.post('/admin/sync/matches/sync-stats-bulk?daysBack=7'))}>
+                {loading === 'bulk-stats-7' ? 'Starting…' : '⚡ Sync Stats — последните 7 дни'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'bulk-stats-30'}
+                onClick={() => run('bulk-stats-30', () => api.post('/admin/sync/matches/sync-stats-bulk?daysBack=30'))}>
+                {loading === 'bulk-stats-30' ? 'Starting…' : '⚡ Sync Stats — последните 30 дни'}
+              </button>
+            </div>
+            <p className="admin-hint">Синква голмайсторите от Sportmonks за всички приключили мачове. Работи в background — провери Results страницата след ~2 мин.</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
