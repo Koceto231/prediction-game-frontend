@@ -291,6 +291,21 @@ export default function AdminPage() {
                 {loading === 'fd-purge' ? 'Deleting…' : '🗑 Delete football-data.org Players'}
               </button>
             </div>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 12, paddingTop: 12 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-soft)', marginBottom: 6 }}>Втори проход — за останалите дубликати</div>
+              <div className="admin-actions">
+                <button className="admin-btn" type="button" disabled={loading === 'fd2-dry'}
+                  onClick={() => run('fd2-dry', () => api.delete('/admin/sync/players/footballdata-remaining?dryRun=true'))}>
+                  {loading === 'fd2-dry' ? 'Checking…' : '🔍 Preview втори проход'}
+                </button>
+              </div>
+              <div className="admin-actions" style={{ marginTop: 8 }}>
+                <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fd2-purge'}
+                  onClick={() => run('fd2-purge', () => api.delete('/admin/sync/players/footballdata-remaining?dryRun=false'))}>
+                  {loading === 'fd2-purge' ? 'Deleting…' : '🗑 Delete останалите (втори проход)'}
+                </button>
+              </div>
+            </div>
             <p className="admin-hint">Изтрива всички играчи от старото API (football-data.org) и пренасочва залозите/статистиките към съответния Sportmonks играч. Пусни Preview първо.</p>
           </AdminSection>
 
