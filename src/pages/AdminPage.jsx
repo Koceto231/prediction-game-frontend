@@ -196,6 +196,12 @@ export default function AdminPage() {
             </div>
             <p className="admin-hint">One-time fix: copies LeagueCode from team onto all matches that are missing it (~1587 old matches). Run once.</p>
             <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-statuses'}
+                onClick={() => run('fix-statuses', () => api.post('/admin/sync/matches/fix-statuses'))}>
+                {loading === 'fix-statuses' ? 'Fixing…' : '🔧 Fix Match Statuses'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn" type="button" disabled={loading === 'standings-check'}
                 onClick={() => run('standings-check', () => api.get('/admin/sync/debug/standings-check'))}>
                 {loading === 'standings-check' ? 'Checking…' : '🔍 Check Standings Data'}
