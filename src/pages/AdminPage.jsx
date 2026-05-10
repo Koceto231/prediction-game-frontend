@@ -90,6 +90,7 @@ export default function AdminPage() {
   const [gwAnchorDate, setGwAnchorDate] = useState(toDateInput(new Date()));
   const [gwNumber, setGwNumber]         = useState('');
   const [gwDeadline, setGwDeadline]     = useState('');
+  const [reResolveBetId, setReResolveBetId] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
@@ -327,6 +328,23 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Generate Missing — само статии без снимка. Regenerate All — презаписва всички (Stability AI → Cloudinary).</p>
+          </AdminSection>
+
+          {/* ── Re-resolve Bet ── */}
+          <AdminSection title="Re-resolve Bet">
+            <div className="admin-row">
+              <label className="admin-label">Bet ID</label>
+              <input className="admin-input" type="number" placeholder="e.g. 42"
+                value={reResolveBetId} onChange={e => setReResolveBetId(e.target.value)} />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button"
+                disabled={loading === 're-resolve' || !reResolveBetId}
+                onClick={() => run('re-resolve', () => api.post(`/admin/sync/bets/${reResolveBetId}/re-resolve`))}>
+                {loading === 're-resolve' ? 'Re-resolving…' : '🔄 Re-resolve Bet'}
+              </button>
+            </div>
+            <p className="admin-hint">Resets a wrongly-settled bet to Pending and re-scores it with the current final match score. Find the Bet ID in My Bets → History tab.</p>
           </AdminSection>
 
           {/* ── Score Predictions ── */}
