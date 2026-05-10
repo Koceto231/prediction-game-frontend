@@ -150,26 +150,33 @@ export default function AdminPage() {
           {/* ── Historical match import ── */}
           <AdminSection title="Import Match History (Sportmonks)">
             <div className="admin-row">
-              <label className="admin-label">League</label>
+              <label className="admin-label">Days back</label>
+              <input className="admin-input" value={histDaysBack}
+                onChange={e => setHistDaysBack(e.target.value)} placeholder="365" />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'history-all'}
+                onClick={() => run('history-all', () =>
+                  api.post(`/admin/sync/matches/history/all?daysBack=${histDaysBack}`))}>
+                {loading === 'history-all' ? 'Importing all…' : '🌍 Import ALL Leagues History'}
+              </button>
+            </div>
+            <div className="admin-row" style={{ marginTop: 8 }}>
+              <label className="admin-label">Single league</label>
               <select className="admin-input" value={histLeague} onChange={e => setHistLeague(e.target.value)}>
                 {SM_LEAGUES.map(l => (
                   <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>
                 ))}
               </select>
             </div>
-            <div className="admin-row">
-              <label className="admin-label">Days back</label>
-              <input className="admin-input" value={histDaysBack}
-                onChange={e => setHistDaysBack(e.target.value)} placeholder="365" />
-            </div>
             <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'history'}
+              <button className="admin-btn" type="button" disabled={loading === 'history'}
                 onClick={() => run('history', () =>
                   api.post(`/admin/sync/matches/history?leagueCode=${histLeague}&daysBack=${histDaysBack}`))}>
                 {loading === 'history' ? 'Importing…' : `Import ${histLeague} History`}
               </button>
             </div>
-            <p className="admin-hint">Вкарва свършените мачове за последните N дни. Пусни веднъж за коректни коефиценти.</p>
+            <p className="admin-hint">Imports finished matches for the past N days. Run once to populate standings. Runs in background — check logs.</p>
           </AdminSection>
 
           {/* ── Dedup matches ── */}
