@@ -294,10 +294,28 @@ export default function FantasyPage() {
           </div>
         )}
 
-        {/* Submitted / locked notice */}
-        {hasSubmitted && !teamData.isLocked && (
-          <div className="alert alert-success" style={{ marginBottom: 12 }}>
-            ✅ Отборът е субмитнат за GW{teamData.gameWeek}. Редактирането е заключено до края на gameweek-а.
+        {/* Next GW info — shown when squad is submitted or deadline passed */}
+        {(hasSubmitted || deadlinePassed) && gameweek.endDate && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 16px', marginBottom: 12, borderRadius: 6,
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            fontSize: '0.80rem', color: 'var(--text-muted)',
+          }}>
+            <span style={{ fontSize: '1rem' }}>🕐</span>
+            <span>
+              Следващ GW отваря след:{' '}
+              <strong style={{ color: 'var(--text-main)' }}>
+                {new Date(gameweek.endDate).toLocaleDateString('bg-BG', {
+                  weekday: 'long', day: 'numeric', month: 'long',
+                })}
+                {' '}·{' '}
+                {new Date(gameweek.endDate).toLocaleTimeString('bg-BG', {
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              </strong>
+            </span>
           </div>
         )}
 
