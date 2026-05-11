@@ -6580,7 +6580,7 @@ select:focus {
   .navbar {
     flex-wrap: nowrap !important;
     min-height: 48px !important;
-    overflow: hidden;
+    overflow: visible; /* must be visible so the avatar dropdown isn't clipped */
   }
   .nav-links {
     flex-wrap: nowrap !important;
@@ -6789,13 +6789,13 @@ select:focus {
   }
   .match-card__col {
     padding: 10px 10px;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
   }
   .match-card__col--odds {
     padding: 8px 6px;
   }
-  .match-card__odds-val { font-size: 0.88rem; }
-  .match-card__odds-lbl { font-size: 0.56rem; }
+  .match-card__odds-val { font-size: 0.95rem; }
+  .match-card__odds-lbl { font-size: 0.60rem; }
 }
 
 @media (max-width: 560px) {
@@ -6805,12 +6805,12 @@ select:focus {
   }
   .match-card__col {
     padding: 9px 8px;
-    font-size: 0.78rem;
+    font-size: 0.88rem;
   }
   .match-card__col--odds {
     padding: 7px 4px;
   }
-  .match-card__odds-val { font-size: 0.82rem; }
+  .match-card__odds-val { font-size: 0.90rem; }
   .match-card__league-tag { display: none; }
 }
 
@@ -6821,7 +6821,7 @@ select:focus {
   }
   .match-card__col {
     padding: 8px 6px;
-    font-size: 0.74rem;
+    font-size: 0.84rem;
   }
   .match-card__col--fixture {
     gap: 4px;
@@ -6829,6 +6829,6 @@ select:focus {
   .match-card__col--odds {
     padding: 6px 2px;
   }
-  .match-card__odds-val { font-size: 0.78rem; }
-  .match-card__vs-sep { font-size: 0.62rem; }
+  .match-card__odds-val { font-size: 0.84rem; }
+  .match-card__vs-sep { font-size: 0.65rem; }
 }
