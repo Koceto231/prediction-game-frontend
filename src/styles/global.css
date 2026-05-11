@@ -6501,7 +6501,7 @@ select:focus {
 }
 
 .result-card__scorer {
-  font-size: 0.70rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
