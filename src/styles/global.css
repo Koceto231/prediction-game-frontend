@@ -6751,8 +6751,8 @@ select:focus {
   .page-grid { padding: 8px; gap: 8px; }
   .shell-card.panel { padding: 14px; border-radius: 10px; }
 
-  /* Brand: smaller */
-  .brand { font-size: 11px; letter-spacing: 0.08em; }
+  /* Brand: mobile size */
+  .brand { font-size: 26px; letter-spacing: 0.08em; }
   .brand-link { padding: 0 12px; }
 
   /* Navbar right: compact */
@@ -6851,7 +6851,7 @@ select:focus {
 @media (max-width: 380px) {
   .page-grid { padding: 6px; }
 
-  .brand { font-size: 10px; }
+  .brand { font-size: 26px; }
   .brand-link { padding: 0 8px; }
 
   .match-card { padding: 10px 12px; }
