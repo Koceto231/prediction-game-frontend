@@ -187,6 +187,16 @@ export default function MatchesPage() {
   const aiCache   = useRef({});   // matchId → AIPredictionResponseDTO
   const setField  = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
+  // Scroll to bet/AI panel whenever a match is selected
+  useEffect(() => {
+    if (!selectedMatch) return;
+    // Small delay so React has time to render the panel before we scroll to it
+    const t = setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [selectedMatch?.id]);
+
   // Load AI analysis when a match is selected — uses cache
   useEffect(() => {
     if (!selectedMatch) return;
@@ -506,7 +516,7 @@ export default function MatchesPage() {
             <MatchCard key={match.id} match={match} selected={selectedMatch?.id === match.id}
               onSelect={() => {
                 if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
-                else { setSelectedMatch(match); resetPanel(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                else { setSelectedMatch(match); resetPanel(); }
               }} />
           ))}
         </div>
@@ -514,7 +524,7 @@ export default function MatchesPage() {
 
       {/* Bet + prediction panel */}
       {selectedMatch && (
-        <section className="shell-card panel" ref={panelRef}>
+        <section className="shell-card panel" ref={panelRef} style={{ scrollMarginTop: 64 }}>
 
           {/* Match hero */}
           <div className="match-hero">

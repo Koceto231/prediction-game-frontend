@@ -6590,6 +6590,16 @@ select:focus {
   /* Match card team names */
   .match-card__team-name { font-size: 15px; }
 
+  /* Match card: center the fixture and time columns */
+  .match-card__col--time {
+    align-items: center;
+    text-align: center;
+  }
+  .match-card__col--fixture {
+    justify-content: center;
+    text-align: center;
+  }
+
   /* Match card odds: smaller padding */
   .odds-chip { padding: 6px 4px; }
   .odds-chip__value { font-size: 14px; }
