@@ -5971,6 +5971,7 @@ select:focus {
 
 .odds-ticker__track {
   flex: 1;
+  min-width: 0; /* must shrink inside the flex row without the global rule */
   overflow: hidden;
   position: relative;
   height: 100%;
@@ -6526,7 +6527,8 @@ select:focus {
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Base: ensure nothing overflows ──────────────────────────── */
-* { min-width: 0; }
+/* NOTE: Do NOT apply min-width:0 globally — it breaks the OddsTicker flex animation.
+   Apply it only where needed (flex/grid children that need text-overflow). */
 
 /* ── 960px — tablets ─────────────────────────────────────────── */
 @media (max-width: 960px) {
@@ -6550,6 +6552,10 @@ select:focus {
 
 /* ── 768px — large phones / small tablets ────────────────────── */
 @media (max-width: 768px) {
+  /* Hide odds ticker on phones — too narrow to be useful */
+  .odds-ticker { display: none !important; }
+  body { padding-bottom: 0 !important; }
+
   /* Navbar: fix wrapping — keep ONE horizontal scrollable row */
   .navbar {
     flex-wrap: nowrap !important;
