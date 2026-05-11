@@ -6681,6 +6681,13 @@ select:focus {
   .section-head h2 { font-size: 1.15rem; }
 }
 
+@media (max-width: 640px) {
+  .brand {
+    font-size: 26px;
+    letter-spacing: .08em;
+  }
+}
+
 /* ── Quick bet panel — mobile fixes ─────────────────────────── */
 @media (max-width: 640px) {
   /* 3 pick buttons: remove hard min-width, allow label to wrap */
