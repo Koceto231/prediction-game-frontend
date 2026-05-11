@@ -6653,6 +6653,46 @@ select:focus {
   .section-head h2 { font-size: 1.15rem; }
 }
 
+/* ── Quick bet panel — mobile fixes ─────────────────────────── */
+@media (max-width: 640px) {
+  /* 3 pick buttons: remove hard min-width, allow label to wrap */
+  .bet-pick-btn {
+    min-width: 0;
+    padding: 10px 6px;
+  }
+  .bet-pick-btn__label {
+    white-space: normal;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .bet-pick-btn__odds {
+    font-size: 1.05rem;
+  }
+
+  /* Stake row: stack input + quick-adds on very narrow screens */
+  .bet-slip__stake-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 10px;
+  }
+  .bet-slip__stake-wrap {
+    flex: 1 1 100%;   /* input takes full width */
+    min-width: 0;
+  }
+  .bet-slip__quick-adds {
+    flex-shrink: 1;   /* was 0 — allow buttons to shrink */
+    gap: 4px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bet-slip__quick-add {
+    flex: 1;
+    padding: 7px 6px;
+    font-size: 0.82rem;
+  }
+}
+
 /* ── 640px — phones ──────────────────────────────────────────── */
 @media (max-width: 640px) {
   /* Page layout */
