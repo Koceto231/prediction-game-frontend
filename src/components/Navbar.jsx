@@ -36,7 +36,7 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <Link to="/matches" className="brand-link">
-        <div className="brand">PRED.TERMINAL</div>
+        <div className="brand">BETWIN</div>
       </Link>
 
       <nav className="nav-links">
