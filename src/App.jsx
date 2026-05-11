@@ -47,7 +47,7 @@ function AppLayout() {
       <div className="pitch-overlay" />
       <Navbar />
       <div className="container">
-        <main className="main-content" style={{ marginTop: 20 }}>
+        <main className="main-content" style={{ marginTop: 0 }}>
           <Routes>
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
