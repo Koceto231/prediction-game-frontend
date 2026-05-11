@@ -467,6 +467,12 @@ export default function AdminPage() {
                 {loading === 'goals-bulk-365' ? 'Starting…' : '⚽ Sync Goals — целият сезон'}
               </button>
             </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'goals-force'}
+                onClick={() => run('goals-force', () => api.post('/admin/sync/matches/sync-goals-bulk?daysBack=365&force=true'))}>
+                {loading === 'goals-force' ? 'Starting…' : '🔄 Force Re-sync Goals — презапиши всички'}
+              </button>
+            </div>
             <p className="admin-hint">Пише голмайсторите (GoalsJson) за всички завършени мачове без тях. Работи в background — може да отнеме няколко минути.</p>
           </AdminSection>
 
