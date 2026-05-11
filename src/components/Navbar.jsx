@@ -57,13 +57,9 @@ export default function Navbar() {
       {/* ── Top bar ── */}
       <header className="navbar">
 
-        {/* Brand — on mobile: centered, balance shown below */}
+        {/* Brand */}
         <Link to="/matches" className="brand-link">
           <div className="brand">BETWIN</div>
-          {/* Mobile-only balance under BETWIN */}
-          {balance !== null && (
-            <div className="brand-balance">€ {Number(balance).toLocaleString()}</div>
-          )}
         </Link>
 
         {/* Desktop nav — hidden on mobile via CSS */}
@@ -113,6 +109,13 @@ export default function Navbar() {
           </div>
         </div>
       </header>
+
+      {/* ── Mobile balance bar — shown below the navbar border on mobile ── */}
+      {balance !== null && (
+        <div className="mobile-balance-bar">
+          € {Number(balance).toLocaleString()}
+        </div>
+      )}
 
       {/* ── Bottom tab bar (mobile only — shown via CSS) ── */}
       <nav className="bottom-tab-bar" aria-label="Main navigation">

@@ -4346,8 +4346,8 @@ select:focus {
 
 .brand-subtitle { display: none; }
 
-/* Mobile-only balance line under BETWIN — hidden on desktop */
-.brand-balance {
+/* Mobile-only balance bar — hidden on desktop */
+.mobile-balance-bar {
   display: none;
 }
 
@@ -6585,28 +6585,16 @@ select:focus {
   /* Navbar: centered brand on mobile */
   .navbar {
     flex-wrap: nowrap !important;
-    min-height: 56px !important;
-    height: 56px !important;
+    min-height: 48px !important;
+    height: 48px !important;
     overflow: visible;
     justify-content: center;
   }
-  /* Brand-link: centered column with balance below */
+  /* Brand-link: centered, takes full width */
   .brand-link {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    border-right: none;
-    padding: 6px 16px;
     flex: 1;
-  }
-  /* Show balance under BETWIN on mobile */
-  .brand-balance {
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: rgba(240, 197, 25, 0.7);
+    justify-content: center;
+    border-right: none;
   }
   /* Hide the top nav-links on mobile — replaced by bottom tab bar */
   .nav-links {
@@ -6615,6 +6603,22 @@ select:focus {
   /* Hide desktop right side (wallet + avatar) on mobile — account is in More */
   .navbar-right {
     display: none !important;
+  }
+  /* Balance bar: sits right below the navbar border */
+  .mobile-balance-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 48px;
+    z-index: 99;
+    height: 28px;
+    background: #0a0a0a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(240, 197, 25, 0.75);
   }
 
   /* Bets summary: 3 → 2 cols */
