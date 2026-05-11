@@ -48,6 +48,10 @@ body,
   margin: 0;
 }
 
+html {
+  overflow-x: hidden; /* prevent horizontal scroll from any overflowing grid/flex child */
+}
+
 body {
   color: var(--text-main);
   background: var(--bg-page);
@@ -510,6 +514,12 @@ select:focus {
   color: var(--text-soft);
   border-bottom: 1px solid var(--border-accent);
   background: rgba(240, 197, 25, 0.04);
+  min-width: 0;
+}
+
+.matches-table-head > * {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .match-card {
@@ -6126,6 +6136,8 @@ select:focus {
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  min-width: 0; /* allow grid children to shrink below content size */
+  overflow: hidden;
 }
 
 .match-card__col--time {
@@ -6139,6 +6151,15 @@ select:focus {
 .match-card__col--fixture {
   gap: 8px;
   font-weight: 600;
+  /* team names must be able to truncate / wrap on small screens */
+  overflow: hidden;
+}
+
+.match-card__col--fixture span:not(.match-card__vs-sep):not(.match-card__league-tag) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .match-card__col--score {
@@ -6598,6 +6619,14 @@ select:focus {
   .match-card__col--fixture {
     justify-content: center;
     text-align: center;
+    flex-wrap: wrap;      /* allow home / vs / away to wrap on tiny screens */
+    gap: 4px;
+  }
+  /* On mobile: wrap team names instead of truncating with ellipsis */
+  .match-card__col--fixture span:not(.match-card__vs-sep):not(.match-card__league-tag) {
+    white-space: normal;
+    text-overflow: clip;
+    overflow: visible;
   }
 
   /* Match card odds: smaller padding */
