@@ -115,12 +115,11 @@ export default function ProfilePage() {
           <span className="wallet-icon-big">€</span>
           <div>
             <h3>Demo Wallet</h3>
-            <p className="profile-muted-text">Use coins to place bets on matches</p>
           </div>
         </div>
         <div className="profile-wallet-right">
           <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} coins</span>
-          <button className="primary-button" disabled={topping}
+          <button className="primary-button" disabled={topping || (balance !== null && Number(balance) > 0)}
             onClick={async () => {
               setTopping(true); setTopUpMsg('');
               try {
