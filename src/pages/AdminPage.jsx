@@ -476,6 +476,23 @@ export default function AdminPage() {
             <p className="admin-hint">Пише голмайсторите (GoalsJson) за всички завършени мачове без тях. Работи в background — може да отнеме няколко минути.</p>
           </AdminSection>
 
+          {/* ── Cleanup phantom matches ── */}
+          <AdminSection title="🧹 Почисти фантомни мачове (грешна лига)">
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'phantom-dry'}
+                onClick={() => run('phantom-dry', () => api.delete('/admin/sync/matches/cleanup-phantom?dryRun=true'))}>
+                {loading === 'phantom-dry' ? 'Checking…' : '🔍 Preview — покажи фантомните мачове'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'phantom-delete'}
+                onClick={() => run('phantom-delete', () => api.delete('/admin/sync/matches/cleanup-phantom?dryRun=false'))}>
+                {loading === 'phantom-delete' ? 'Deleting…' : '🗑️ Изтрий фантомните мачове'}
+              </button>
+            </div>
+            <p className="admin-hint">Изтрива мачове където двата отбора са от различни лиги (Conference League и т.н.). Само мачове без залози/прогнози се изтриват. Preview първо!</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
