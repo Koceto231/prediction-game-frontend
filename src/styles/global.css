@@ -6486,12 +6486,34 @@ select:focus {
 }
 
 .result-card__goals {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.result-card__goals-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+/* Home scorers — left column, left-aligned */
+.result-card__goals-home {
+  text-align: left;
+}
+.result-card__goals-home .result-card__scorers {
+  align-items: flex-start;
+}
+
+/* Away scorers — right column, right-aligned */
+.result-card__goals-away {
+  text-align: right;
+}
+.result-card__goals-away .result-card__scorers {
+  align-items: flex-end;
 }
 
 .result-card__scorers {
@@ -6511,16 +6533,6 @@ select:focus {
 .result-card__scorer-min {
   color: var(--accent);
   font-size: 0.65rem;
-}
-
-/* home scorers right-aligned, away left */
-.result-card__goals > .result-card__scorers:first-child {
-  text-align: right;
-  align-items: flex-end;
-}
-.result-card__goals > .result-card__scorers:last-child {
-  text-align: left;
-  align-items: flex-start;
 }
 
 

@@ -138,14 +138,18 @@ export default function ResultsPage() {
                   {/* Goal scorers — shown on expand */}
                   {expanded && (
                     <div className="result-card__goals">
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-soft)', opacity: 0.5, marginBottom: 4 }}>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-soft)', opacity: 0.5, marginBottom: 6 }}>
                         Match ID: {m.id}
                       </div>
                       {goals.length > 0 ? (
-                        <>
-                          <GoalList goals={goals} team="home" />
-                          <GoalList goals={goals} team="away" />
-                        </>
+                        <div className="result-card__goals-row">
+                          <div className="result-card__goals-home">
+                            <GoalList goals={goals} team="home" />
+                          </div>
+                          <div className="result-card__goals-away">
+                            <GoalList goals={goals} team="away" />
+                          </div>
+                        </div>
                       ) : (
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-soft)', textAlign: 'center', padding: '6px 0' }}>
                           No goal scorers recorded for this match.
