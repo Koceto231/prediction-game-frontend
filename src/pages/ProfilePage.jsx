@@ -119,8 +119,13 @@ export default function ProfilePage() {
         </div>
         <div className="profile-wallet-right">
           <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} coins</span>
-          <button className="primary-button" disabled={topping || (balance !== null && Number(balance) > 0)}
+          <button className="primary-button"
+            disabled={topping}
             onClick={async () => {
+              if (balance !== null && Number(balance) > 0) {
+                setTopUpMsg('You can only top up when your balance reaches 0.');
+                return;
+              }
               setTopping(true); setTopUpMsg('');
               try {
                 const res = await api.post('/Wallet/topup');
