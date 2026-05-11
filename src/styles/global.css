@@ -6599,7 +6599,7 @@ select:focus {
   /* BETWIN bigger on mobile */
   .brand {
     font-size: 24px;
-    letter-spacing: 0.14em;
+    letter-spacing: .08em;
   }
   /* Hide the top nav-links on mobile — replaced by bottom tab bar */
   .nav-links {
@@ -6620,7 +6620,7 @@ select:focus {
     height: 22px;
     background: #0a0a0a;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    font-size: 0.70rem;
+    font-size: .8rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: rgba(240, 197, 25, 0.75);
