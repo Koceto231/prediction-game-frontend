@@ -4346,6 +4346,11 @@ select:focus {
 
 .brand-subtitle { display: none; }
 
+/* Mobile-only balance line under BETWIN — hidden on desktop */
+.brand-balance {
+  display: none;
+}
+
 .nav-links {
   display: flex;
   flex: 1;
@@ -6577,14 +6582,38 @@ select:focus {
   /* Body padding-bottom for bottom tab bar (64px bar height) */
   body { padding-bottom: 64px !important; }
 
-  /* Navbar: keep ONE horizontal row, NO nav-links on mobile */
+  /* Navbar: centered brand on mobile */
   .navbar {
     flex-wrap: nowrap !important;
-    min-height: 48px !important;
-    overflow: visible; /* must be visible so the avatar dropdown isn't clipped */
+    min-height: 56px !important;
+    height: 56px !important;
+    overflow: visible;
+    justify-content: center;
+  }
+  /* Brand-link: centered column with balance below */
+  .brand-link {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    border-right: none;
+    padding: 6px 16px;
+    flex: 1;
+  }
+  /* Show balance under BETWIN on mobile */
+  .brand-balance {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgba(240, 197, 25, 0.7);
   }
   /* Hide the top nav-links on mobile — replaced by bottom tab bar */
   .nav-links {
+    display: none !important;
+  }
+  /* Hide desktop right side (wallet + avatar) on mobile — account is in More */
+  .navbar-right {
     display: none !important;
   }
 
@@ -7000,5 +7029,18 @@ select:focus {
     text-align: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+  }
+
+  .bottom-more-item--danger {
+    color: rgba(255, 100, 100, 0.85);
+  }
+  .bottom-more-item--danger:active {
+    background: rgba(255, 80, 80, 0.06);
+  }
+
+  .bottom-more-sheet__divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 6px 0;
   }
 }

@@ -11,10 +11,10 @@ const PRIMARY_TABS = [
 ];
 
 const MORE_ITEMS = [
-  { to: '/leagues',    icon: '🌍', label: 'Leagues'   },
-  { to: '/standings',  icon: '📊', label: 'Standings' },
-  { to: '/results',    icon: '✅', label: 'Results'   },
-  { to: '/news',       icon: '📰', label: 'News'      },
+  { to: '/leagues',   icon: '🌍', label: 'Leagues'   },
+  { to: '/standings', icon: '📊', label: 'Standings' },
+  { to: '/results',   icon: '✅', label: 'Results'   },
+  { to: '/news',      icon: '📰', label: 'News'      },
 ];
 
 export default function Navbar() {
@@ -23,8 +23,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [menuOpen,    setMenuOpen]    = useState(false);
-  const [moreOpen,    setMoreOpen]    = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const menuRef = useRef(null);
 
   const username = user?.username ?? '';
@@ -44,19 +44,26 @@ export default function Navbar() {
   // Close more-sheet on route change
   useEffect(() => { setMoreOpen(false); }, [location.pathname]);
 
-  const handleProfile = () => { setMenuOpen(false); navigate('/profile'); };
-  const handleLogout  = () => { setMenuOpen(false); logout(); };
+  const handleProfile = () => { setMenuOpen(false); setMoreOpen(false); navigate('/profile'); };
+  const handleLogout  = () => { setMenuOpen(false); setMoreOpen(false); logout(); };
 
   // Is current path in the "More" group?
   const moreActive = MORE_ITEMS.some(i => location.pathname.startsWith(i.to))
+    || location.pathname.startsWith('/profile')
     || (isAdmin && location.pathname.startsWith('/admin'));
 
   return (
     <>
       {/* ── Top bar ── */}
       <header className="navbar">
+
+        {/* Brand — on mobile: centered, balance shown below */}
         <Link to="/matches" className="brand-link">
           <div className="brand">BETWIN</div>
+          {/* Mobile-only balance under BETWIN */}
+          {balance !== null && (
+            <div className="brand-balance">€ {Number(balance).toLocaleString()}</div>
+          )}
         </Link>
 
         {/* Desktop nav — hidden on mobile via CSS */}
@@ -72,6 +79,7 @@ export default function Navbar() {
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 
+        {/* Desktop right side — hidden on mobile */}
         <div className="navbar-right">
           {balance !== null && (
             <div className="wallet-badge">
@@ -171,6 +179,28 @@ export default function Navbar() {
                 Admin
               </NavLink>
             )}
+
+            {/* Account section */}
+            <div className="bottom-more-sheet__divider" />
+            <div className="bottom-more-sheet__title">Account</div>
+
+            <button
+              type="button"
+              className="bottom-more-item"
+              onClick={handleProfile}
+            >
+              <span className="bottom-more-item__icon">👤</span>
+              Profile
+            </button>
+
+            <button
+              type="button"
+              className="bottom-more-item bottom-more-item--danger"
+              onClick={handleLogout}
+            >
+              <span className="bottom-more-item__icon">🚪</span>
+              Logout
+            </button>
           </div>
         </div>
       )}
