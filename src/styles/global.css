@@ -6731,3 +6731,60 @@ select:focus {
   .bet-card { padding: 10px 12px; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   MATCH CARD TABLE — responsive column widths
+   Default: 90px 1fr 90px 90px 90px (total fixed = 360px)
+   On phones this leaves almost no room for the fixture column.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .match-card,
+  .matches-table-head {
+    grid-template-columns: 72px 1fr 66px 66px 66px;
+  }
+  .match-card__col {
+    padding: 10px 10px;
+    font-size: 0.82rem;
+  }
+  .match-card__col--odds {
+    padding: 8px 6px;
+  }
+  .match-card__odds-val { font-size: 0.88rem; }
+  .match-card__odds-lbl { font-size: 0.56rem; }
+}
+
+@media (max-width: 560px) {
+  .match-card,
+  .matches-table-head {
+    grid-template-columns: 60px 1fr 58px 58px 58px;
+  }
+  .match-card__col {
+    padding: 9px 8px;
+    font-size: 0.78rem;
+  }
+  .match-card__col--odds {
+    padding: 7px 4px;
+  }
+  .match-card__odds-val { font-size: 0.82rem; }
+  .match-card__league-tag { display: none; }
+}
+
+@media (max-width: 420px) {
+  .match-card,
+  .matches-table-head {
+    grid-template-columns: 54px 1fr 52px 52px 52px;
+  }
+  .match-card__col {
+    padding: 8px 6px;
+    font-size: 0.74rem;
+  }
+  .match-card__col--fixture {
+    gap: 4px;
+  }
+  .match-card__col--odds {
+    padding: 6px 2px;
+  }
+  .match-card__odds-val { font-size: 0.78rem; }
+  .match-card__vs-sep { font-size: 0.62rem; }
+}
