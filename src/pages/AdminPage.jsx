@@ -453,6 +453,23 @@ export default function AdminPage() {
             <p className="admin-hint">Синква голмайсторите от Sportmonks за всички приключили мачове. Работи в background — провери Results страницата след ~2 мин.</p>
           </AdminSection>
 
+          {/* ── GoalsJson bulk sync ── */}
+          <AdminSection title="⚽ Sync Голмайстори в Results (всички мачове)">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'goals-bulk-30'}
+                onClick={() => run('goals-bulk-30', () => api.post('/admin/sync/matches/sync-goals-bulk?daysBack=30'))}>
+                {loading === 'goals-bulk-30' ? 'Starting…' : '⚽ Sync Goals — последните 30 дни'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'goals-bulk-365'}
+                onClick={() => run('goals-bulk-365', () => api.post('/admin/sync/matches/sync-goals-bulk?daysBack=365'))}>
+                {loading === 'goals-bulk-365' ? 'Starting…' : '⚽ Sync Goals — целият сезон'}
+              </button>
+            </div>
+            <p className="admin-hint">Пише голмайсторите (GoalsJson) за всички завършени мачове без тях. Работи в background — може да отнеме няколко минути.</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
