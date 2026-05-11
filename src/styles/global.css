@@ -4425,24 +4425,7 @@ select:focus {
   }
 }
 
-@media (max-width: 640px) {
-  .navbar {
-    flex-wrap: wrap;
-    min-height: auto;
-  }
-
-  .nav-links {
-    flex-wrap: wrap;
-    order: 3;
-    width: 100%;
-    border-top: 1px solid var(--border-accent);
-  }
-
-  .nav-links a {
-    padding: 10px 14px;
-    font-size: 0.72rem;
-  }
-}
+/* navbar mobile wrapping removed — handled by responsive section at end of file */
 
 /* ── 4. MATCH CARD — terminal table-row layout ─────────────── */
 /* (match-card base is defined in the MATCHES section above) */
@@ -6535,4 +6518,216 @@ select:focus {
   font-size: 0.65rem;
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN — comprehensive mobile overrides
+   Breakpoints: 960 / 768 / 640 / 480 / 380
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base: ensure nothing overflows ──────────────────────────── */
+* { min-width: 0; }
+
+/* ── 960px — tablets ─────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .page-grid { padding: 12px; gap: 12px; }
+
+  /* Bet panel float → inline below match card */
+  .bet-panel {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 16px;
+    border-radius: 14px;
+  }
+
+  /* Quick bet panel */
+  .quick-bet-panel {
+    position: static;
+    width: 100%;
+  }
+}
+
+/* ── 768px — large phones / small tablets ────────────────────── */
+@media (max-width: 768px) {
+  /* Navbar: fix wrapping — keep ONE horizontal scrollable row */
+  .navbar {
+    flex-wrap: nowrap !important;
+    min-height: 48px !important;
+    overflow: hidden;
+  }
+  .nav-links {
+    flex-wrap: nowrap !important;
+    order: 0 !important;
+    width: auto !important;
+    border-top: none !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a {
+    padding: 0 12px !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap;
+  }
+
+  /* Bets summary: 3 → 2 cols */
+  .bets-summary { grid-template-columns: repeat(2, 1fr); }
+
+  /* Bet card padding */
+  .bet-card { padding: 14px 16px; }
+
+  /* Bet card details: wrap tighter */
+  .bet-card__details { gap: 12px; font-size: 0.84rem; }
+
+  /* Match card team names */
+  .match-card__team-name { font-size: 15px; }
+
+  /* Match card odds: smaller padding */
+  .odds-chip { padding: 6px 4px; }
+  .odds-chip__value { font-size: 14px; }
+
+  /* Result card: allow longer team names */
+  .result-card__name { max-width: 120px; font-size: 0.84rem; }
+
+  /* Profile stats: 2 cols */
+  .profile-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Fantasy toggle: compact */
+  .fantasy-view-btn { padding: 8px 14px; font-size: 0.74rem; }
+
+  /* Leaderboard: hide points column on small */
+  .leaderboard-head { display: none; }
+
+  /* Section head: stack */
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .section-head h2 { font-size: 1.15rem; }
+}
+
+/* ── 640px — phones ──────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Page layout */
+  .page-grid { padding: 8px; gap: 8px; }
+  .shell-card.panel { padding: 14px; border-radius: 10px; }
+
+  /* Brand: smaller */
+  .brand { font-size: 11px; letter-spacing: 0.08em; }
+  .brand-link { padding: 0 12px; }
+
+  /* Navbar right: compact */
+  .navbar-right { padding-left: 8px; gap: 6px; }
+
+  /* Bets summary: 1 col */
+  .bets-summary { grid-template-columns: 1fr; gap: 8px; }
+
+  /* Bet card: tighter */
+  .bet-card { padding: 12px 14px; }
+  .bet-card__header { gap: 8px; }
+  .bet-card__fixture { font-size: 0.88rem; }
+  .bet-card__details { flex-direction: column; gap: 6px; font-size: 0.84rem; }
+  .bet-card__leg { flex-wrap: wrap; gap: 6px; }
+
+  /* Match card */
+  .match-card { padding: 12px 14px; }
+  .match-card__team-name { font-size: 14px; }
+  .match-card__vs-row { gap: 6px; margin: 10px 0; }
+  .match-card__vs { width: 28px; height: 28px; font-size: 9px; }
+  .match-card__odds { gap: 4px; }
+  .odds-chip { padding: 5px 3px; border-radius: 8px; }
+  .odds-chip__value { font-size: 13px; }
+  .odds-chip__label { font-size: 9px; }
+
+  /* Result card */
+  .result-card { padding: 10px 12px; }
+  .result-card__name { max-width: 100px; font-size: 0.80rem; }
+  .result-card__score { font-size: 1.1rem; min-width: 54px; }
+  .result-card__scorer { font-size: 0.76rem; }
+
+  /* Profile */
+  .profile-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .profile-stat-card { padding: 12px 14px; }
+  .profile-header-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .profile-avatar-big { width: 64px; height: 64px; font-size: 1.5rem; }
+
+  /* Leaderboard rows: compact */
+  .leaderboard-row { padding: 10px 12px; gap: 8px; }
+  .leaderboard-rank { width: 32px; height: 32px; font-size: 14px; }
+
+  /* Fantasy: single column */
+  .fantasy-squad-grid,
+  .fantasy-pick-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  /* Auth cards: full width */
+  .auth-card { max-width: 100%; padding: 18px; }
+
+  /* Pick chips: 2 per row */
+  .pick-row { flex-wrap: wrap; gap: 6px; }
+  .pick-chip { flex: 1 1 calc(50% - 6px); min-width: 0; text-align: center; }
+
+  /* Inputs: comfortable tap target */
+  input, select, textarea {
+    padding: 11px 12px;
+    font-size: 16px; /* prevents iOS zoom */
+    border-radius: 10px;
+  }
+  button { min-height: 40px; }
+
+  /* Wallet balance badge: smaller */
+  .wallet-badge { font-size: 0.74rem; padding: 4px 10px; }
+}
+
+/* ── 480px — small phones ────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Team names: allow wrapping */
+  .match-card__team-name { font-size: 13px; white-space: normal; line-height: 1.2; }
+  .result-card__name { max-width: 85px; font-size: 0.76rem; }
+
+  /* Odds: even tighter */
+  .odds-chip__value { font-size: 12px; }
+
+  /* Nav links: even smaller text */
+  .nav-links a { padding: 0 10px !important; font-size: 0.68rem !important; }
+
+  /* Section title */
+  .section-head h2 { font-size: 1rem; }
+
+  /* Bet card header: stack fixture + status */
+  .bet-card__header { flex-wrap: wrap; }
+
+  /* Profile stats: still 2 cols but smaller */
+  .profile-stat-card span { font-size: 0.74rem; }
+  .profile-stat-card strong { font-size: 1.2rem; }
+
+  /* Admin page: full-width buttons */
+  .admin-actions { flex-direction: column !important; }
+  .admin-btn { width: 100%; text-align: center; }
+}
+
+/* ── 380px — very small phones ───────────────────────────────── */
+@media (max-width: 380px) {
+  .page-grid { padding: 6px; }
+
+  .brand { font-size: 10px; }
+  .brand-link { padding: 0 8px; }
+
+  .match-card { padding: 10px 12px; }
+  .match-card__team-name { font-size: 12px; }
+
+  .result-card__name { max-width: 72px; font-size: 0.72rem; }
+  .result-card__score { font-size: 1rem; min-width: 48px; }
+
+  /* Profile stats: stack to 1 col on tiny screens */
+  .profile-stats-grid { grid-template-columns: 1fr !important; }
+
+  /* Bet card: ultra compact */
+  .bet-card { padding: 10px 12px; }
+}
 
