@@ -6585,8 +6585,8 @@ select:focus {
   /* Navbar: centered brand on mobile */
   .navbar {
     flex-wrap: nowrap !important;
-    min-height: 48px !important;
-    height: 48px !important;
+    min-height: 42px !important;
+    height: 42px !important;
     overflow: visible;
     justify-content: center;
   }
@@ -6595,6 +6595,11 @@ select:focus {
     flex: 1;
     justify-content: center;
     border-right: none;
+  }
+  /* BETWIN bigger on mobile */
+  .brand {
+    font-size: 24px;
+    letter-spacing: 0.14em;
   }
   /* Hide the top nav-links on mobile — replaced by bottom tab bar */
   .nav-links {
@@ -6610,12 +6615,12 @@ select:focus {
     align-items: center;
     justify-content: center;
     position: sticky;
-    top: 48px;
+    top: 42px;
     z-index: 99;
-    height: 28px;
+    height: 22px;
     background: #0a0a0a;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    font-size: 0.72rem;
+    font-size: 0.70rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: rgba(240, 197, 25, 0.75);
