@@ -21,9 +21,9 @@ const BET_TYPE_LABELS = {
 };
 
 export default function BetsPage() {
-  const [bets, setBets]           = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  const [bets, setBets]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
@@ -33,12 +33,7 @@ export default function BetsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const [tab, setTab] = useState('pending');
-
-  const pendingBets  = bets.filter(b => b.status === 'Pending');
-  const settledBets  = bets.filter(b => b.status !== 'Pending');
-  const displayBets  = tab === 'pending' ? pendingBets : settledBets;
-
+  const pendingBets    = bets.filter(b => b.status === 'Pending');
   const totalStaked    = pendingBets.reduce((s, b) => s + b.amount, 0);
   const totalPotential = pendingBets.reduce((s, b) => s + (b.potentialPayout ?? 0), 0);
 
@@ -58,23 +53,9 @@ export default function BetsPage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="fantasy-view-toggle" style={{ marginBottom: 16 }}>
-          <button type="button"
-            className={`fantasy-view-btn${tab === 'pending' ? ' fantasy-view-btn--active' : ''}`}
-            onClick={() => setTab('pending')}>
-            ⏳ Active ({pendingBets.length})
-          </button>
-          <button type="button"
-            className={`fantasy-view-btn${tab === 'history' ? ' fantasy-view-btn--active' : ''}`}
-            onClick={() => setTab('history')}>
-            📋 History ({settledBets.length})
-          </button>
-        </div>
-
         {error && <div className="alert alert-error">{error}</div>}
 
-        {tab === 'pending' && pendingBets.length > 0 && (
+        {pendingBets.length > 0 && (
           <div className="bets-summary">
             <div className="shell-card profile-stat-card">
               <span>Active Bets</span>
@@ -91,15 +72,12 @@ export default function BetsPage() {
           </div>
         )}
 
-        {tab === 'pending' && pendingBets.length === 0 && !error && (
+        {pendingBets.length === 0 && !error && (
           <div className="empty-box">No active bets. Head to Matches to place your first bet!</div>
-        )}
-        {tab === 'history' && settledBets.length === 0 && !error && (
-          <div className="empty-box">No settled bets yet.</div>
         )}
 
         <div className="bets-list">
-          {displayBets.map(bet => {
+          {pendingBets.map(bet => {
             const typeLabel  = BET_TYPE_LABELS[bet.betType] ?? bet.betType;
             const maxPts     = bet.maxPoints ?? 0;
             const isAccum    = bet.betType === 'Accumulator';
@@ -136,15 +114,7 @@ export default function BetsPage() {
                   <div className="bet-card__pick">Pick: <strong>{bet.betDescription}</strong></div>
                   <div>Odds: <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
                   <div>Stake: <strong>{Number(bet.amount).toLocaleString()} €</strong></div>
-                  {bet.status === 'Pending'
-                    ? <div>Potential: <strong>{Number(bet.potentialPayout).toFixed(2)} €</strong></div>
-                    : <div>Payout: <strong style={{ color: bet.status === 'Won' ? 'var(--accent)' : 'var(--text-muted)' }}>
-                        {bet.actualPayout ? `${Number(bet.actualPayout).toFixed(2)} €` : '—'}
-                      </strong></div>
-                  }
-                  {tab === 'history' && (
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>ID: #{bet.id}</div>
-                  )}
+                  <div>Potential: <strong style={{ color: 'var(--accent)' }}>{Number(bet.potentialPayout).toFixed(2)} €</strong></div>
                 </div>
 
                 {isExpanded && (
