@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../api/apiClient';
 
 const STATUS_LABELS = {
@@ -119,24 +119,43 @@ export default function ProfilePage() {
         </div>
         <div className="profile-wallet-right">
           <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} coins</span>
-          <button className="primary-button"
-            disabled={topping}
-            onClick={async () => {
-              if (balance !== null && Number(balance) > 0) {
-                setTopUpMsg('You can only top up when your balance reaches 0.');
-                return;
-              }
-              setTopping(true); setTopUpMsg('');
-              try {
-                const res = await api.post('/Wallet/topup');
-                setBalance(res.data.balance);
-                setTopUpMsg('+1,000 coins added!');
-              } catch (err) {
-                setTopUpMsg(err?.response?.data?.message || 'Top up failed.');
-              } finally { setTopping(false); }
+          <div style={{ position: 'relative', display: 'inline-block' }}
+            onMouseEnter={e => {
+              if (balance !== null && Number(balance) > 0)
+                e.currentTarget.querySelector('.topup-tooltip').style.opacity = '1';
+            }}
+            onMouseLeave={e => {
+              const tip = e.currentTarget.querySelector('.topup-tooltip');
+              if (tip) tip.style.opacity = '0';
             }}>
-            {topping ? 'Adding...' : '+ Top Up 1,000'}
-          </button>
+            <span className="topup-tooltip" style={{
+              position: 'absolute', bottom: 'calc(100% + 6px)', left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'var(--surface2, #2a2a2a)', color: 'var(--text, #fff)',
+              fontSize: '0.72rem', whiteSpace: 'nowrap',
+              padding: '4px 10px', borderRadius: 6,
+              pointerEvents: 'none', opacity: 0,
+              transition: 'opacity 0.15s',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+              zIndex: 10,
+            }}>
+              Top up available only when balance reaches 0
+            </span>
+            <button className="primary-button"
+              disabled={topping || (balance !== null && Number(balance) > 0)}
+              onClick={async () => {
+                setTopping(true); setTopUpMsg('');
+                try {
+                  const res = await api.post('/Wallet/topup');
+                  setBalance(res.data.balance);
+                  setTopUpMsg('+1,000 coins added!');
+                } catch (err) {
+                  setTopUpMsg(err?.response?.data?.message || 'Top up failed.');
+                } finally { setTopping(false); }
+              }}>
+              {topping ? 'Adding...' : '+ Top Up 1,000'}
+            </button>
+          </div>
           {topUpMsg && <span className="wallet-topup-msg">{topUpMsg}</span>}
         </div>
       </div>
