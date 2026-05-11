@@ -6979,8 +6979,9 @@ select:focus {
   }
 
   .bottom-tab__icon {
-    font-size: 1.25rem;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* "More" overlay backdrop */

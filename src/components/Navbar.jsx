@@ -2,19 +2,33 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
+import {
+  Zap,
+  ClipboardList,
+  Crown,
+  Trophy,
+  Menu,
+  Globe,
+  BarChart2,
+  CheckCircle,
+  Newspaper,
+  Settings,
+  User,
+  LogOut,
+} from 'lucide-react';
 
 const PRIMARY_TABS = [
-  { to: '/matches',     icon: '⚽', label: 'Matches'  },
-  { to: '/bets',        icon: '📋', label: 'My Bets'  },
-  { to: '/fantasy',     icon: '👑', label: 'Fantasy'  },
-  { to: '/leaderboard', icon: '🏆', label: 'Board'    },
+  { to: '/matches',     Icon: Zap,           label: 'Matches'  },
+  { to: '/bets',        Icon: ClipboardList,  label: 'My Bets'  },
+  { to: '/fantasy',     Icon: Crown,          label: 'Fantasy'  },
+  { to: '/leaderboard', Icon: Trophy,         label: 'Board'    },
 ];
 
 const MORE_ITEMS = [
-  { to: '/leagues',   icon: '🌍', label: 'Leagues'   },
-  { to: '/standings', icon: '📊', label: 'Standings' },
-  { to: '/results',   icon: '✅', label: 'Results'   },
-  { to: '/news',      icon: '📰', label: 'News'      },
+  { to: '/leagues',   Icon: Globe,        label: 'Leagues'   },
+  { to: '/standings', Icon: BarChart2,    label: 'Standings' },
+  { to: '/results',   Icon: CheckCircle,  label: 'Results'   },
+  { to: '/news',      Icon: Newspaper,    label: 'News'      },
 ];
 
 export default function Navbar() {
@@ -30,7 +44,6 @@ export default function Navbar() {
   const username = user?.username ?? '';
   const initials = username.slice(0, 2).toUpperCase() || 'U';
 
-  // Close avatar dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -41,13 +54,11 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close more-sheet on route change
   useEffect(() => { setMoreOpen(false); }, [location.pathname]);
 
   const handleProfile = () => { setMenuOpen(false); setMoreOpen(false); navigate('/profile'); };
   const handleLogout  = () => { setMenuOpen(false); setMoreOpen(false); logout(); };
 
-  // Is current path in the "More" group?
   const moreActive = MORE_ITEMS.some(i => location.pathname.startsWith(i.to))
     || location.pathname.startsWith('/profile')
     || (isAdmin && location.pathname.startsWith('/admin'));
@@ -56,13 +67,10 @@ export default function Navbar() {
     <>
       {/* ── Top bar ── */}
       <header className="navbar">
-
-        {/* Brand */}
         <Link to="/matches" className="brand-link">
           <div className="brand">BETWIN</div>
         </Link>
 
-        {/* Desktop nav — hidden on mobile via CSS */}
         <nav className="nav-links">
           <NavLink to="/matches">Matches</NavLink>
           <NavLink to="/bets">My Bets</NavLink>
@@ -75,7 +83,6 @@ export default function Navbar() {
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 
-        {/* Desktop right side — hidden on mobile */}
         <div className="navbar-right">
           {balance !== null && (
             <div className="wallet-badge">
@@ -83,7 +90,6 @@ export default function Navbar() {
               <span className="wallet-amount">{Number(balance).toLocaleString()}</span>
             </div>
           )}
-
           <div className="nav-avatar-wrap" ref={menuRef}>
             <button
               className="nav-avatar"
@@ -93,80 +99,68 @@ export default function Navbar() {
             >
               {initials}
             </button>
-
             {menuOpen && (
               <div className="nav-avatar-menu">
                 <div className="nav-avatar-menu__user">{username}</div>
-                <button className="nav-avatar-menu__item" onClick={handleProfile} type="button">
-                  Profile
-                </button>
+                <button className="nav-avatar-menu__item" onClick={handleProfile} type="button">Profile</button>
                 <div className="nav-avatar-menu__divider" />
-                <button className="nav-avatar-menu__item nav-avatar-menu__item--danger" onClick={handleLogout} type="button">
-                  Logout
-                </button>
+                <button className="nav-avatar-menu__item nav-avatar-menu__item--danger" onClick={handleLogout} type="button">Logout</button>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* ── Mobile balance bar — shown below the navbar border on mobile ── */}
+      {/* ── Mobile balance bar ── */}
       {balance !== null && (
         <div className="mobile-balance-bar">
           € {Number(balance).toLocaleString()}
         </div>
       )}
 
-      {/* ── Bottom tab bar (mobile only — shown via CSS) ── */}
+      {/* ── Bottom tab bar ── */}
       <nav className="bottom-tab-bar" aria-label="Main navigation">
-        {PRIMARY_TABS.map(tab => (
+        {PRIMARY_TABS.map(({ to, Icon, label }) => (
           <NavLink
-            key={tab.to}
-            to={tab.to}
+            key={to}
+            to={to}
             className={({ isActive }) =>
               'bottom-tab' + (isActive ? ' bottom-tab--active' : '')
             }
           >
-            <span className="bottom-tab__icon">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <Icon size={20} strokeWidth={1.75} />
+            <span>{label}</span>
           </NavLink>
         ))}
 
-        {/* More button */}
         <button
           type="button"
           className={'bottom-tab' + (moreActive ? ' bottom-tab--active' : '')}
           onClick={() => setMoreOpen(o => !o)}
           aria-expanded={moreOpen}
         >
-          <span className="bottom-tab__icon">☰</span>
+          <Menu size={20} strokeWidth={1.75} />
           <span>More</span>
         </button>
       </nav>
 
       {/* ── More overlay ── */}
       {moreOpen && (
-        <div
-          className="bottom-more-overlay"
-          onClick={() => setMoreOpen(false)}
-        >
-          <div
-            className="bottom-more-sheet"
-            onClick={e => e.stopPropagation()}
-          >
+        <div className="bottom-more-overlay" onClick={() => setMoreOpen(false)}>
+          <div className="bottom-more-sheet" onClick={e => e.stopPropagation()}>
             <div className="bottom-more-sheet__title">More</div>
 
-            {MORE_ITEMS.map(item => (
+            {MORE_ITEMS.map(({ to, Icon, label }) => (
               <NavLink
-                key={item.to}
-                to={item.to}
+                key={to}
+                to={to}
                 className={({ isActive }) =>
                   'bottom-more-item' + (isActive ? ' active' : '')
                 }
                 onClick={() => setMoreOpen(false)}
               >
-                <span className="bottom-more-item__icon">{item.icon}</span>
-                {item.label}
+                <span className="bottom-more-item__icon"><Icon size={18} strokeWidth={1.75} /></span>
+                {label}
               </NavLink>
             ))}
 
@@ -178,30 +172,21 @@ export default function Navbar() {
                 }
                 onClick={() => setMoreOpen(false)}
               >
-                <span className="bottom-more-item__icon">⚙️</span>
+                <span className="bottom-more-item__icon"><Settings size={18} strokeWidth={1.75} /></span>
                 Admin
               </NavLink>
             )}
 
-            {/* Account section */}
             <div className="bottom-more-sheet__divider" />
             <div className="bottom-more-sheet__title">Account</div>
 
-            <button
-              type="button"
-              className="bottom-more-item"
-              onClick={handleProfile}
-            >
-              <span className="bottom-more-item__icon">👤</span>
+            <button type="button" className="bottom-more-item" onClick={handleProfile}>
+              <span className="bottom-more-item__icon"><User size={18} strokeWidth={1.75} /></span>
               Profile
             </button>
 
-            <button
-              type="button"
-              className="bottom-more-item bottom-more-item--danger"
-              onClick={handleLogout}
-            >
-              <span className="bottom-more-item__icon">🚪</span>
+            <button type="button" className="bottom-more-item bottom-more-item--danger" onClick={handleLogout}>
+              <span className="bottom-more-item__icon"><LogOut size={18} strokeWidth={1.75} /></span>
               Logout
             </button>
           </div>
