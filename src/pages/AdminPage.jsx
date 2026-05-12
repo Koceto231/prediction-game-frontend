@@ -513,6 +513,12 @@ export default function AdminPage() {
                 {loading === 'debug-odds' ? 'Checking…' : '🔍 Debug — виж суровите коефициенти'}
               </button>
             </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'debug-odds-raw' || !matchId}
+                onClick={() => run('debug-odds-raw', () => api.get(`/admin/sync/debug/odds-raw/${matchId}`))}>
+                {loading === 'debug-odds-raw' ? 'Fetching…' : '📄 Raw Response — виж точния Sportmonks отговор'}
+              </button>
+            </div>
             <p className="admin-hint">Debug odds — показва всички пазари и коефициенти от Sportmonks за конкретен fixture. Използвай ExternalId на мача.</p>
           </AdminSection>
 
