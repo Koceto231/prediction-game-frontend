@@ -282,58 +282,42 @@ export default function MatchesPage() {
     return () => { cancelled = true; };
   }, [isExact, selectedMatch?.id, home, away, hasBetOdds]);
 
-  // Live odds — Market Pick (winner + btts + ou)
+  // Live odds — all markets from real Sportmonks data (no API calls)
   useEffect(() => {
-    if (!isMarket || !hasBetOdds) return;
-    let cancelled = false;
-    setMpOddsLoading(true);
-    const winnerOdds = winner === 'Home' ? selectedMatch.homeOdds
-                     : winner === 'Draw' ? selectedMatch.drawOdds
-                     : winner === 'Away' ? selectedMatch.awayOdds : null;
-    Promise.all([
-      Promise.resolve(winnerOdds),
-      btts
-        ? fetchOdds(selectedMatch.id, BET_TYPE.BTTS, { btts }).then(r => r?.odds ?? null)
-        : Promise.resolve(null),
-      ouLine && ouPick
-        ? fetchOdds(selectedMatch.id, BET_TYPE.OverUnder, { ouLine: OU_LINE_MAP[ouLine], ouPick: OU_PICK_MAP[ouPick] }).then(r => r?.odds ?? null)
-        : Promise.resolve(null),
-    ]).then(([w, b, o]) => {
-      if (!cancelled) setMpOdds(prev => ({ ...prev, winner: w, btts: b, ou: o }));
-    }).finally(() => { if (!cancelled) setMpOddsLoading(false); });
-    return () => { cancelled = true; };
-  }, [isMarket, selectedMatch?.id, winner, btts, ouLine, ouPick, hasBetOdds]);
+    if (!isMarket) return;
+    const winnerOdds = winner === 'Home' ? selectedMatch?.homeOdds
+                     : winner === 'Draw' ? selectedMatch?.drawOdds
+                     : winner === 'Away' ? selectedMatch?.awayOdds : null;
+    const bttsOdds = btts === 'true'  ? (preOdds.btts?.['true']  ?? null)
+                   : btts === 'false' ? (preOdds.btts?.['false'] ?? null) : null;
+    const ouOdds   = (ouLine && ouPick) ? (preOdds.ou?.[ouLine]?.[ouPick] ?? null) : null;
+    setMpOdds(prev => ({ ...prev, winner: winnerOdds, btts: bttsOdds, ou: ouOdds }));
+  }, [isMarket, selectedMatch?.id, winner, btts, ouLine, ouPick, preOdds]);
 
   // Live odds — Double Chance
   useEffect(() => {
-    if (!isMarket || !dcPick) { setMpOdds(p => ({ ...p, dc: null })); return; }
-    let cancelled = false;
-    fetchOdds(selectedMatch.id, BET_TYPE.DoubleChance, { dcPick })
-      .then(r => { if (!cancelled) setMpOdds(p => ({ ...p, dc: r?.odds ?? null })); });
-    return () => { cancelled = true; };
-  }, [isMarket, selectedMatch?.id, dcPick]);
+    if (!isMarket) { setMpOdds(p => ({ ...p, dc: null })); return; }
+    const odds = dcPick ? (preOdds.dc?.[dcPick] ?? null) : null;
+    setMpOdds(p => ({ ...p, dc: odds }));
+  }, [isMarket, selectedMatch?.id, dcPick, preOdds]);
 
-  // Live odds — Corners
+  // Live odds — Corners (from real Sportmonks data on match object)
   useEffect(() => {
     if (!isMarket || !cornersLine || !cornersOU) { setMpOdds(p => ({ ...p, corners: null })); return; }
-    let cancelled = false;
-    fetchOdds(selectedMatch.id, BET_TYPE.Corners, { lineValue: cornersLine, ouPick: cornersOU })
-      .then(r => { if (!cancelled) setMpOdds(p => ({ ...p, corners: r?.odds ?? null })); });
-    return () => { cancelled = true; };
-  }, [isMarket, selectedMatch?.id, cornersLine, cornersOU]);
+    const odds = cornersPreOdds[cornersLine]?.[cornersOU] ?? null;
+    setMpOdds(p => ({ ...p, corners: odds }));
+  }, [isMarket, selectedMatch?.id, cornersLine, cornersOU, cornersPreOdds]);
 
-  // Live odds — Yellow Cards
+  // Live odds — Yellow Cards (from real Sportmonks data on match object)
   useEffect(() => {
     if (!isMarket || !yellowsLine || !yellowsOU) { setMpOdds(p => ({ ...p, yellows: null })); return; }
-    let cancelled = false;
-    fetchOdds(selectedMatch.id, BET_TYPE.YellowCards, { lineValue: yellowsLine, ouPick: yellowsOU })
-      .then(r => { if (!cancelled) setMpOdds(p => ({ ...p, yellows: r?.odds ?? null })); });
-    return () => { cancelled = true; };
-  }, [isMarket, selectedMatch?.id, yellowsLine, yellowsOU]);
+    const odds = yellowsPreOdds[yellowsLine]?.[yellowsOU] ?? null;
+    setMpOdds(p => ({ ...p, yellows: odds }));
+  }, [isMarket, selectedMatch?.id, yellowsLine, yellowsOU, yellowsPreOdds]);
 
-  // Build market odds display directly from real Sportmonks data on the match object
+  // Build all market odds from real Sportmonks data on the match object — no API calls
   useEffect(() => {
-    if (!selectedMatch) { setPreOdds({}); return; }
+    if (!selectedMatch) { setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); return; }
     const m = selectedMatch;
     setPreOdds({
       dc: {
@@ -351,36 +335,18 @@ export default function MatchesPage() {
         Line35: { Over: m.over35 ?? null, Under: m.under35 ?? null },
       },
     });
+    setCornersPreOdds({
+      8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
+      9.5:  { Over: m.cornersOver95  ?? null, Under: m.cornersUnder95  ?? null },
+      10.5: { Over: m.cornersOver105 ?? null, Under: m.cornersUnder105 ?? null },
+    });
+    setYellowsPreOdds({
+      2.5: { Over: m.yellowOver25 ?? null, Under: m.yellowUnder25 ?? null },
+      3.5: { Over: m.yellowOver35 ?? null, Under: m.yellowUnder35 ?? null },
+      4.5: { Over: m.yellowOver45 ?? null, Under: m.yellowUnder45 ?? null },
+    });
     setPreOddsLoading(false);
   }, [selectedMatch?.id]);
-
-  // Fetch corners odds when section is expanded
-  useEffect(() => {
-    if (collapsed.corners || !isMarket || !selectedMatch) return;
-    const mid = selectedMatch.id;
-    Promise.all(CORNER_LINES.flatMap(l => [
-      fetchOdds(mid, BET_TYPE.Corners, { lineValue: l, ouPick: 'Over' }),
-      fetchOdds(mid, BET_TYPE.Corners, { lineValue: l, ouPick: 'Under' }),
-    ])).then(results => {
-      const obj = {};
-      CORNER_LINES.forEach((l, i) => { obj[l] = { Over: results[i*2]?.odds ?? null, Under: results[i*2+1]?.odds ?? null }; });
-      setCornersPreOdds(obj);
-    });
-  }, [collapsed.corners, isMarket, selectedMatch?.id]);
-
-  // Fetch yellow cards odds when section is expanded
-  useEffect(() => {
-    if (collapsed.yellows || !isMarket || !selectedMatch) return;
-    const mid = selectedMatch.id;
-    Promise.all(YELLOW_LINES.flatMap(l => [
-      fetchOdds(mid, BET_TYPE.YellowCards, { lineValue: l, ouPick: 'Over' }),
-      fetchOdds(mid, BET_TYPE.YellowCards, { lineValue: l, ouPick: 'Under' }),
-    ])).then(results => {
-      const obj = {};
-      YELLOW_LINES.forEach((l, i) => { obj[l] = { Over: results[i*2]?.odds ?? null, Under: results[i*2+1]?.odds ?? null }; });
-      setYellowsPreOdds(obj);
-    });
-  }, [collapsed.yellows, isMarket, selectedMatch?.id]);
 
   // All selected odds (for combined slip)
   // Only include a market's odds if that market is actually chosen AND the odds value
