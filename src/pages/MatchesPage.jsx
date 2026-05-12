@@ -331,38 +331,28 @@ export default function MatchesPage() {
     return () => { cancelled = true; };
   }, [isMarket, selectedMatch?.id, yellowsLine, yellowsOU]);
 
-  // Pre-fetch all market odds for display when market pick opens
+  // Build market odds display directly from real Sportmonks data on the match object
   useEffect(() => {
-    if (!isMarket || !selectedMatch || !hasBetOdds) return;
-    let cancelled = false;
-    setPreOddsLoading(true);
-    const mid = selectedMatch.id;
-    Promise.all([
-      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'HomeOrDraw' }),
-      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'DrawOrAway' }),
-      fetchOdds(mid, BET_TYPE.DoubleChance, { dcPick: 'HomeOrAway' }),
-      fetchOdds(mid, BET_TYPE.BTTS, { btts: 'true' }),
-      fetchOdds(mid, BET_TYPE.BTTS, { btts: 'false' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line15', ouPick: 'Over' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line15', ouPick: 'Under' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line25', ouPick: 'Over' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line25', ouPick: 'Under' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line35', ouPick: 'Over' }),
-      fetchOdds(mid, BET_TYPE.OverUnder, { ouLine: 'Line35', ouPick: 'Under' }),
-    ]).then(([dcHD, dcDA, dcHA, bttsY, bttsN, ou15o, ou15u, ou25o, ou25u, ou35o, ou35u]) => {
-      if (cancelled) return;
-      setPreOdds({
-        dc:   { HomeOrDraw: dcHD?.odds ?? null, DrawOrAway: dcDA?.odds ?? null, HomeOrAway: dcHA?.odds ?? null },
-        btts: { true: bttsY?.odds ?? null, false: bttsN?.odds ?? null },
-        ou:   {
-          Line15: { Over: ou15o?.odds ?? null, Under: ou15u?.odds ?? null },
-          Line25: { Over: ou25o?.odds ?? null, Under: ou25u?.odds ?? null },
-          Line35: { Over: ou35o?.odds ?? null, Under: ou35u?.odds ?? null },
-        },
-      });
-    }).finally(() => { if (!cancelled) setPreOddsLoading(false); });
-    return () => { cancelled = true; };
-  }, [isMarket, selectedMatch?.id, hasBetOdds]);
+    if (!selectedMatch) { setPreOdds({}); return; }
+    const m = selectedMatch;
+    setPreOdds({
+      dc: {
+        HomeOrDraw: m.dcHomeOrDraw ?? null,
+        DrawOrAway: m.dcDrawOrAway ?? null,
+        HomeOrAway: m.dcHomeOrAway ?? null,
+      },
+      btts: {
+        true:  m.bttsYes ?? null,
+        false: m.bttsNo  ?? null,
+      },
+      ou: {
+        Line15: { Over: m.over15 ?? null, Under: m.under15 ?? null },
+        Line25: { Over: m.over25 ?? null, Under: m.under25 ?? null },
+        Line35: { Over: m.over35 ?? null, Under: m.under35 ?? null },
+      },
+    });
+    setPreOddsLoading(false);
+  }, [selectedMatch?.id]);
 
   // Fetch corners odds when section is expanded
   useEffect(() => {
