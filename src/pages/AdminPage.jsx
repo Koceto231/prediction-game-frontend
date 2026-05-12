@@ -493,6 +493,29 @@ export default function AdminPage() {
             <p className="admin-hint">Изтрива мачове където двата отбора са от различни лиги (Conference League и т.н.). Само мачове без залози/прогнози се изтриват. Preview първо!</p>
           </AdminSection>
 
+          {/* ── Real Odds (Sportmonks) ── */}
+          <AdminSection title="Real Odds (Sportmonks)">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sync-odds'}
+                onClick={() => run('sync-odds', () => api.post('/admin/sync/odds/sync-1x2'))}>
+                {loading === 'sync-odds' ? 'Syncing…' : '📊 Sync 1X2 Odds Now'}
+              </button>
+            </div>
+            <p className="admin-hint">Дърпа реални коефициенти от Sportmonks за всички предстоящи мачове (следващите 7 дни). Автоматично се пуска на 15 мин, но тук може ръчно.</p>
+            <div className="admin-row" style={{ marginTop: 12 }}>
+              <label className="admin-label">Fixture ID</label>
+              <input className="admin-input" value={matchId}
+                onChange={e => setMatchId(e.target.value)} placeholder="Sportmonks fixture ID" />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'debug-odds' || !matchId}
+                onClick={() => run('debug-odds', () => api.get(`/admin/sync/debug/odds/${matchId}`))}>
+                {loading === 'debug-odds' ? 'Checking…' : '🔍 Debug — виж суровите коефициенти'}
+              </button>
+            </div>
+            <p className="admin-hint">Debug odds — показва всички пазари и коефициенти от Sportmonks за конкретен fixture. Използвай ExternalId на мача.</p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
