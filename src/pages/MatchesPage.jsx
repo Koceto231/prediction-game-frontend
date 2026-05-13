@@ -962,33 +962,31 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Handicap */}
-                  {preOdds.hcp?.Home != null && (
-                    <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}`}>
-                      <div className="market-section__header" onClick={() => toggleSection('hcp')}>
-                        <span className="market-section__name">⚡ Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : ''}</span>
-                        {hcpPick && <span className="market-section__badge">{hcpPick}</span>}
-                        <span className="market-section__toggle">{collapsed.hcp ? '▼' : '▲'}</span>
-                      </div>
-                      {!collapsed.hcp && (
-                        <div className="market-options market-options--3">
-                          {[
-                            { key: 'Home', label: selectedMatch.homeTeamName },
-                            { key: 'Draw', label: 'Draw' },
-                            { key: 'Away', label: selectedMatch.awayTeamName },
-                          ].map(({ key, label }) => (
-                            <button key={key} type="button"
-                              className={`market-option ${hcpPick === key ? 'market-option--active' : ''}`}
-                              onClick={() => setHcpPick(hcpPick === key ? '' : key)}>
-                              <div className="market-option__label">{label}</div>
-                              <div className="market-option__odds">
-                                {preOdds.hcp?.[key] != null ? Number(preOdds.hcp[key]).toFixed(2) : '—'}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                  <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('hcp')}>
+                      <span className="market-section__name">⚡ Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
+                      {hcpPick && <span className="market-section__badge">{hcpPick}</span>}
+                      <span className="market-section__toggle">{collapsed.hcp ? '▼' : '▲'}</span>
                     </div>
-                  )}
+                    {!collapsed.hcp && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { key: 'Home', label: selectedMatch.homeTeamName },
+                          { key: 'Draw', label: 'Draw' },
+                          { key: 'Away', label: selectedMatch.awayTeamName },
+                        ].map(({ key, label }) => (
+                          <button key={key} type="button"
+                            className={`market-option ${hcpPick === key ? 'market-option--active' : ''}`}
+                            onClick={() => setHcpPick(hcpPick === key ? '' : key)}>
+                            <div className="market-option__label">{label}</div>
+                            <div className="market-option__odds">
+                              {preOdds.hcp?.[key] != null ? Number(preOdds.hcp[key]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Home Team Goals O/U */}
                   <div className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
