@@ -4,9 +4,10 @@ import MatchCard from '../components/MatchCard';
 import { useWallet } from '../context/WalletContext';
 
 // ── Enums ────────────────────────────────────────────────────────
-const BET_TYPE    = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder', Goalscorer: 'Goalscorer', Corners: 'Corners', YellowCards: 'YellowCards', DoubleChance: 'DoubleChance', OddEven: 'OddEven', DrawNoBet: 'DrawNoBet', Handicap: 'Handicap', WinToNil: 'WinToNil', TeamGoals: 'TeamGoals', HalfTime: 'HalfTime', CleanSheet: 'CleanSheet', FirstGoal: 'FirstGoal' };
+const BET_TYPE    = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder', Goalscorer: 'Goalscorer', Corners: 'Corners', YellowCards: 'YellowCards', DoubleChance: 'DoubleChance', OddEven: 'OddEven', DrawNoBet: 'DrawNoBet', Handicap: 'Handicap', WinToNil: 'WinToNil', TeamGoals: 'TeamGoals', HalfTime: 'HalfTime', CleanSheet: 'CleanSheet', FirstGoal: 'FirstGoal', Btts1stHalf: 'Btts1stHalf', Btts2ndHalf: 'Btts2ndHalf', HalfTimeGoals: 'HalfTimeGoals', SecondHalfGoals: 'SecondHalfGoals', TeamOddEven: 'TeamOddEven', OddEven1stHalf: 'OddEven1stHalf', TeamToScore: 'TeamToScore', WinBothHalves: 'WinBothHalves', LastToScore: 'LastToScore', HtFt: 'HtFt', ResultBtts: 'ResultBtts' };
 const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
-const OU_LINE_MAP = { Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const OU_LINE_MAP = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const lineToKey   = l => `Line${String(l).replace('.', '')}`;
 const OU_PICK_MAP = { Over: 'Over', Under: 'Under' };
 const DC_OPTIONS  = [{ key: 'HomeOrDraw', label: '1X' }, { key: 'HomeOrAway', label: '12' }, { key: 'DrawOrAway', label: 'X2' }];
 const CORNER_LINES  = [8.5, 9.5, 10.5];
@@ -160,7 +161,7 @@ export default function MatchesPage() {
   // Existing odds
   const [exactOdds, setExactOdds]               = useState(null);
   const [exactOddsLoading, setExactOddsLoading] = useState(false);
-  const [mpOdds, setMpOdds]                     = useState({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null });
+  const [mpOdds, setMpOdds]                     = useState({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null, rbt: null });
   const [mpOddsLoading, setMpOddsLoading]       = useState(false);
 
   // New market pick fields
@@ -191,12 +192,30 @@ export default function MatchesPage() {
   const [csYN, setCsYN]                 = useState('');   // '' | 'true' | 'false'
   const [fgPick, setFgPick]             = useState('');   // '' | 'Home' | 'Draw' | 'Away'
 
+  // Phase 3 markets
+  const [btts1hPick, setBtts1hPick]       = useState('');   // '' | 'true' | 'false'
+  const [btts2hPick, setBtts2hPick]       = useState('');
+  const [htGoalsLine, setHtGoalsLine]     = useState('');   // '' | '0.5' | '1.5' | '2.5'
+  const [htGoalsOU, setHtGoalsOU]         = useState('');
+  const [shGoalsLine, setShGoalsLine]     = useState('');
+  const [shGoalsOU, setShGoalsOU]         = useState('');
+  const [homeOEPick, setHomeOEPick]       = useState('');   // '' | 'true' (Odd) | 'false' (Even)
+  const [awayOEPick, setAwayOEPick]       = useState('');
+  const [oe1hPick, setOe1hPick]           = useState('');
+  const [homeTsPick, setHomeTsPick]       = useState('');   // '' | 'true' (Yes) | 'false' (No)
+  const [awayTsPick, setAwayTsPick]       = useState('');
+  const [wbhHomePick, setWbhHomePick]     = useState('');   // '' | 'true' | 'false'
+  const [wbhAwayPick, setWbhAwayPick]     = useState('');
+  const [lastScorePick, setLastScorePick] = useState('');   // '' | 'Home' | 'Draw' | 'Away'
+  const [htftPick, setHtftPick]           = useState('');   // '' | 'HH' | 'HD' | 'HA' | ...
+  const [rbtPick, setRbtPick]             = useState('');   // '' | 'HomeYes' | 'DrawNo' | ...
+
   // Market table — pre-fetched odds + collapse state
   const [preOdds, setPreOdds]               = useState({});
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, rbt: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -264,12 +283,18 @@ export default function MatchesPage() {
   const resetPanel = useCallback(() => {
     setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
     setExactOdds(null);
-    setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null });
+    setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null, rbt: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
     setScorerPlayer(null); setScorerPlayers([]); setScorerPosFilter('FWD');
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
+    setBtts1hPick(''); setBtts2hPick('');
+    setHtGoalsLine(''); setHtGoalsOU(''); setShGoalsLine(''); setShGoalsOU('');
+    setHomeOEPick(''); setAwayOEPick(''); setOe1hPick('');
+    setHomeTsPick(''); setAwayTsPick('');
+    setWbhHomePick(''); setWbhAwayPick('');
+    setLastScorePick(''); setHtftPick(''); setRbtPick('');
     setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({});
     setCollapsed(INIT_COLLAPSED);
   }, []);
@@ -390,6 +415,90 @@ export default function MatchesPage() {
     setMpOdds(p => ({ ...p, fg: preOdds.fg?.[fgPick] ?? null }));
   }, [isMarket, selectedMatch?.id, fgPick, preOdds]);
 
+  // Live odds — BTTS 1st Half
+  useEffect(() => {
+    if (!isMarket || !btts1hPick) { setMpOdds(p => ({ ...p, btts1h: null })); return; }
+    setMpOdds(p => ({ ...p, btts1h: preOdds.btts1h?.[btts1hPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, btts1hPick, preOdds]);
+
+  // Live odds — BTTS 2nd Half
+  useEffect(() => {
+    if (!isMarket || !btts2hPick) { setMpOdds(p => ({ ...p, btts2h: null })); return; }
+    setMpOdds(p => ({ ...p, btts2h: preOdds.btts2h?.[btts2hPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, btts2hPick, preOdds]);
+
+  // Live odds — 1st Half Goals O/U
+  useEffect(() => {
+    if (!isMarket || !htGoalsLine || !htGoalsOU) { setMpOdds(p => ({ ...p, htGoals: null })); return; }
+    setMpOdds(p => ({ ...p, htGoals: preOdds.htGoals?.[htGoalsLine]?.[htGoalsOU] ?? null }));
+  }, [isMarket, selectedMatch?.id, htGoalsLine, htGoalsOU, preOdds]);
+
+  // Live odds — 2nd Half Goals O/U
+  useEffect(() => {
+    if (!isMarket || !shGoalsLine || !shGoalsOU) { setMpOdds(p => ({ ...p, shGoals: null })); return; }
+    setMpOdds(p => ({ ...p, shGoals: preOdds.shGoals?.[shGoalsLine]?.[shGoalsOU] ?? null }));
+  }, [isMarket, selectedMatch?.id, shGoalsLine, shGoalsOU, preOdds]);
+
+  // Live odds — Home Team Odd/Even
+  useEffect(() => {
+    if (!isMarket || !homeOEPick) { setMpOdds(p => ({ ...p, homeOE: null })); return; }
+    setMpOdds(p => ({ ...p, homeOE: preOdds.homeOE?.[homeOEPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, homeOEPick, preOdds]);
+
+  // Live odds — Away Team Odd/Even
+  useEffect(() => {
+    if (!isMarket || !awayOEPick) { setMpOdds(p => ({ ...p, awayOE: null })); return; }
+    setMpOdds(p => ({ ...p, awayOE: preOdds.awayOE?.[awayOEPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, awayOEPick, preOdds]);
+
+  // Live odds — Odd/Even 1st Half
+  useEffect(() => {
+    if (!isMarket || !oe1hPick) { setMpOdds(p => ({ ...p, oe1h: null })); return; }
+    setMpOdds(p => ({ ...p, oe1h: preOdds.oe1h?.[oe1hPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, oe1hPick, preOdds]);
+
+  // Live odds — Home Team to Score
+  useEffect(() => {
+    if (!isMarket || !homeTsPick) { setMpOdds(p => ({ ...p, homeTs: null })); return; }
+    setMpOdds(p => ({ ...p, homeTs: preOdds.homeTs?.[homeTsPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, homeTsPick, preOdds]);
+
+  // Live odds — Away Team to Score
+  useEffect(() => {
+    if (!isMarket || !awayTsPick) { setMpOdds(p => ({ ...p, awayTs: null })); return; }
+    setMpOdds(p => ({ ...p, awayTs: preOdds.awayTs?.[awayTsPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, awayTsPick, preOdds]);
+
+  // Live odds — Win Both Halves (Home)
+  useEffect(() => {
+    if (!isMarket || !wbhHomePick) { setMpOdds(p => ({ ...p, wbhHome: null })); return; }
+    setMpOdds(p => ({ ...p, wbhHome: preOdds.wbh?.Home?.[wbhHomePick] ?? null }));
+  }, [isMarket, selectedMatch?.id, wbhHomePick, preOdds]);
+
+  // Live odds — Win Both Halves (Away)
+  useEffect(() => {
+    if (!isMarket || !wbhAwayPick) { setMpOdds(p => ({ ...p, wbhAway: null })); return; }
+    setMpOdds(p => ({ ...p, wbhAway: preOdds.wbh?.Away?.[wbhAwayPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, wbhAwayPick, preOdds]);
+
+  // Live odds — Last Team to Score
+  useEffect(() => {
+    if (!isMarket || !lastScorePick) { setMpOdds(p => ({ ...p, lastScore: null })); return; }
+    setMpOdds(p => ({ ...p, lastScore: preOdds.lastScore?.[lastScorePick] ?? null }));
+  }, [isMarket, selectedMatch?.id, lastScorePick, preOdds]);
+
+  // Live odds — HT/FT
+  useEffect(() => {
+    if (!isMarket || !htftPick) { setMpOdds(p => ({ ...p, htft: null })); return; }
+    setMpOdds(p => ({ ...p, htft: preOdds.htft?.[htftPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, htftPick, preOdds]);
+
+  // Live odds — Result + BTTS
+  useEffect(() => {
+    if (!isMarket || !rbtPick) { setMpOdds(p => ({ ...p, rbt: null })); return; }
+    setMpOdds(p => ({ ...p, rbt: preOdds.rbt?.[rbtPick] ?? null }));
+  }, [isMarket, selectedMatch?.id, rbtPick, preOdds]);
+
   // Build all market odds from real Sportmonks data on the match object — no API calls
   useEffect(() => {
     if (!selectedMatch) { setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); return; }
@@ -432,6 +541,31 @@ export default function MatchesPage() {
         Away: { true: m.csAwayYes ?? null, false: m.csAwayNo ?? null },
       },
       fg: { Home: m.fgHome ?? null, Draw: m.fgNone ?? null, Away: m.fgAway ?? null },
+      // Phase 3
+      btts1h:    { true: m.btts1HYes ?? null, false: m.btts1HNo ?? null },
+      btts2h:    { true: m.btts2HYes ?? null, false: m.btts2HNo ?? null },
+      htGoals: {
+        '0.5': { Over: m.htGoalsOver05 ?? null, Under: m.htGoalsUnder05 ?? null },
+        '1.5': { Over: m.htGoalsOver15 ?? null, Under: m.htGoalsUnder15 ?? null },
+        '2.5': { Over: m.htGoalsOver25 ?? null, Under: m.htGoalsUnder25 ?? null },
+      },
+      shGoals: {
+        '0.5': { Over: m.shGoalsOver05 ?? null, Under: m.shGoalsUnder05 ?? null },
+        '1.5': { Over: m.shGoalsOver15 ?? null, Under: m.shGoalsUnder15 ?? null },
+        '2.5': { Over: m.shGoalsOver25 ?? null, Under: m.shGoalsUnder25 ?? null },
+      },
+      homeOE:    { true: m.homeOddGoals ?? null, false: m.homeEvenGoals ?? null },
+      awayOE:    { true: m.awayOddGoals ?? null, false: m.awayEvenGoals ?? null },
+      oe1h:      { true: m.oddGoals1H   ?? null, false: m.evenGoals1H   ?? null },
+      homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
+      awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
+      wbh: {
+        Home: { true: m.winBothHomeYes ?? null, false: m.winBothHomeNo ?? null },
+        Away: { true: m.winBothAwayYes ?? null, false: m.winBothAwayNo ?? null },
+      },
+      lastScore: { Home: m.lastTeamHome ?? null, Draw: m.lastTeamNone ?? null, Away: m.lastTeamAway ?? null },
+      htft:      (() => { try { return m.htFtOddsJson ? JSON.parse(m.htFtOddsJson) : {}; } catch { return {}; } })(),
+      rbt:       (() => { try { return m.resultBttsJson ? JSON.parse(m.resultBttsJson) : {}; } catch { return {}; } })(),
     });
     setCornersPreOdds({
       8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
@@ -467,6 +601,20 @@ export default function MatchesPage() {
     htPick                       ? mpOdds.ht        : null,
     (csPick && csYN)             ? mpOdds.cs        : null,
     fgPick                       ? mpOdds.fg        : null,
+    btts1hPick                   ? mpOdds.btts1h    : null,
+    btts2hPick                   ? mpOdds.btts2h    : null,
+    (htGoalsLine && htGoalsOU)   ? mpOdds.htGoals   : null,
+    (shGoalsLine && shGoalsOU)   ? mpOdds.shGoals   : null,
+    homeOEPick                   ? mpOdds.homeOE    : null,
+    awayOEPick                   ? mpOdds.awayOE    : null,
+    oe1hPick                     ? mpOdds.oe1h      : null,
+    homeTsPick                   ? mpOdds.homeTs    : null,
+    awayTsPick                   ? mpOdds.awayTs    : null,
+    wbhHomePick                  ? mpOdds.wbhHome   : null,
+    wbhAwayPick                  ? mpOdds.wbhAway   : null,
+    lastScorePick                ? mpOdds.lastScore : null,
+    htftPick                     ? mpOdds.htft      : null,
+    rbtPick                      ? mpOdds.rbt       : null,
   ].filter(v => v != null && Number(v) > 0);
 
   const combinedOdds    = allSelectedOdds.length ? allSelectedOdds.reduce((a, o) => a * Number(o), 1) : null;
@@ -478,7 +626,10 @@ export default function MatchesPage() {
     (cornersLine && cornersOU) || (yellowsLine && yellowsOU) || scorerPlayer ||
     oddEvenPick || dnbPick || (wtnTeam && wtnYN) || hcpPick ||
     (hGoalsLine && hGoalsOU) || (aGoalsLine && aGoalsOU) ||
-    htPick || (csPick && csYN) || fgPick;
+    htPick || (csPick && csYN) || fgPick ||
+    btts1hPick || btts2hPick || (htGoalsLine && htGoalsOU) || (shGoalsLine && shGoalsOU) ||
+    homeOEPick || awayOEPick || oe1hPick || homeTsPick || awayTsPick ||
+    wbhHomePick || wbhAwayPick || lastScorePick || htftPick || rbtPick;
 
   // Position list from loaded players
   const scorerPositions = [...new Set(scorerPlayers.map(p => p.position))]
@@ -551,6 +702,34 @@ export default function MatchesPage() {
             legs.push({ betType: BET_TYPE.CleanSheet, pick: csPick, bTTSPick: csYN === 'true' });
           if (fgPick && mpOdds.fg != null)
             legs.push({ betType: BET_TYPE.FirstGoal, pick: fgPick === 'Draw' ? 'Draw' : fgPick });
+          if (btts1hPick && mpOdds.btts1h != null)
+            legs.push({ betType: BET_TYPE.Btts1stHalf, bTTSPick: btts1hPick === 'true' });
+          if (btts2hPick && mpOdds.btts2h != null)
+            legs.push({ betType: BET_TYPE.Btts2ndHalf, bTTSPick: btts2hPick === 'true' });
+          if (htGoalsLine && htGoalsOU && mpOdds.htGoals != null)
+            legs.push({ betType: BET_TYPE.HalfTimeGoals, oULine: lineToKey(htGoalsLine), oUPick: htGoalsOU });
+          if (shGoalsLine && shGoalsOU && mpOdds.shGoals != null)
+            legs.push({ betType: BET_TYPE.SecondHalfGoals, oULine: lineToKey(shGoalsLine), oUPick: shGoalsOU });
+          if (homeOEPick && mpOdds.homeOE != null)
+            legs.push({ betType: BET_TYPE.TeamOddEven, pick: 'Home', bTTSPick: homeOEPick === 'true' });
+          if (awayOEPick && mpOdds.awayOE != null)
+            legs.push({ betType: BET_TYPE.TeamOddEven, pick: 'Away', bTTSPick: awayOEPick === 'true' });
+          if (oe1hPick && mpOdds.oe1h != null)
+            legs.push({ betType: BET_TYPE.OddEven1stHalf, bTTSPick: oe1hPick === 'true' });
+          if (homeTsPick && mpOdds.homeTs != null)
+            legs.push({ betType: BET_TYPE.TeamToScore, pick: 'Home', bTTSPick: homeTsPick === 'true' });
+          if (awayTsPick && mpOdds.awayTs != null)
+            legs.push({ betType: BET_TYPE.TeamToScore, pick: 'Away', bTTSPick: awayTsPick === 'true' });
+          if (wbhHomePick && mpOdds.wbhHome != null)
+            legs.push({ betType: BET_TYPE.WinBothHalves, pick: 'Home', bTTSPick: wbhHomePick === 'true' });
+          if (wbhAwayPick && mpOdds.wbhAway != null)
+            legs.push({ betType: BET_TYPE.WinBothHalves, pick: 'Away', bTTSPick: wbhAwayPick === 'true' });
+          if (lastScorePick && mpOdds.lastScore != null)
+            legs.push({ betType: BET_TYPE.LastToScore, pick: lastScorePick });
+          if (htftPick && mpOdds.htft != null)
+            legs.push({ betType: BET_TYPE.HtFt, stringPick: htftPick });
+          if (rbtPick && mpOdds.rbt != null)
+            legs.push({ betType: BET_TYPE.ResultBtts, stringPick: rbtPick });
 
           if (legs.length === 1) {
             // Single market — use normal endpoint
@@ -711,7 +890,7 @@ export default function MatchesPage() {
                 <div className="mode-card mode-card--market">
                   <div className="mode-card__top"><span className="mode-badge">MARKET PICK — UP TO 3 PTS</span></div>
                   <div className="mode-card__title">Pick any combination of markets</div>
-                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU(''); setScorerPlayer(null); setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick(''); setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU(''); setHtPick(''); setCsPick(''); setCsYN(''); setFgPick(''); }}>Change type</button>
+                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU(''); setScorerPlayer(null); setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick(''); setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU(''); setHtPick(''); setCsPick(''); setCsYN(''); setFgPick(''); setBtts1hPick(''); setBtts2hPick(''); setHtGoalsLine(''); setHtGoalsOU(''); setShGoalsLine(''); setShGoalsOU(''); setHomeOEPick(''); setAwayOEPick(''); setOe1hPick(''); setHomeTsPick(''); setAwayTsPick(''); setWbhHomePick(''); setWbhAwayPick(''); setLastScorePick(''); setHtftPick(''); setRbtPick(''); }}>Change type</button>
                 </div>
 
                 <div className="market-table">
@@ -1131,6 +1310,321 @@ export default function MatchesPage() {
                     )}
                   </div>
 
+                  {/* BTTS 1st Half */}
+                  <div className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('btts1h')}>
+                      <span className="market-section__name">⚽ BTTS — 1st Half</span>
+                      {btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{collapsed.btts1h ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.btts1h && (
+                      <div className="market-options market-options--2">
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
+                          <button key={val} type="button"
+                            className={`market-option ${btts1hPick === val ? 'market-option--active' : ''}`}
+                            onClick={() => setBtts1hPick(btts1hPick === val ? '' : val)}>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">
+                              {preOdds.btts1h?.[val] != null ? Number(preOdds.btts1h[val]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* BTTS 2nd Half */}
+                  <div className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
+                      <span className="market-section__name">⚽ BTTS — 2nd Half</span>
+                      {btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{collapsed.btts2h ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.btts2h && (
+                      <div className="market-options market-options--2">
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
+                          <button key={val} type="button"
+                            className={`market-option ${btts2hPick === val ? 'market-option--active' : ''}`}
+                            onClick={() => setBtts2hPick(btts2hPick === val ? '' : val)}>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">
+                              {preOdds.btts2h?.[val] != null ? Number(preOdds.btts2h[val]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 1st Half Goals O/U */}
+                  <div className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('htGoals')}>
+                      <span className="market-section__name">⏱️ 1st Half Goals — Over / Under</span>
+                      {htGoalsLine && htGoalsOU && <span className="market-section__badge">{htGoalsOU} {htGoalsLine}</span>}
+                      <span className="market-section__toggle">{collapsed.htGoals ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.htGoals && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                        {['0.5', '1.5', '2.5'].map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].map(pick => (
+                              <button key={pick} type="button"
+                                className={`ou-cell ${htGoalsLine === l && htGoalsOU === pick ? 'ou-cell--active' : ''}`}
+                                onClick={() => {
+                                  if (htGoalsLine === l && htGoalsOU === pick) { setHtGoalsLine(''); setHtGoalsOU(''); }
+                                  else { setHtGoalsLine(l); setHtGoalsOU(pick); }
+                                }}>
+                                {preOdds.htGoals?.[l]?.[pick] != null ? Number(preOdds.htGoals[l][pick]).toFixed(2) : '—'}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2nd Half Goals O/U */}
+                  <div className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('shGoals')}>
+                      <span className="market-section__name">⏱️ 2nd Half Goals — Over / Under</span>
+                      {shGoalsLine && shGoalsOU && <span className="market-section__badge">{shGoalsOU} {shGoalsLine}</span>}
+                      <span className="market-section__toggle">{collapsed.shGoals ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.shGoals && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                        {['0.5', '1.5', '2.5'].map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].map(pick => (
+                              <button key={pick} type="button"
+                                className={`ou-cell ${shGoalsLine === l && shGoalsOU === pick ? 'ou-cell--active' : ''}`}
+                                onClick={() => {
+                                  if (shGoalsLine === l && shGoalsOU === pick) { setShGoalsLine(''); setShGoalsOU(''); }
+                                  else { setShGoalsLine(l); setShGoalsOU(pick); }
+                                }}>
+                                {preOdds.shGoals?.[l]?.[pick] != null ? Number(preOdds.shGoals[l][pick]).toFixed(2) : '—'}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Team Odd / Even Goals */}
+                  <div className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('teamOE')}>
+                      <span className="market-section__name">⚖️ Team Goals — Odd / Even</span>
+                      {(homeOEPick || awayOEPick) && <span className="market-section__badge">selected</span>}
+                      <span className="market-section__toggle">{collapsed.teamOE ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.teamOE && (
+                      <div style={{ padding: '0 16px 12px' }}>
+                        {[
+                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: homeOEPick, setPick: setHomeOEPick, key: 'homeOE' },
+                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: awayOEPick, setPick: setAwayOEPick, key: 'awayOE' },
+                        ].map(({ val, lbl, pick: teamPick, setPick, key }) => (
+                          <div key={val} style={{ marginBottom: 8 }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
+                            <div className="market-options market-options--2">
+                              {[{ oe: 'true', lbl2: 'Odd' }, { oe: 'false', lbl2: 'Even' }].map(({ oe, lbl2 }) => (
+                                <button key={oe} type="button"
+                                  className={`market-option ${teamPick === oe ? 'market-option--active' : ''}`}
+                                  onClick={() => setPick(teamPick === oe ? '' : oe)}>
+                                  <div className="market-option__label">{lbl2}</div>
+                                  <div className="market-option__odds">
+                                    {preOdds[key]?.[oe] != null ? Number(preOdds[key][oe]).toFixed(2) : '—'}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Odd / Even Goals — 1st Half */}
+                  <div className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('oe1h')}>
+                      <span className="market-section__name">⚖️ Odd / Even Goals — 1st Half</span>
+                      {oe1hPick && <span className="market-section__badge">{oe1hPick === 'true' ? 'Odd' : 'Even'}</span>}
+                      <span className="market-section__toggle">{collapsed.oe1h ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.oe1h && (
+                      <div className="market-options market-options--2">
+                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].map(({ val, lbl }) => (
+                          <button key={val} type="button"
+                            className={`market-option ${oe1hPick === val ? 'market-option--active' : ''}`}
+                            onClick={() => setOe1hPick(oe1hPick === val ? '' : val)}>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">
+                              {preOdds.oe1h?.[val] != null ? Number(preOdds.oe1h[val]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Team to Score */}
+                  <div className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
+                      <span className="market-section__name">🥅 Team to Score</span>
+                      {(homeTsPick || awayTsPick) && <span className="market-section__badge">selected</span>}
+                      <span className="market-section__toggle">{collapsed.teamTs ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.teamTs && (
+                      <div style={{ padding: '0 16px 12px' }}>
+                        {[
+                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: homeTsPick, setPick: setHomeTsPick, key: 'homeTs' },
+                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: awayTsPick, setPick: setAwayTsPick, key: 'awayTs' },
+                        ].map(({ val, lbl, pick: teamPick, setPick, key }) => (
+                          <div key={val} style={{ marginBottom: 8 }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
+                            <div className="market-options market-options--2">
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                                <button key={yn} type="button"
+                                  className={`market-option ${teamPick === yn ? 'market-option--active' : ''}`}
+                                  onClick={() => setPick(teamPick === yn ? '' : yn)}>
+                                  <div className="market-option__label">{lbl2}</div>
+                                  <div className="market-option__odds">
+                                    {preOdds[key]?.[yn] != null ? Number(preOdds[key][yn]).toFixed(2) : '—'}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Win Both Halves */}
+                  <div className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('wbh')}>
+                      <span className="market-section__name">🏆 Win Both Halves</span>
+                      {(wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
+                      <span className="market-section__toggle">{collapsed.wbh ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.wbh && (
+                      <div style={{ padding: '0 16px 12px' }}>
+                        <div className="muted-text" style={{ fontSize: '0.74rem', marginBottom: 8 }}>Team wins both the 1st and 2nd half.</div>
+                        {[
+                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: wbhHomePick, setPick: v => { setWbhHomePick(v); } },
+                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: wbhAwayPick, setPick: v => { setWbhAwayPick(v); } },
+                        ].map(({ val, lbl, pick: teamPick, setPick }) => (
+                          <div key={val} style={{ marginBottom: 8 }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
+                            <div className="market-options market-options--2">
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                                <button key={yn} type="button"
+                                  className={`market-option ${teamPick === yn ? 'market-option--active' : ''}`}
+                                  onClick={() => setPick(teamPick === yn ? '' : yn)}>
+                                  <div className="market-option__label">{lbl2}</div>
+                                  <div className="market-option__odds">
+                                    {preOdds.wbh?.[val]?.[yn] != null ? Number(preOdds.wbh[val][yn]).toFixed(2) : '—'}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Last Team to Score */}
+                  <div className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('lastScore')}>
+                      <span className="market-section__name">🏁 Last Team to Score</span>
+                      {lastScorePick && <span className="market-section__badge">{lastScorePick === 'Home' ? selectedMatch.homeTeamName : lastScorePick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
+                      <span className="market-section__toggle">{collapsed.lastScore ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.lastScore && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { key: 'Home', label: selectedMatch.homeTeamName },
+                          { key: 'Draw', label: 'No Goal' },
+                          { key: 'Away', label: selectedMatch.awayTeamName },
+                        ].map(({ key, label }) => (
+                          <button key={key} type="button"
+                            className={`market-option ${lastScorePick === key ? 'market-option--active' : ''}`}
+                            onClick={() => setLastScorePick(lastScorePick === key ? '' : key)}>
+                            <div className="market-option__label">{label}</div>
+                            <div className="market-option__odds">
+                              {preOdds.lastScore?.[key] != null ? Number(preOdds.lastScore[key]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* HT / FT */}
+                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('htft')}>
+                      <span className="market-section__name">🔀 Half Time / Full Time</span>
+                      {htftPick && <span className="market-section__badge">{htftPick}</span>}
+                      <span className="market-section__toggle">{collapsed.htft ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.htft && (() => {
+                      const H = selectedMatch.homeTeamName, D = 'Draw', A = selectedMatch.awayTeamName;
+                      const htftOptions = [
+                        { key: 'HH', label: `${H} / ${H}` }, { key: 'HD', label: `${H} / ${D}` }, { key: 'HA', label: `${H} / ${A}` },
+                        { key: 'DH', label: `${D} / ${H}` }, { key: 'DD', label: `${D} / ${D}` }, { key: 'DA', label: `${D} / ${A}` },
+                        { key: 'AH', label: `${A} / ${H}` }, { key: 'AD', label: `${A} / ${D}` }, { key: 'AA', label: `${A} / ${A}` },
+                      ];
+                      return (
+                        <div className="market-options market-options--3">
+                          {htftOptions.map(({ key, label }) => (
+                            <button key={key} type="button"
+                              className={`market-option ${htftPick === key ? 'market-option--active' : ''}`}
+                              onClick={() => setHtftPick(htftPick === key ? '' : key)}>
+                              <div className="market-option__label" style={{ fontSize: '0.72rem' }}>{label}</div>
+                              <div className="market-option__odds">
+                                {preOdds.htft?.[key] != null ? Number(preOdds.htft[key]).toFixed(2) : '—'}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Result + BTTS */}
+                  <div className={`market-section ${collapsed.rbt ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('rbt')}>
+                      <span className="market-section__name">📊 Result + BTTS</span>
+                      {rbtPick && <span className="market-section__badge">{rbtPick}</span>}
+                      <span className="market-section__toggle">{collapsed.rbt ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.rbt && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { key: 'HomeYes', lbl: `${selectedMatch.homeTeamName} & Yes` },
+                          { key: 'HomeNo',  lbl: `${selectedMatch.homeTeamName} & No` },
+                          { key: 'DrawYes', lbl: 'Draw & Yes' },
+                          { key: 'DrawNo',  lbl: 'Draw & No' },
+                          { key: 'AwayYes', lbl: `${selectedMatch.awayTeamName} & Yes` },
+                          { key: 'AwayNo',  lbl: `${selectedMatch.awayTeamName} & No` },
+                        ].map(({ key, lbl }) => (
+                          <button key={key} type="button"
+                            className={`market-option ${rbtPick === key ? 'market-option--active' : ''}`}
+                            onClick={() => setRbtPick(rbtPick === key ? '' : key)}>
+                            <div className="market-option__label" style={{ fontSize: '0.72rem' }}>{lbl}</div>
+                            <div className="market-option__odds">
+                              {preOdds.rbt?.[key] != null ? Number(preOdds.rbt[key]).toFixed(2) : '—'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Goalscorer */}
                   <div className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('scorer')}>
@@ -1289,6 +1783,48 @@ export default function MatchesPage() {
                                   First Goal — {fgPick === 'Home' ? selectedMatch.homeTeamName : fgPick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}
                                   <em>{Number(mpOdds.fg).toFixed(2)}</em>
                                 </span>
+                              )}
+                              {btts1hPick && mpOdds.btts1h != null && (
+                                <span className="bet-slip__leg">BTTS 1st Half — {btts1hPick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.btts1h).toFixed(2)}</em></span>
+                              )}
+                              {btts2hPick && mpOdds.btts2h != null && (
+                                <span className="bet-slip__leg">BTTS 2nd Half — {btts2hPick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.btts2h).toFixed(2)}</em></span>
+                              )}
+                              {htGoalsLine && htGoalsOU && mpOdds.htGoals != null && (
+                                <span className="bet-slip__leg">1H Goals {htGoalsOU} {htGoalsLine}<em>{Number(mpOdds.htGoals).toFixed(2)}</em></span>
+                              )}
+                              {shGoalsLine && shGoalsOU && mpOdds.shGoals != null && (
+                                <span className="bet-slip__leg">2H Goals {shGoalsOU} {shGoalsLine}<em>{Number(mpOdds.shGoals).toFixed(2)}</em></span>
+                              )}
+                              {homeOEPick && mpOdds.homeOE != null && (
+                                <span className="bet-slip__leg">{selectedMatch.homeTeamName} Goals — {homeOEPick === 'true' ? 'Odd' : 'Even'}<em>{Number(mpOdds.homeOE).toFixed(2)}</em></span>
+                              )}
+                              {awayOEPick && mpOdds.awayOE != null && (
+                                <span className="bet-slip__leg">{selectedMatch.awayTeamName} Goals — {awayOEPick === 'true' ? 'Odd' : 'Even'}<em>{Number(mpOdds.awayOE).toFixed(2)}</em></span>
+                              )}
+                              {oe1hPick && mpOdds.oe1h != null && (
+                                <span className="bet-slip__leg">1H Goals — {oe1hPick === 'true' ? 'Odd' : 'Even'}<em>{Number(mpOdds.oe1h).toFixed(2)}</em></span>
+                              )}
+                              {homeTsPick && mpOdds.homeTs != null && (
+                                <span className="bet-slip__leg">{selectedMatch.homeTeamName} To Score — {homeTsPick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.homeTs).toFixed(2)}</em></span>
+                              )}
+                              {awayTsPick && mpOdds.awayTs != null && (
+                                <span className="bet-slip__leg">{selectedMatch.awayTeamName} To Score — {awayTsPick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.awayTs).toFixed(2)}</em></span>
+                              )}
+                              {wbhHomePick && mpOdds.wbhHome != null && (
+                                <span className="bet-slip__leg">{selectedMatch.homeTeamName} Win Both Halves — {wbhHomePick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.wbhHome).toFixed(2)}</em></span>
+                              )}
+                              {wbhAwayPick && mpOdds.wbhAway != null && (
+                                <span className="bet-slip__leg">{selectedMatch.awayTeamName} Win Both Halves — {wbhAwayPick === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.wbhAway).toFixed(2)}</em></span>
+                              )}
+                              {lastScorePick && mpOdds.lastScore != null && (
+                                <span className="bet-slip__leg">Last Goal — {lastScorePick === 'Home' ? selectedMatch.homeTeamName : lastScorePick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}<em>{Number(mpOdds.lastScore).toFixed(2)}</em></span>
+                              )}
+                              {htftPick && mpOdds.htft != null && (
+                                <span className="bet-slip__leg">HT/FT — {htftPick}<em>{Number(mpOdds.htft).toFixed(2)}</em></span>
+                              )}
+                              {rbtPick && mpOdds.rbt != null && (
+                                <span className="bet-slip__leg">Result+BTTS — {rbtPick}<em>{Number(mpOdds.rbt).toFixed(2)}</em></span>
                               )}
                             </div>
                           </div>
