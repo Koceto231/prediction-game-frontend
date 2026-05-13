@@ -6,6 +6,7 @@ import AdminPage from './pages/AdminPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import LoginPage from './pages/LoginPage';
 import MatchesPage from './pages/MatchesPage';
+import LivePage from './pages/LivePage';
 import PredictionsPage from './pages/PredictionsPage';
 import LeaguesPage from './pages/LeaguesPage';
 import LeaguePage from './pages/LeaguePage';
@@ -50,6 +51,7 @@ function AppLayout() {
         <main className="main-content" style={{ marginTop: 0 }}>
           <Routes>
             <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/live" element={<LivePage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/leagues" element={<LeaguesPage />} />

@@ -15,10 +15,12 @@ import {
   Settings,
   User,
   LogOut,
+  Radio,
 } from 'lucide-react';
 
 const PRIMARY_TABS = [
   { to: '/matches',     Icon: Zap,           label: 'Matches'  },
+  { to: '/live',        Icon: Radio,          label: 'Live'     },
   { to: '/bets',        Icon: ClipboardList,  label: 'My Bets'  },
   { to: '/fantasy',     Icon: Crown,          label: 'Fantasy'  },
   { to: '/leaderboard', Icon: Trophy,         label: 'Board'    },
@@ -73,6 +75,7 @@ export default function Navbar() {
 
         <nav className="nav-links">
           <NavLink to="/matches">Matches</NavLink>
+          <NavLink to="/live">Live</NavLink>
           <NavLink to="/bets">My Bets</NavLink>
           <NavLink to="/leaderboard">Board</NavLink>
           <NavLink to="/leagues">Leagues</NavLink>
