@@ -146,6 +146,7 @@ export default function MatchesPage() {
   const { refreshBalance } = useWallet();
 
   const [matches, setMatches]             = useState([]);
+  const [liveMatches, setLiveMatches]     = useState([]);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [mode, setMode]                   = useState('');
   const [fields, setFields]               = useState(EMPTY);
@@ -279,6 +280,15 @@ export default function MatchesPage() {
       .finally(() => setPageLoading(false));
   }, []);
 
+  // ── Live matches polling ─────────────────────────────────────────
+  useEffect(() => {
+    const fetchLive = () =>
+      api.get('/Match/live').then(r => setLiveMatches(r.data ?? [])).catch(() => {});
+    fetchLive();
+    const id = setInterval(fetchLive, 45_000);
+    return () => clearInterval(id);
+  }, []);
+
   const resetPanel = useCallback(() => {
     setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
     setExactOdds(null);
@@ -293,7 +303,7 @@ export default function MatchesPage() {
     setHomeOEPick(''); setAwayOEPick(''); setOe1hPick('');
     setHomeTsPick(''); setAwayTsPick('');
     setWbhHomePick(''); setWbhAwayPick('');
-    setLastScorePick(''); setHtftPick(''); setRbtPick('');
+    setLastScorePick(''); setHtftPick('');
     setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({});
     setCollapsed(INIT_COLLAPSED);
   }, []);
@@ -746,6 +756,47 @@ export default function MatchesPage() {
   // ── Render ────────────────────────────────────────────────────
   return (
     <div className="page-grid">
+
+      {/* Live Matches */}
+      {liveMatches.length > 0 && (
+        <section className="shell-card panel" style={{ marginBottom: 0 }}>
+          <div className="section-head">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="live-dot" />
+              <h2 style={{ margin: 0 }}>Live Now</h2>
+            </div>
+          </div>
+          <div className="cards-grid">
+            <div className="matches-table-head">
+              <span>MIN</span>
+              <span>FIXTURE</span>
+              <span style={{ textAlign: 'center' }}>HOME</span>
+              <span style={{ textAlign: 'center' }}>—</span>
+              <span style={{ textAlign: 'center' }}>AWAY</span>
+            </div>
+            {liveMatches.map(match => (
+              <div
+                key={match.id}
+                className={`match-card match-card--live${selectedMatch?.id === match.id ? ' match-card--selected' : ''}`}
+                onClick={() => {
+                  if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
+                  else { setSelectedMatch(match); resetPanel(); }
+                }}
+              >
+                <span className="match-card__time" style={{ color: 'var(--red, #e53e3e)', fontWeight: 700 }}>
+                  {match.liveMinute != null ? `${match.liveMinute}'` : 'LIVE'}
+                </span>
+                <span className="match-card__fixture">
+                  {match.homeTeamName} <strong style={{ margin: '0 6px' }}>{match.homeScore ?? 0} – {match.awayScore ?? 0}</strong> {match.awayTeamName}
+                </span>
+                <span className="match-card__odds">{match.homeOdds ? Number(match.homeOdds).toFixed(2) : '—'}</span>
+                <span className="match-card__odds">{match.drawOdds ? Number(match.drawOdds).toFixed(2) : '—'}</span>
+                <span className="match-card__odds">{match.awayOdds ? Number(match.awayOdds).toFixed(2) : '—'}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Match list */}
       <section className="shell-card panel">
