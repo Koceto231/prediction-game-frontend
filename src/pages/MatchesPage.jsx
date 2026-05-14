@@ -273,7 +273,7 @@ export default function MatchesPage() {
 
   useEffect(() => {
     setPageLoading(true);
-    api.get('/Match/upcoming?take=20')
+    api.get('/Match/upcoming?take=50')
       .then(r => setMatches(r.data))
       .catch(e => setLoadError(e?.response?.data?.message || 'Failed to load matches.'))
       .finally(() => setPageLoading(false));
