@@ -7214,3 +7214,103 @@ select:focus {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ── Quick Bet Strip ────────────────────────────────────── */
+.quick-bet-strip {
+  background: rgba(240, 197, 25, 0.06);
+  border-top: 1px solid rgba(240, 197, 25, 0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-bet-strip__odds {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.quick-bet-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: var(--text-main);
+}
+
+.quick-bet-btn:hover:not(:disabled) {
+  background: rgba(240, 197, 25, 0.10);
+  border-color: rgba(240, 197, 25, 0.35);
+}
+
+.quick-bet-btn--active {
+  background: rgba(240, 197, 25, 0.18) !important;
+  border-color: var(--accent) !important;
+}
+
+.quick-bet-btn__label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+.quick-bet-btn__odds {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.quick-bet-strip__place {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quick-bet-strip__input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.quick-bet-strip__input:focus {
+  border-color: var(--accent);
+}
+
+.quick-bet-strip__cta {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-bet-strip__cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Locked market section ──────────────────────────────── */
+.market-section--locked {
+  opacity: 0.6;
+}
