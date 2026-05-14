@@ -454,8 +454,21 @@ export default function LivePage() {
                 <span className="match-card__time" style={{ color: 'var(--red, #e53e3e)', fontWeight: 700 }}>
                   {match.liveMinute != null ? `${match.liveMinute}'` : 'LIVE'}
                 </span>
-                <span className="match-card__fixture">
-                  {match.homeTeamName} <strong style={{ margin: '0 6px' }}>{match.homeScore ?? 0} – {match.awayScore ?? 0}</strong> {match.awayTeamName}
+                <span className="match-card__fixture" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span>
+                    {match.homeTeamName} <strong style={{ margin: '0 6px' }}>{match.homeScore ?? 0} – {match.awayScore ?? 0}</strong> {match.awayTeamName}
+                  </span>
+                  {match.goalScorers?.length > 0 && (
+                    <span style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px', marginTop: 3, fontSize: '0.70rem', color: 'var(--text-muted)' }}>
+                      {match.goalScorers.map((g, i) => (
+                        <span key={i} style={{ whiteSpace: 'nowrap' }}>
+                          {g.team === 'home'
+                            ? <>⚽ {g.isOwnGoal ? <em>(OG) </em> : null}{g.playerName} {g.minute}&apos;</>
+                            : <>{g.playerName}{g.isOwnGoal ? <em> (OG)</em> : null} {g.minute}&apos; ⚽</>}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </span>
                 <span className="match-card__odds">{match.homeOdds ? Number(match.homeOdds).toFixed(2) : '—'}</span>
                 <span className="match-card__odds">{match.drawOdds ? Number(match.drawOdds).toFixed(2) : '—'}</span>
@@ -480,6 +493,22 @@ export default function LivePage() {
               <span className="match-hero__vs">{selectedMatch.homeScore ?? 0} – {selectedMatch.awayScore ?? 0}</span>
               <span>{selectedMatch.awayTeamName}</span>
             </h2>
+            {selectedMatch.goalScorers?.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', gap: 8 }}>
+                {/* Home goals — left-aligned */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {selectedMatch.goalScorers.filter(g => g.team === 'home').map((g, i) => (
+                    <span key={i}>⚽ {g.isOwnGoal ? <em>(OG) </em> : null}{g.playerName} {g.minute}&apos;</span>
+                  ))}
+                </div>
+                {/* Away goals — right-aligned */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                  {selectedMatch.goalScorers.filter(g => g.team === 'away').map((g, i) => (
+                    <span key={i}>{g.playerName}{g.isOwnGoal ? <em> (OG)</em> : null} {g.minute}&apos; ⚽</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {feedback && (
