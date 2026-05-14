@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
+import api from '../api/apiClient';
 import {
   Zap,
   ClipboardList,
@@ -41,7 +42,15 @@ export default function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [liveCount, setLiveCount] = useState(0);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    const fetch = () => api.get('/Match/live').then(r => setLiveCount((r.data ?? []).length)).catch(() => {});
+    fetch();
+    const id = setInterval(fetch, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const username = user?.username ?? '';
   const initials = username.slice(0, 2).toUpperCase() || 'U';
@@ -75,7 +84,7 @@ export default function Navbar() {
 
         <nav className="nav-links">
           <NavLink to="/matches">Matches</NavLink>
-          <NavLink to="/live">Live</NavLink>
+          <NavLink to="/live">Live{liveCount > 0 ? ` — ${liveCount}` : ''}</NavLink>
           <NavLink to="/bets">My Bets</NavLink>
           <NavLink to="/leaderboard">Board</NavLink>
           <NavLink to="/leagues">Leagues</NavLink>
@@ -132,7 +141,7 @@ export default function Navbar() {
             }
           >
             <Icon size={20} strokeWidth={1.75} />
-            <span>{label}</span>
+            <span>{to === '/live' && liveCount > 0 ? `Live — ${liveCount}` : label}</span>
           </NavLink>
         ))}
 
