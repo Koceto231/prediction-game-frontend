@@ -208,6 +208,13 @@ export default function AdminPage() {
             </div>
             <p className="admin-hint">Попълва LeagueCode на отбори с null — Werder Bremen, Hoffenheim и т.н. Взима кода от мачовете им. Пусни преди да изтриваш фантомни мачове!</p>
             <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'delete-orphan-teams'}
+                onClick={() => run('delete-orphan-teams', () => api.delete('/admin/sync/teams/orphaned'))}>
+                {loading === 'delete-orphan-teams' ? 'Deleting…' : '🗑️ Delete Orphaned Teams (null LeagueCode + no matches)'}
+              </button>
+            </div>
+            <p className="admin-hint">Изтрива отбори без LeagueCode И без нито един мач — чисто сираци. Пусни след Fix Team LeagueCodes.</p>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-leagues'}
                 onClick={() => run('fix-leagues', () => api.post('/admin/sync/matches/fix-league-codes'))}>
                 {loading === 'fix-leagues' ? 'Fixing…' : '🔧 Fix League Codes on Old Matches'}
