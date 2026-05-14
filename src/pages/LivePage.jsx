@@ -651,37 +651,39 @@ export default function LivePage() {
           )}
 
           {!mode && (
-            <div className="premium-mode-grid">
-              <button
-                type="button"
-                className="premium-mode-card premium-mode-card--exact"
-                onClick={() => setMode('exact')}
-                disabled
-                style={{ opacity: 0.38, cursor: 'not-allowed', filter: 'grayscale(0.5)' }}
-                title="Not available during live play"
-              >
-                <div className="premium-mode-card__top">
-                  <span className="premium-mode-card__icon">🎯</span>
-                  <span className="premium-mode-card__points">5 pts</span>
-                </div>
-                <div className="premium-mode-card__title">Exact Score</div>
-                <div className="premium-mode-card__text">Not available during live play.</div>
-              </button>
-              <button type="button" className="premium-mode-card premium-mode-card--market" onClick={() => setMode('market')}>
-                <div className="premium-mode-card__top">
-                  <span className="premium-mode-card__icon">📈</span>
-                  <span className="premium-mode-card__points">up to 3 pts</span>
-                </div>
-                <div className="premium-mode-card__title">Market Pick</div>
-                <div className="premium-mode-card__text">Combine any markets — winner, BTTS, corners, goalscorer and more.</div>
-              </button>
-            </div>
-            {selectedMatch.homeOdds != null && (
-              <>
-                <div className="quick-bet-divider"><span>or place a quick bet</span></div>
-                <QuickBetPanel match={selectedMatch} />
-              </>
-            )}
+            <>
+              <div className="premium-mode-grid">
+                <button
+                  type="button"
+                  className="premium-mode-card premium-mode-card--exact"
+                  onClick={() => setMode('exact')}
+                  disabled
+                  style={{ opacity: 0.38, cursor: 'not-allowed', filter: 'grayscale(0.5)' }}
+                  title="Not available during live play"
+                >
+                  <div className="premium-mode-card__top">
+                    <span className="premium-mode-card__icon">🎯</span>
+                    <span className="premium-mode-card__points">5 pts</span>
+                  </div>
+                  <div className="premium-mode-card__title">Exact Score</div>
+                  <div className="premium-mode-card__text">Not available during live play.</div>
+                </button>
+                <button type="button" className="premium-mode-card premium-mode-card--market" onClick={() => setMode('market')}>
+                  <div className="premium-mode-card__top">
+                    <span className="premium-mode-card__icon">📈</span>
+                    <span className="premium-mode-card__points">up to 3 pts</span>
+                  </div>
+                  <div className="premium-mode-card__title">Market Pick</div>
+                  <div className="premium-mode-card__text">Combine any markets — winner, BTTS, corners, goalscorer and more.</div>
+                </button>
+              </div>
+              {selectedMatch.homeOdds != null && (
+                <>
+                  <div className="quick-bet-divider"><span>or place a quick bet</span></div>
+                  <QuickBetPanel match={selectedMatch} />
+                </>
+              )}
+            </>
           )}
 
           <div className="prediction-form">
@@ -864,7 +866,8 @@ export default function LivePage() {
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
