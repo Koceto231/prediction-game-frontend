@@ -204,18 +204,26 @@ export default function LivePage() {
   const panelRef = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Wall-clock estimate for the live minute when Sportmonks hasn't reported a
-  // real clock yet (typical for BGL where state flips slowly). Marked with ~
-  // on the UI so users see it's approximate.
+  // Wall-clock estimate — used only when Sportmonks gives us a phase (1H/2H)
+  // but no clock.minute. Slightly conservative (small buffer) so we never
+  // show a minute AHEAD of the real game state — being a minute behind is
+  // always safer for betting decisions than being ahead.
   const estimateMinute = (matchDate) => {
     const kickoff = new Date(matchDate);
     const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60000);
     if (elapsed <= 0)  return null;
-    if (elapsed <= 45) return elapsed;        // 1st half
-    if (elapsed <= 60) return 45;             // half time
-    return Math.min(90, elapsed - 15);        // 2nd half (minus 15 min HT)
+    if (elapsed <= 45) return Math.max(1, elapsed - 2);       // 1H: -2 buffer
+    if (elapsed <= 60) return 45;                             // HT zone fallback
+    return Math.min(85, elapsed - 20);                        // 2H: -15 HT - 5 buffer
   };
+  // Display priority:
+  //   1. Sportmonks says HT          → "HT"
+  //   2. Sportmonks gives real clock → "67'"
+  //   3. Sportmonks knows phase only → "~67'"
+  //   4. Nothing                     → "LIVE"
   const displayMinute = (m) => {
+    if (m.liveState === 'HT' || m.liveState === 'BREAK') return 'HT';
+    if (m.liveState === 'FT' || m.liveState === 'AET')   return 'FT';
     if (m.liveMinute != null) return `${m.liveMinute}'`;
     const est = estimateMinute(m.matchDate);
     return est != null ? `~${est}'` : 'LIVE';
@@ -511,9 +519,16 @@ export default function LivePage() {
   };
 
   // ── Live restrictions ─────────────────────────────────────────
-  // liveMinute is null when Sportmonks hasn't provided a real clock yet — unknown half
+  // Prefer Sportmonks phase ('1H'/'HT'/'2H'/'ET') when available — it's the
+  // authoritative signal. Fall back to minute > 45 only when phase is missing.
   const liveMin       = selectedMatch?.liveMinute ?? null;
-  const isSecondHalf  = liveMin != null && liveMin > 45;
+  const liveState     = selectedMatch?.liveState ?? null;
+  const isHalfTime    = liveState === 'HT' || liveState === 'BREAK';
+  // "isSecondHalf" = 1H is done (HT, BREAK, 2H, ET all qualify). Used to lock
+  // every 1H market deterministically — no more minute-based guessing.
+  const isSecondHalf  = liveState === 'HT' || liveState === 'BREAK'
+                     || liveState === '2H' || liveState === 'ET'
+                     || (liveState == null && liveMin != null && liveMin > 45);
   const liveHomeScore = selectedMatch?.homeScore ?? 0;
   const liveAwayScore = selectedMatch?.awayScore ?? 0;
   const totalGoals    = liveHomeScore + liveAwayScore;
