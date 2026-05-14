@@ -524,6 +524,22 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Debug показва homeLeague/awayLeague за всеки предстоящ мач. Изтриването маха мачове с различни лиги без залози/прогнози.</p>
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
+              Мачове, при които <b>и двата</b> отбора имат и друг мач на същия ден — сигурни фантоми (Newcastle vs Fulham тип)
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'same-day-dry'}
+                onClick={() => run('same-day-dry', () => api.delete('/admin/sync/matches/same-day-phantoms?dryRun=true'))}>
+                {loading === 'same-day-dry' ? 'Checking…' : '🔍 Preview — same-day фантоми'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'same-day-delete'}
+                onClick={() => run('same-day-delete', () => api.delete('/admin/sync/matches/same-day-phantoms?dryRun=false'))}>
+                {loading === 'same-day-delete' ? 'Deleting…' : '🗑️ Изтрий same-day фантоми'}
+              </button>
+            </div>
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
