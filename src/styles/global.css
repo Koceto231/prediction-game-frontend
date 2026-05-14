@@ -121,6 +121,79 @@ select {
   gap: 22px;
 }
 
+/* ── Matches page layout (sidebar + content) ─────────────────── */
+.matches-layout {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.matches-layout .page-grid {
+  flex: 1;
+  min-width: 0;
+}
+
+.league-sidebar {
+  width: 158px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.league-sidebar__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  padding: 0 10px 8px;
+  text-transform: uppercase;
+}
+
+.league-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.league-sidebar__item:hover {
+  background: var(--surface-shell);
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+}
+
+.league-sidebar__item--active {
+  background: var(--surface-shell);
+  color: var(--accent, #e4b94a);
+  border-color: var(--accent, #e4b94a);
+  font-weight: 600;
+}
+
+.league-sidebar__flag {
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.league-sidebar__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .panel {
   padding: 24px;
 }
@@ -6557,6 +6630,19 @@ select:focus {
 
 /* ── 960px — tablets ─────────────────────────────────────────── */
 @media (max-width: 960px) {
+  .matches-layout { flex-direction: column; gap: 12px; }
+  .league-sidebar {
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  .league-sidebar__title { display: none; }
+  .league-sidebar__item { width: auto; padding: 7px 12px; font-size: 12px; }
+  .league-sidebar__flag { font-size: 13px; }
+
   .page-grid { padding: 12px; gap: 12px; }
 
   /* Bet panel float → inline below match card */

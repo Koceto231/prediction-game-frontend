@@ -141,11 +141,22 @@ function QuickBetPanel({ match, onBetPlaced }) {
   );
 }
 
+// ── League definitions ───────────────────────────────────────────
+const LEAGUE_LIST = [
+  { code: null,  label: 'All Leagues',    flag: '◈' },
+  { code: 'PL',  label: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { code: 'BL1', label: 'Bundesliga',     flag: '🇩🇪' },
+  { code: 'SA',  label: 'Serie A',        flag: '🇮🇹' },
+  { code: 'PD',  label: 'La Liga',        flag: '🇪🇸' },
+  { code: 'BGL', label: 'Efbet Liga',     flag: '🇧🇬' },
+];
+
 // ── Main page ────────────────────────────────────────────────────
 export default function MatchesPage() {
   const { refreshBalance } = useWallet();
 
   const [matches, setMatches]             = useState([]);
+  const [selectedLeague, setSelectedLeague] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [mode, setMode]                   = useState('');
   const [fields, setFields]               = useState(EMPTY);
@@ -745,20 +756,43 @@ export default function MatchesPage() {
   };
 
   // ── Render ────────────────────────────────────────────────────
-  return (
-    <div className="page-grid">
+  const filteredMatches = selectedLeague
+    ? matches.filter(m => m.leagueCode === selectedLeague)
+    : matches;
 
+  return (
+    <div className="matches-layout">
+
+      {/* League sidebar */}
+      <aside className="league-sidebar">
+        <div className="league-sidebar__title">LEAGUES</div>
+        {LEAGUE_LIST.map(({ code, label, flag }) => (
+          <button
+            key={code ?? 'all'}
+            className={`league-sidebar__item${selectedLeague === code ? ' league-sidebar__item--active' : ''}`}
+            onClick={() => { setSelectedLeague(code); setSelectedMatch(null); resetPanel(); }}
+          >
+            <span className="league-sidebar__flag">{flag}</span>
+            <span className="league-sidebar__label">{label}</span>
+          </button>
+        ))}
+      </aside>
+
+      <div className="page-grid">
 
       {/* Match list */}
       <section className="shell-card panel">
         <div className="section-head">
-          <div><h2>Upcoming Matches</h2><p>Select a match to place your bet.</p></div>
+          <div>
+            <h2>Upcoming Matches</h2>
+            <p>{selectedLeague ? LEAGUE_LIST.find(l => l.code === selectedLeague)?.label : 'All Leagues'}</p>
+          </div>
         </div>
         {loadError && <div className="alert alert-error">{loadError}</div>}
         {pageLoading && <div className="empty-box">Loading matches...</div>}
-        {!pageLoading && !matches.length && !loadError && <div className="empty-box">No upcoming matches found.</div>}
+        {!pageLoading && !filteredMatches.length && !loadError && <div className="empty-box">No upcoming matches found.</div>}
         <div className="cards-grid">
-          {matches.length > 0 && (
+          {filteredMatches.length > 0 && (
             <div className="matches-table-head">
               <span>TIME</span>
               <span>FIXTURE</span>
@@ -767,7 +801,7 @@ export default function MatchesPage() {
               <span style={{ textAlign: 'center' }}>2</span>
             </div>
           )}
-          {matches.map(match => (
+          {filteredMatches.map(match => (
             <MatchCard key={match.id} match={match} selected={selectedMatch?.id === match.id}
               onSelect={() => {
                 if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
@@ -1838,6 +1872,7 @@ export default function MatchesPage() {
 
         </section>
       )}
+      </div>
     </div>
   );
 }
