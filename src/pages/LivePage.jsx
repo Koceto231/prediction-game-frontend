@@ -528,6 +528,10 @@ export default function LivePage() {
   // (Over guaranteed AND Under impossible — both sides of the bet are determined)
   const isOULocked = (line, total) => total >= Math.ceil(Number(line));
 
+  // Live stats from Sportmonks (null when API hasn't returned them yet)
+  const liveCorners = selectedMatch?.totalCorners ?? null;
+  const liveYellows = selectedMatch?.totalYellowCards ?? null;
+
   // Wraps a market section header to show a lock message when disabled
   const LiveLock = ({ reason }) => (
     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 8, fontStyle: 'italic' }}>
@@ -839,20 +843,23 @@ export default function LivePage() {
                   {/* Corners */}
                   <div className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('corners')}>
-                      <span className="market-section__name">⌐ Corners — Over / Under</span>
+                      <span className="market-section__name">⌐ Corners — Over / Under{liveCorners != null && <span style={{ marginLeft: 8, color: 'var(--text-muted)', fontSize: '0.78rem' }}>({liveCorners} so far)</span>}</span>
                       {cornersLine && cornersOU && <span className="market-section__badge">{cornersOU} {cornersLine}</span>}
                       <span className="market-section__toggle">{collapsed.corners ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.corners && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {CORNER_LINES.map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {CORNER_LINES.map(l => {
+                          const cellLocked = liveCorners != null && isOULocked(l, liveCorners);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${cornersLine === String(l) && cornersOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (cornersLine === String(l) && cornersOU === pick) { setCornersLine(''); setCornersOU(''); } else { setCornersLine(String(l)); setCornersOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${cornersLine === String(l) && cornersOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (cornersLine === String(l) && cornersOU === pick) { setCornersLine(''); setCornersOU(''); } else { setCornersLine(String(l)); setCornersOU(pick); } }}>
                                 {cornersPreOdds[l]?.[pick] != null ? Number(cornersPreOdds[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
@@ -865,25 +872,29 @@ export default function LivePage() {
                   {/* Yellow Cards */}
                   <div className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('yellows')}>
-                      <span className="market-section__name">▬ Yellow Cards — Over / Under</span>
+                      <span className="market-section__name">▬ Yellow Cards — Over / Under{liveYellows != null && <span style={{ marginLeft: 8, color: 'var(--text-muted)', fontSize: '0.78rem' }}>({liveYellows} so far)</span>}</span>
                       {yellowsLine && yellowsOU && <span className="market-section__badge">{yellowsOU} {yellowsLine}</span>}
                       <span className="market-section__toggle">{collapsed.yellows ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.yellows && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {YELLOW_LINES.map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {YELLOW_LINES.map(l => {
+                          const cellLocked = liveYellows != null && isOULocked(l, liveYellows);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${yellowsLine === String(l) && yellowsOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (yellowsLine === String(l) && yellowsOU === pick) { setYellowsLine(''); setYellowsOU(''); } else { setYellowsLine(String(l)); setYellowsOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${yellowsLine === String(l) && yellowsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (yellowsLine === String(l) && yellowsOU === pick) { setYellowsLine(''); setYellowsOU(''); } else { setYellowsLine(String(l)); setYellowsOU(pick); } }}>
                                 {yellowsPreOdds[l]?.[pick] != null ? Number(yellowsPreOdds[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
