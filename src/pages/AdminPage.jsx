@@ -479,9 +479,15 @@ export default function AdminPage() {
           {/* ── Cleanup phantom matches ── */}
           <AdminSection title="🧹 Почисти фантомни мачове (грешна лига)">
             <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'phantom-debug'}
+                onClick={() => run('phantom-debug', () => api.get('/admin/sync/debug/upcoming-phantom'))}>
+                {loading === 'phantom-debug' ? 'Checking…' : '🔍 Debug — виж LeagueCodes на предстоящите мачове'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn" type="button" disabled={loading === 'phantom-dry'}
                 onClick={() => run('phantom-dry', () => api.delete('/admin/sync/matches/cleanup-phantom?dryRun=true'))}>
-                {loading === 'phantom-dry' ? 'Checking…' : '🔍 Preview — покажи фантомните мачове'}
+                {loading === 'phantom-dry' ? 'Checking…' : '🔍 Preview — покажи фантомните за изтриване'}
               </button>
             </div>
             <div className="admin-actions" style={{ marginTop: 8 }}>
@@ -490,7 +496,7 @@ export default function AdminPage() {
                 {loading === 'phantom-delete' ? 'Deleting…' : '🗑️ Изтрий фантомните мачове'}
               </button>
             </div>
-            <p className="admin-hint">Изтрива мачове където двата отбора са от различни лиги (Conference League и т.н.). Само мачове без залози/прогнози се изтриват. Preview първо!</p>
+            <p className="admin-hint">Debug показва homeLeague/awayLeague за всеки предстоящ мач. Изтриването маха мачове с различни лиги без залози/прогнози.</p>
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
