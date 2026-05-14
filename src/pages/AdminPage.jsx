@@ -215,6 +215,19 @@ export default function AdminPage() {
             </div>
             <p className="admin-hint">Изтрива отбори без LeagueCode И без нито един мач — чисто сираци. Пусни след Fix Team LeagueCodes.</p>
             <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'no-league-dry'}
+                onClick={() => run('no-league-dry', () => api.delete('/admin/sync/teams/no-league?dryRun=true'))}>
+                {loading === 'no-league-dry' ? 'Checking…' : '🔍 Preview — отбори без лига + техните мачове'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'no-league-delete'}
+                onClick={() => run('no-league-delete', () => api.delete('/admin/sync/teams/no-league?dryRun=false'))}>
+                {loading === 'no-league-delete' ? 'Deleting…' : '🗑️ Delete — отбори без лига + мачовете им'}
+              </button>
+            </div>
+            <p className="admin-hint">Изтрива отбори с null LeagueCode ЗАЕДНО с всичките им мачове, бетове, предикции и фентъзи данни. За Ligue 1 и др. неподдържани лиги.</p>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-leagues'}
                 onClick={() => run('fix-leagues', () => api.post('/admin/sync/matches/fix-league-codes'))}>
                 {loading === 'fix-leagues' ? 'Fixing…' : '🔧 Fix League Codes on Old Matches'}
