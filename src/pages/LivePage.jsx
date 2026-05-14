@@ -664,7 +664,7 @@ export default function LivePage() {
                   {/* Corners */}
                   <div className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('corners')}>
-                      <span className="market-section__name">🚩 Corners — Over / Under</span>
+                      <span className="market-section__name">⌐ Corners — Over / Under</span>
                       {cornersLine && cornersOU && <span className="market-section__badge">{cornersOU} {cornersLine}</span>}
                       <span className="market-section__toggle">{collapsed.corners ? '▼' : '▲'}</span>
                     </div>
@@ -690,7 +690,7 @@ export default function LivePage() {
                   {/* Yellow Cards */}
                   <div className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('yellows')}>
-                      <span className="market-section__name">🟨 Yellow Cards — Over / Under</span>
+                      <span className="market-section__name">▬ Yellow Cards — Over / Under</span>
                       {yellowsLine && yellowsOU && <span className="market-section__badge">{yellowsOU} {yellowsLine}</span>}
                       <span className="market-section__toggle">{collapsed.yellows ? '▼' : '▲'}</span>
                     </div>
@@ -716,7 +716,7 @@ export default function LivePage() {
                   {/* Odd / Even Goals */}
                   <div className={`market-section ${collapsed.oddEven ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oddEven')}>
-                      <span className="market-section__name">⚖️ Odd / Even Goals</span>
+                      <span className="market-section__name">≈ Odd / Even Goals</span>
                       {oddEvenPick && <span className="market-section__badge">{oddEvenPick === 'true' ? 'Odd' : 'Even'}</span>}
                       <span className="market-section__toggle">{collapsed.oddEven ? '▼' : '▲'}</span>
                     </div>
@@ -737,7 +737,7 @@ export default function LivePage() {
                   {/* Draw No Bet */}
                   <div className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('dnb')}>
-                      <span className="market-section__name">🔄 Draw No Bet</span>
+                      <span className="market-section__name">⊖ Draw No Bet</span>
                       {dnbPick && <span className="market-section__badge">{dnbPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>}
                       <span className="market-section__toggle">{collapsed.dnb ? '▼' : '▲'}</span>
                     </div>
@@ -758,7 +758,7 @@ export default function LivePage() {
                   {/* Win to Nil */}
                   <div className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('wtn')}>
-                      <span className="market-section__name">🧱 Win to Nil</span>
+                      <span className="market-section__name">⊘ Win to Nil</span>
                       {wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.wtn ? '▼' : '▲'}</span>
                     </div>
@@ -786,7 +786,7 @@ export default function LivePage() {
                   {/* Handicap */}
                   <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('hcp')}>
-                      <span className="market-section__name">⚡ Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
+                      <span className="market-section__name">± Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
                       {hcpPick && <span className="market-section__badge">{hcpPick}</span>}
                       <span className="market-section__toggle">{collapsed.hcp ? '▼' : '▲'}</span>
                     </div>
@@ -807,7 +807,7 @@ export default function LivePage() {
                   {/* Home Goals */}
                   <div className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
-                      <span className="market-section__name">🏠 {selectedMatch.homeTeamName} Goals</span>
+                      <span className="market-section__name">△ {selectedMatch.homeTeamName} Goals</span>
                       {hGoalsLine && hGoalsOU && <span className="market-section__badge">{hGoalsOU} {hGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.homeGoals ? '▼' : '▲'}</span>
                     </div>
@@ -833,7 +833,7 @@ export default function LivePage() {
                   {/* Away Goals */}
                   <div className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
-                      <span className="market-section__name">✈️ {selectedMatch.awayTeamName} Goals</span>
+                      <span className="market-section__name">▽ {selectedMatch.awayTeamName} Goals</span>
                       {aGoalsLine && aGoalsOU && <span className="market-section__badge">{aGoalsOU} {aGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.awayGoals ? '▼' : '▲'}</span>
                     </div>
@@ -859,7 +859,7 @@ export default function LivePage() {
                   {/* Half Time Result */}
                   <div className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('ht')}>
-                      <span className="market-section__name">⏱️ Half Time Result</span>
+                      <span className="market-section__name">◑ Half Time Result</span>
                       {htPick && <span className="market-section__badge">{htPick === 'Home' ? selectedMatch.homeTeamName : htPick === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>}
                       <span className="market-section__toggle">{collapsed.ht ? '▼' : '▲'}</span>
                     </div>
@@ -880,7 +880,7 @@ export default function LivePage() {
                   {/* Clean Sheet */}
                   <div className={`market-section ${collapsed.cs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('cs')}>
-                      <span className="market-section__name">🧤 Clean Sheet</span>
+                      <span className="market-section__name">○ Clean Sheet</span>
                       {csPick && csYN && <span className="market-section__badge">{csPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {csYN === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.cs ? '▼' : '▲'}</span>
                     </div>
@@ -908,7 +908,7 @@ export default function LivePage() {
                   {/* First Goal */}
                   <div className={`market-section ${collapsed.fg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('fg')}>
-                      <span className="market-section__name">🥅 First Goal</span>
+                      <span className="market-section__name">◎ First Goal</span>
                       {fgPick && <span className="market-section__badge">{fgPick === 'Home' ? selectedMatch.homeTeamName : fgPick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
                       <span className="market-section__toggle">{collapsed.fg ? '▼' : '▲'}</span>
                     </div>
@@ -929,7 +929,7 @@ export default function LivePage() {
                   {/* BTTS 1st Half */}
                   <div className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts1h')}>
-                      <span className="market-section__name">⚽ BTTS — 1st Half</span>
+                      <span className="market-section__name">◐ BTTS — 1st Half</span>
                       {btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.btts1h ? '▼' : '▲'}</span>
                     </div>
@@ -950,7 +950,7 @@ export default function LivePage() {
                   {/* BTTS 2nd Half */}
                   <div className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
-                      <span className="market-section__name">⚽ BTTS — 2nd Half</span>
+                      <span className="market-section__name">◑ BTTS — 2nd Half</span>
                       {btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.btts2h ? '▼' : '▲'}</span>
                     </div>
@@ -971,7 +971,7 @@ export default function LivePage() {
                   {/* 1st Half Goals O/U */}
                   <div className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htGoals')}>
-                      <span className="market-section__name">⏱️ 1st Half Goals — Over / Under</span>
+                      <span className="market-section__name">◐ 1st Half Goals — Over / Under</span>
                       {htGoalsLine && htGoalsOU && <span className="market-section__badge">{htGoalsOU} {htGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.htGoals ? '▼' : '▲'}</span>
                     </div>
@@ -997,7 +997,7 @@ export default function LivePage() {
                   {/* 2nd Half Goals O/U */}
                   <div className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('shGoals')}>
-                      <span className="market-section__name">⏱️ 2nd Half Goals — Over / Under</span>
+                      <span className="market-section__name">◑ 2nd Half Goals — Over / Under</span>
                       {shGoalsLine && shGoalsOU && <span className="market-section__badge">{shGoalsOU} {shGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.shGoals ? '▼' : '▲'}</span>
                     </div>
@@ -1023,7 +1023,7 @@ export default function LivePage() {
                   {/* Team Odd/Even */}
                   <div className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamOE')}>
-                      <span className="market-section__name">⚖️ Team Goals — Odd / Even</span>
+                      <span className="market-section__name">≈ Team Goals — Odd / Even</span>
                       {(homeOEPick || awayOEPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{collapsed.teamOE ? '▼' : '▲'}</span>
                     </div>
@@ -1054,7 +1054,7 @@ export default function LivePage() {
                   {/* Odd/Even 1st Half */}
                   <div className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe1h')}>
-                      <span className="market-section__name">⚖️ Odd / Even Goals — 1st Half</span>
+                      <span className="market-section__name">≈ Odd / Even Goals — 1st Half</span>
                       {oe1hPick && <span className="market-section__badge">{oe1hPick === 'true' ? 'Odd' : 'Even'}</span>}
                       <span className="market-section__toggle">{collapsed.oe1h ? '▼' : '▲'}</span>
                     </div>
@@ -1075,7 +1075,7 @@ export default function LivePage() {
                   {/* Team to Score */}
                   <div className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
-                      <span className="market-section__name">🥅 Team to Score</span>
+                      <span className="market-section__name">→ Team to Score</span>
                       {(homeTsPick || awayTsPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{collapsed.teamTs ? '▼' : '▲'}</span>
                     </div>
@@ -1106,7 +1106,7 @@ export default function LivePage() {
                   {/* Win Both Halves */}
                   <div className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('wbh')}>
-                      <span className="market-section__name">🏆 Win Both Halves</span>
+                      <span className="market-section__name">◆ Win Both Halves</span>
                       {(wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{collapsed.wbh ? '▼' : '▲'}</span>
                     </div>
@@ -1137,7 +1137,7 @@ export default function LivePage() {
                   {/* Last Team to Score */}
                   <div className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('lastScore')}>
-                      <span className="market-section__name">🏁 Last Team to Score</span>
+                      <span className="market-section__name">◇ Last Team to Score</span>
                       {lastScorePick && <span className="market-section__badge">{lastScorePick === 'Home' ? selectedMatch.homeTeamName : lastScorePick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
                       <span className="market-section__toggle">{collapsed.lastScore ? '▼' : '▲'}</span>
                     </div>
@@ -1158,7 +1158,7 @@ export default function LivePage() {
                   {/* HT/FT */}
                   <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htft')}>
-                      <span className="market-section__name">🔀 Half Time / Full Time</span>
+                      <span className="market-section__name">↕ Half Time / Full Time</span>
                       {htftPick && <span className="market-section__badge">{htftPick}</span>}
                       <span className="market-section__toggle">{collapsed.htft ? '▼' : '▲'}</span>
                     </div>
@@ -1187,7 +1187,7 @@ export default function LivePage() {
                   {/* Goalscorer */}
                   <div className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('scorer')}>
-                      <span className="market-section__name">⚽ Goalscorer</span>
+                      <span className="market-section__name">◉ Goalscorer</span>
                       {scorerPlayer && <span className="market-section__badge">{scorerPlayer.name} · {Number(scorerPlayer.odds).toFixed(2)}</span>}
                       <span className="market-section__toggle">{collapsed.scorer ? '▼' : '▲'}</span>
                     </div>
