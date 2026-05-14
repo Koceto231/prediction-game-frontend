@@ -494,8 +494,9 @@ export default function LivePage() {
   };
 
   // ── Live restrictions ─────────────────────────────────────────
-  const liveMin       = selectedMatch?.liveMinute ?? 0;
-  const isSecondHalf  = liveMin > 45;
+  // liveMinute is null when Sportmonks hasn't provided a real clock yet — unknown half
+  const liveMin       = selectedMatch?.liveMinute ?? null;
+  const isSecondHalf  = liveMin != null && liveMin > 45;
   const hasHomeGoal   = (selectedMatch?.homeScore ?? 0) > 0;
   const hasAwayGoal   = (selectedMatch?.awayScore ?? 0) > 0;
   const hasAnyGoal    = hasHomeGoal || hasAwayGoal;
@@ -624,21 +625,16 @@ export default function LivePage() {
                 type="button"
                 className="premium-mode-card premium-mode-card--exact"
                 onClick={() => setMode('exact')}
-                disabled={selectedMatch.status === 'IN_PLAY' || selectedMatch.liveMinute != null}
-                style={selectedMatch.status === 'IN_PLAY' || selectedMatch.liveMinute != null
-                  ? { opacity: 0.38, cursor: 'not-allowed', filter: 'grayscale(0.5)' } : {}}
-                title={selectedMatch.status === 'IN_PLAY' ? 'Not available during live play' : undefined}
+                disabled
+                style={{ opacity: 0.38, cursor: 'not-allowed', filter: 'grayscale(0.5)' }}
+                title="Not available during live play"
               >
                 <div className="premium-mode-card__top">
                   <span className="premium-mode-card__icon">🎯</span>
                   <span className="premium-mode-card__points">5 pts</span>
                 </div>
                 <div className="premium-mode-card__title">Exact Score</div>
-                <div className="premium-mode-card__text">
-                  {selectedMatch.status === 'IN_PLAY' || selectedMatch.liveMinute != null
-                    ? 'Not available during live play.'
-                    : 'Predict the final score and earn maximum points.'}
-                </div>
+                <div className="premium-mode-card__text">Not available during live play.</div>
               </button>
               <button type="button" className="premium-mode-card premium-mode-card--market" onClick={() => setMode('market')}>
                 <div className="premium-mode-card__top">
