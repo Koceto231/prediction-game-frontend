@@ -3,6 +3,56 @@ import api from '../api/apiClient';
 
 const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
 
+function TeamMatchSearch() {
+  const [query, setQuery]     = useState('');
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+
+  const search = async () => {
+    if (!query.trim()) return;
+    setLoading(true); setResults(null);
+    try { const r = await api.get(`/admin/sync/debug/team-matches?team=${encodeURIComponent(query)}`); setResults(r.data); }
+    catch { setResults([]); }
+    finally { setLoading(false); }
+  };
+
+  const del = async (id) => {
+    if (!window.confirm(`Delete match ID ${id}?`)) return;
+    setDeleting(id);
+    try { await api.delete(`/admin/sync/matches/${id}`); setResults(r => r.filter(m => m.id !== id)); }
+    catch (e) { alert(e?.response?.data?.message || 'Error'); }
+    finally { setDeleting(null); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input className="admin-input" placeholder="Търси отбор…" value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && search()}
+          style={{ flex: 1 }} />
+        <button className="admin-btn" type="button" onClick={search} disabled={loading}>
+          {loading ? '…' : '🔍'}
+        </button>
+      </div>
+      {results && results.length === 0 && <p className="admin-hint">Няма предстоящи мачове.</p>}
+      {results && results.map(m => (
+        <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.8rem' }}>
+          <span>
+            <b>#{m.id}</b> · {m.fixture} · {new Date(m.date).toLocaleDateString()} · {m.leagueCode ?? '—'} · кръг {m.matchDay ?? '—'}
+          </span>
+          <button className="admin-btn admin-btn--danger" type="button" style={{ padding: '2px 10px', fontSize: '0.75rem' }}
+            disabled={deleting === m.id} onClick={() => del(m.id)}>
+            {deleting === m.id ? '…' : '🗑️'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Format a Date as yyyy-MM-dd for <input type="date">
 function toDateInput(d) {
   return d.toISOString().slice(0, 10);
@@ -540,6 +590,11 @@ export default function AdminPage() {
                 {loading === 'same-day-delete' ? 'Deleting…' : '🗑️ Изтрий same-day фантоми'}
               </button>
             </div>
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
+              Намери мач по отбор → виж ID → изтрий го директно
+            </div>
+            <TeamMatchSearch />
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
