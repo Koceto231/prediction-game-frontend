@@ -48,7 +48,7 @@ export default function Navbar() {
   useEffect(() => {
     const fetch = () => api.get('/Match/live').then(r => setLiveCount((r.data ?? []).length)).catch(() => {});
     fetch();
-    const id = setInterval(fetch, 60_000);
+    const id = setInterval(fetch, 15_000);
     return () => clearInterval(id);
   }, []);
 

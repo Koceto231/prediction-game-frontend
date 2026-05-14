@@ -204,7 +204,7 @@ export default function LivePage() {
   const panelRef = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // ── Fetch live matches every 30 s ───────────────────────────────
+  // ── Fetch live matches every 5 s — DB query is cheap; backend syncs every 15 s ───
   useEffect(() => {
     const fetchLive = () => {
       api.get('/Match/live')
@@ -212,7 +212,7 @@ export default function LivePage() {
         .catch(() => setLoadingLive(false));
     };
     fetchLive();
-    const id = setInterval(fetchLive, 30_000);
+    const id = setInterval(fetchLive, 5_000);
     return () => clearInterval(id);
   }, []);
 
@@ -530,7 +530,7 @@ export default function LivePage() {
           <div className="empty-box" style={{ padding: '40px 0' }}>
             <div style={{ fontSize: '2rem', marginBottom: 10 }}>📺</div>
             <div style={{ fontWeight: 600, marginBottom: 6 }}>No live matches right now</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>This page refreshes every 30 seconds.</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>This page refreshes every 5 seconds.</div>
           </div>
         )}
 
