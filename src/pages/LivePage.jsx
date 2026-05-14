@@ -497,9 +497,36 @@ export default function LivePage() {
   // liveMinute is null when Sportmonks hasn't provided a real clock yet — unknown half
   const liveMin       = selectedMatch?.liveMinute ?? null;
   const isSecondHalf  = liveMin != null && liveMin > 45;
-  const hasHomeGoal   = (selectedMatch?.homeScore ?? 0) > 0;
-  const hasAwayGoal   = (selectedMatch?.awayScore ?? 0) > 0;
-  const hasAnyGoal    = hasHomeGoal || hasAwayGoal;
+  const liveHomeScore = selectedMatch?.homeScore ?? 0;
+  const liveAwayScore = selectedMatch?.awayScore ?? 0;
+  const totalGoals    = liveHomeScore + liveAwayScore;
+  const hasHomeGoal   = liveHomeScore > 0;
+  const hasAwayGoal   = liveAwayScore > 0;
+  const hasAnyGoal    = totalGoals > 0;
+  const bothScored    = hasHomeGoal && hasAwayGoal;
+
+  // Derive 1H score from goalScorers (events with minute ≤ 45)
+  const goalsArr      = selectedMatch?.goalScorers ?? [];
+  const goals1H       = goalsArr.filter(g => (g.minute ?? 0) <= 45);
+  const home1H        = goals1H.filter(g => g.team === 'home').length;
+  const away1H        = goals1H.filter(g => g.team === 'away').length;
+  const total1H       = home1H + away1H;
+  const both1HScored  = home1H > 0 && away1H > 0;
+
+  // 2H score = total − 1H (only meaningful once 2H started)
+  const home2H        = isSecondHalf ? Math.max(0, liveHomeScore - home1H) : 0;
+  const away2H        = isSecondHalf ? Math.max(0, liveAwayScore - away1H) : 0;
+  const total2H       = home2H + away2H;
+  const both2HScored  = home2H > 0 && away2H > 0;
+
+  // HT result — only known once 2H started
+  const htResult      = isSecondHalf
+    ? (home1H > away1H ? 'Home' : home1H < away1H ? 'Away' : 'Draw')
+    : null;
+
+  // Helper: O/U cell is locked when score crosses the line
+  // (Over guaranteed AND Under impossible — both sides of the bet are determined)
+  const isOULocked = (line, total) => total >= Math.ceil(Number(line));
 
   // Wraps a market section header to show a lock message when disabled
   const LiveLock = ({ reason }) => (
@@ -768,30 +795,34 @@ export default function LivePage() {
                     {!collapsed.goals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => (
-                          <div key={line} className="ou-table__row">
-                            <span className="ou-table__line">{label}</span>
+                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => {
+                          const cellLocked = isOULocked(label, totalGoals);
+                          return (
+                          <div key={line} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{label}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (ouLine === line && ouPick === pick) { setField('ouLine',''); setField('ouPick',''); } else { setField('ouLine', line); setField('ouPick', pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (ouLine === line && ouPick === pick) { setField('ouLine',''); setField('ouPick',''); } else { setField('ouLine', line); setField('ouPick', pick); } }}>
                                 {preOdds.ou?.[line]?.[pick] != null ? Number(preOdds.ou[line][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
 
                   {/* BTTS */}
-                  <div className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('btts')}>
+                  <div className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}${bothScored ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !bothScored && toggleSection('btts')} style={bothScored ? { cursor: 'default' } : {}}>
                       <span className="market-section__name">Both Teams to Score</span>
-                      {btts && <span className="market-section__badge">{btts === 'true' ? 'Yes' : 'No'}</span>}
-                      <span className="market-section__toggle">{collapsed.btts ? '▼' : '▲'}</span>
+                      {bothScored ? <LiveLock reason="both teams have scored" /> : btts && <span className="market-section__badge">{btts === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{!bothScored && (collapsed.btts ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.btts && (
+                    {!collapsed.btts && !bothScored && (
                       <div className="market-options market-options--2">
                         {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
                           <button key={val} type="button"
@@ -964,18 +995,22 @@ export default function LivePage() {
                     {!collapsed.homeGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {TEAM_GOAL_LINES.map(l => {
+                          const cellLocked = isOULocked(l, liveHomeScore);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${hGoalsLine === String(l) && hGoalsOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (hGoalsLine === String(l) && hGoalsOU === pick) { setHGoalsLine(''); setHGoalsOU(''); } else { setHGoalsLine(String(l)); setHGoalsOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${hGoalsLine === String(l) && hGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (hGoalsLine === String(l) && hGoalsOU === pick) { setHGoalsLine(''); setHGoalsOU(''); } else { setHGoalsLine(String(l)); setHGoalsOU(pick); } }}>
                                 {preOdds.homeGoals?.[l]?.[pick] != null ? Number(preOdds.homeGoals[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -990,18 +1025,22 @@ export default function LivePage() {
                     {!collapsed.awayGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {TEAM_GOAL_LINES.map(l => {
+                          const cellLocked = isOULocked(l, liveAwayScore);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${aGoalsLine === String(l) && aGoalsOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (aGoalsLine === String(l) && aGoalsOU === pick) { setAGoalsLine(''); setAGoalsOU(''); } else { setAGoalsLine(String(l)); setAGoalsOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${aGoalsLine === String(l) && aGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (aGoalsLine === String(l) && aGoalsOU === pick) { setAGoalsLine(''); setAGoalsOU(''); } else { setAGoalsLine(String(l)); setAGoalsOU(pick); } }}>
                                 {preOdds.awayGoals?.[l]?.[pick] != null ? Number(preOdds.awayGoals[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1047,9 +1086,9 @@ export default function LivePage() {
                             <div className="market-options market-options--2">
                               {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
-                                  disabled={locked && yn === 'true'}
-                                  className={`market-option ${csPick === val && csYN === yn ? 'market-option--active' : ''}${locked && yn === 'true' ? ' market-option--disabled' : ''}`}
-                                  onClick={() => { if (locked && yn === 'true') return; if (csPick === val && csYN === yn) { setCsPick(''); setCsYN(''); } else { setCsPick(val); setCsYN(yn); } }}>
+                                  disabled={locked}
+                                  className={`market-option ${csPick === val && csYN === yn ? 'market-option--active' : ''}${locked ? ' market-option--disabled' : ''}`}
+                                  onClick={() => { if (locked) return; if (csPick === val && csYN === yn) { setCsPick(''); setCsYN(''); } else { setCsPick(val); setCsYN(yn); } }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">{preOdds.cs?.[val]?.[yn] != null ? Number(preOdds.cs[val][yn]).toFixed(2) : '—'}</div>
                                 </button>
@@ -1083,13 +1122,13 @@ export default function LivePage() {
                   </div>
 
                   {/* BTTS 1st Half */}
-                  <div className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}${isSecondHalf ? ' market-section--locked' : ''}`}>
-                    <div className="market-section__header" onClick={() => !isSecondHalf && toggleSection('btts1h')} style={isSecondHalf ? { cursor: 'default', opacity: 0.45 } : {}}>
+                  <div className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}${(isSecondHalf || both1HScored) ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !(isSecondHalf || both1HScored) && toggleSection('btts1h')} style={(isSecondHalf || both1HScored) ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◐ BTTS — 1st Half</span>
-                      {isSecondHalf ? <LiveLock reason="2nd half" /> : btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
-                      <span className="market-section__toggle">{!isSecondHalf && (collapsed.btts1h ? '▼' : '▲')}</span>
+                      {both1HScored && !isSecondHalf ? <LiveLock reason="both scored in 1H" /> : isSecondHalf ? <LiveLock reason="2nd half" /> : btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{!(isSecondHalf || both1HScored) && (collapsed.btts1h ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.btts1h && !isSecondHalf && (
+                    {!collapsed.btts1h && !isSecondHalf && !both1HScored && (
                       <div className="market-options market-options--2">
                         {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
                           <button key={val} type="button"
@@ -1104,13 +1143,13 @@ export default function LivePage() {
                   </div>
 
                   {/* BTTS 2nd Half */}
-                  <div className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
+                  <div className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}${both2HScored ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !both2HScored && toggleSection('btts2h')} style={both2HScored ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◑ BTTS — 2nd Half</span>
-                      {btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
-                      <span className="market-section__toggle">{collapsed.btts2h ? '▼' : '▲'}</span>
+                      {both2HScored ? <LiveLock reason="both scored in 2H" /> : btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{!both2HScored && (collapsed.btts2h ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.btts2h && (
+                    {!collapsed.btts2h && !both2HScored && (
                       <div className="market-options market-options--2">
                         {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
                           <button key={val} type="button"
@@ -1134,18 +1173,22 @@ export default function LivePage() {
                     {!collapsed.htGoals && !isSecondHalf && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {['0.5', '1.5', '2.5'].map(l => {
+                          const cellLocked = isOULocked(l, total1H);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${htGoalsLine === l && htGoalsOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (htGoalsLine === l && htGoalsOU === pick) { setHtGoalsLine(''); setHtGoalsOU(''); } else { setHtGoalsLine(l); setHtGoalsOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${htGoalsLine === l && htGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (htGoalsLine === l && htGoalsOU === pick) { setHtGoalsLine(''); setHtGoalsOU(''); } else { setHtGoalsLine(l); setHtGoalsOU(pick); } }}>
                                 {preOdds.htGoals?.[l]?.[pick] != null ? Number(preOdds.htGoals[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1160,18 +1203,23 @@ export default function LivePage() {
                     {!collapsed.shGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
+                        {['0.5', '1.5', '2.5'].map(l => {
+                          // Only meaningful when 2H has started — otherwise total2H is 0 and nothing locks
+                          const cellLocked = isSecondHalf && isOULocked(l, total2H);
+                          return (
+                          <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                            <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => (
                               <button key={pick} type="button"
-                                className={`ou-cell ${shGoalsLine === l && shGoalsOU === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => { if (shGoalsLine === l && shGoalsOU === pick) { setShGoalsLine(''); setShGoalsOU(''); } else { setShGoalsLine(l); setShGoalsOU(pick); } }}>
+                                disabled={cellLocked}
+                                className={`ou-cell ${shGoalsLine === l && shGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => { if (cellLocked) return; if (shGoalsLine === l && shGoalsOU === pick) { setShGoalsLine(''); setShGoalsOU(''); } else { setShGoalsLine(l); setShGoalsOU(pick); } }}>
                                 {preOdds.shGoals?.[l]?.[pick] != null ? Number(preOdds.shGoals[l][pick]).toFixed(2) : '—'}
                               </button>
                             ))}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1238,16 +1286,19 @@ export default function LivePage() {
                     {!collapsed.teamTs && (
                       <div style={{ padding: '0 16px 12px' }}>
                         {[
-                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: homeTsPick, setPick: setHomeTsPick, key: 'homeTs' },
-                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: awayTsPick, setPick: setAwayTsPick, key: 'awayTs' },
-                        ].map(({ val, lbl, pick: tp, setPick, key }) => (
-                          <div key={val} style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
+                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: homeTsPick, setPick: setHomeTsPick, key: 'homeTs', locked: hasHomeGoal },
+                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: awayTsPick, setPick: setAwayTsPick, key: 'awayTs', locked: hasAwayGoal },
+                        ].map(({ val, lbl, pick: tp, setPick, key, locked }) => (
+                          <div key={val} style={{ marginBottom: 8, opacity: locked ? 0.45 : 1 }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {lbl}{locked && <LiveLock reason="already scored" />}
+                            </div>
                             <div className="market-options market-options--2">
                               {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
-                                  className={`market-option ${tp === yn ? 'market-option--active' : ''}`}
-                                  onClick={() => setPick(tp === yn ? '' : yn)}>
+                                  disabled={locked}
+                                  className={`market-option ${tp === yn ? 'market-option--active' : ''}${locked ? ' market-option--disabled' : ''}`}
+                                  onClick={() => { if (locked) return; setPick(tp === yn ? '' : yn); }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">{preOdds[key]?.[yn] != null ? Number(preOdds[key][yn]).toFixed(2) : '—'}</div>
                                 </button>
@@ -1269,16 +1320,19 @@ export default function LivePage() {
                     {!collapsed.wbh && (
                       <div style={{ padding: '0 16px 12px' }}>
                         {[
-                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: wbhHomePick, setPick: setWbhHomePick },
-                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: wbhAwayPick, setPick: setWbhAwayPick },
-                        ].map(({ val, lbl, pick: tp, setPick }) => (
-                          <div key={val} style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
+                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: wbhHomePick, setPick: setWbhHomePick, locked: htResult != null && htResult !== 'Home', reason: htResult === 'Draw' ? '1H was a draw' : htResult === 'Away' ? `${selectedMatch.awayTeamName} won 1H` : '' },
+                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: wbhAwayPick, setPick: setWbhAwayPick, locked: htResult != null && htResult !== 'Away', reason: htResult === 'Draw' ? '1H was a draw' : htResult === 'Home' ? `${selectedMatch.homeTeamName} won 1H` : '' },
+                        ].map(({ val, lbl, pick: tp, setPick, locked, reason }) => (
+                          <div key={val} style={{ marginBottom: 8, opacity: locked ? 0.45 : 1 }}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {lbl}{locked && <LiveLock reason={reason} />}
+                            </div>
                             <div className="market-options market-options--2">
                               {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
-                                  className={`market-option ${tp === yn ? 'market-option--active' : ''}`}
-                                  onClick={() => setPick(tp === yn ? '' : yn)}>
+                                  disabled={locked}
+                                  className={`market-option ${tp === yn ? 'market-option--active' : ''}${locked ? ' market-option--disabled' : ''}`}
+                                  onClick={() => { if (locked) return; setPick(tp === yn ? '' : yn); }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">{preOdds.wbh?.[val]?.[yn] != null ? Number(preOdds.wbh[val][yn]).toFixed(2) : '—'}</div>
                                 </button>
@@ -1311,30 +1365,38 @@ export default function LivePage() {
                     )}
                   </div>
 
-                  {/* HT/FT */}
-                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${isSecondHalf ? ' market-section--locked' : ''}`}>
-                    <div className="market-section__header" onClick={() => !isSecondHalf && toggleSection('htft')} style={isSecondHalf ? { cursor: 'default', opacity: 0.45 } : {}}>
+                  {/* HT/FT — when HT result known, only valid combinations remain unlocked */}
+                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('htft')}>
                       <span className="market-section__name">↕ Half Time / Full Time</span>
-                      {isSecondHalf ? <LiveLock reason="2nd half — HT result is set" /> : htftPick && <span className="market-section__badge">{htftPick}</span>}
-                      <span className="market-section__toggle">{!isSecondHalf && (collapsed.htft ? '▼' : '▲')}</span>
+                      {htResult && <LiveLock reason={`HT: ${htResult}`} />}
+                      {!htResult && htftPick && <span className="market-section__badge">{htftPick}</span>}
+                      <span className="market-section__toggle">{collapsed.htft ? '▼' : '▲'}</span>
                     </div>
-                    {!collapsed.htft && !isSecondHalf && (() => {
+                    {!collapsed.htft && (() => {
                       const H = selectedMatch.homeTeamName, D = 'Draw', A = selectedMatch.awayTeamName;
                       const opts = [
                         { key: 'HH', label: `${H} / ${H}` }, { key: 'HD', label: `${H} / ${D}` }, { key: 'HA', label: `${H} / ${A}` },
                         { key: 'DH', label: `${D} / ${H}` }, { key: 'DD', label: `${D} / ${D}` }, { key: 'DA', label: `${D} / ${A}` },
                         { key: 'AH', label: `${A} / ${H}` }, { key: 'AD', label: `${A} / ${D}` }, { key: 'AA', label: `${A} / ${A}` },
                       ];
+                      // First letter of key encodes HT outcome: H/D/A
+                      const htLetter = htResult === 'Home' ? 'H' : htResult === 'Away' ? 'A' : htResult === 'Draw' ? 'D' : null;
                       return (
                         <div className="market-options market-options--3">
-                          {opts.map(({ key, label }) => (
+                          {opts.map(({ key, label }) => {
+                            const optLocked = htLetter != null && key[0] !== htLetter;
+                            return (
                             <button key={key} type="button"
-                              className={`market-option ${htftPick === key ? 'market-option--active' : ''}`}
-                              onClick={() => setHtftPick(htftPick === key ? '' : key)}>
+                              disabled={optLocked}
+                              className={`market-option ${htftPick === key ? 'market-option--active' : ''}${optLocked ? ' market-option--disabled' : ''}`}
+                              style={optLocked ? { opacity: 0.4 } : {}}
+                              onClick={() => { if (optLocked) return; setHtftPick(htftPick === key ? '' : key); }}>
                               <div className="market-option__label" style={{ fontSize: '0.72rem' }}>{label}</div>
                               <div className="market-option__odds">{preOdds.htft?.[key] != null ? Number(preOdds.htft[key]).toFixed(2) : '—'}</div>
                             </button>
-                          ))}
+                            );
+                          })}
                         </div>
                       );
                     })()}
