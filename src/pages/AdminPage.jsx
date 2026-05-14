@@ -201,6 +201,13 @@ export default function AdminPage() {
           {/* ── Standings debug ── */}
           <AdminSection title="Debug Standings Data">
             <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-team-leagues'}
+                onClick={() => run('fix-team-leagues', () => api.post('/admin/sync/teams/fix-league-codes'))}>
+                {loading === 'fix-team-leagues' ? 'Fixing…' : '🔧 Fix Team LeagueCodes (от мачовете им)'}
+              </button>
+            </div>
+            <p className="admin-hint">Попълва LeagueCode на отбори с null — Werder Bremen, Hoffenheim и т.н. Взима кода от мачовете им. Пусни преди да изтриваш фантомни мачове!</p>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'fix-leagues'}
                 onClick={() => run('fix-leagues', () => api.post('/admin/sync/matches/fix-league-codes'))}>
                 {loading === 'fix-leagues' ? 'Fixing…' : '🔧 Fix League Codes on Old Matches'}
