@@ -592,6 +592,22 @@ export default function AdminPage() {
             </div>
             <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
             <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
+              Мачове без кръг (MatchDay = null) — Sportmonks не ги е върнал = не съществуват
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'no-round-dry'}
+                onClick={() => run('no-round-dry', () => api.delete('/admin/sync/matches/no-round-phantoms?dryRun=true'))}>
+                {loading === 'no-round-dry' ? 'Checking…' : '🔍 Preview — мачове без кръг'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'no-round-delete'}
+                onClick={() => run('no-round-delete', () => api.delete('/admin/sync/matches/no-round-phantoms?dryRun=false'))}>
+                {loading === 'no-round-delete' ? 'Deleting…' : '🗑️ Изтрий мачове без кръг'}
+              </button>
+            </div>
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
               Намери мач по отбор → виж ID → изтрий го директно
             </div>
             <TeamMatchSearch />
