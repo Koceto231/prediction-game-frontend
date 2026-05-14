@@ -204,6 +204,23 @@ export default function LivePage() {
   const panelRef = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
+  // Wall-clock estimate for the live minute when Sportmonks hasn't reported a
+  // real clock yet (typical for BGL where state flips slowly). Marked with ~
+  // on the UI so users see it's approximate.
+  const estimateMinute = (matchDate) => {
+    const kickoff = new Date(matchDate);
+    const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60000);
+    if (elapsed <= 0)  return null;
+    if (elapsed <= 45) return elapsed;        // 1st half
+    if (elapsed <= 60) return 45;             // half time
+    return Math.min(90, elapsed - 15);        // 2nd half (minus 15 min HT)
+  };
+  const displayMinute = (m) => {
+    if (m.liveMinute != null) return `${m.liveMinute}'`;
+    const est = estimateMinute(m.matchDate);
+    return est != null ? `~${est}'` : 'LIVE';
+  };
+
   // ── Fetch live matches every 5 s — DB query is cheap; backend syncs every 15 s ───
   useEffect(() => {
     const fetchLive = () => {
@@ -584,7 +601,7 @@ export default function LivePage() {
                 }}
               >
                 <span className="match-card__time" style={{ color: 'var(--red, #e53e3e)', fontWeight: 700 }}>
-                  {match.liveMinute != null ? `${match.liveMinute}'` : 'LIVE'}
+                  {displayMinute(match)}
                 </span>
                 <span className="match-card__fixture" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <span>
@@ -619,7 +636,7 @@ export default function LivePage() {
           <div className="match-hero">
             <div className="match-hero__badge" style={{ background: 'var(--red, #e53e3e)', color: '#fff' }}>
               <span className="live-dot" style={{ marginRight: 6 }} />
-              LIVE — {selectedMatch.liveMinute != null ? `${selectedMatch.liveMinute}'` : ''}
+              LIVE — {displayMinute(selectedMatch)}
             </div>
             <h2 className="match-hero__title">
               <span>{selectedMatch.homeTeamName}</span>
