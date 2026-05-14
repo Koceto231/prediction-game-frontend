@@ -7215,6 +7215,82 @@ select:focus {
   font-weight: 600;
 }
 
+/* ── Live match card — mobile layout (≤640px) ──────────────── */
+@media (max-width: 640px) {
+  /* Hide the table head row — labels mis-align with the stacked layout */
+  .matches-table-head {
+    display: none;
+  }
+
+  /* 2-row grid: time + fixture on top, three odds chips below */
+  .match-card--live {
+    grid-template-columns: 52px 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 6px;
+    row-gap: 8px;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid rgba(229, 62, 62, 0.18);
+  }
+
+  /* Row 1: time (col 1) + fixture (cols 2-4) */
+  .match-card--live > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+    font-size: 12px;
+    align-self: center;
+  }
+  .match-card--live > :nth-child(2) {
+    grid-column: 2 / -1;
+    grid-row: 1;
+    padding: 0;
+    font-size: 0.90rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.25;
+  }
+
+  /* Row 2: three odds chips */
+  .match-card--live > :nth-child(3),
+  .match-card--live > :nth-child(4),
+  .match-card--live > :nth-child(5) {
+    padding: 8px 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+    text-align: center;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .match-card--live > :nth-child(3) { grid-column: 2; grid-row: 2; }
+  .match-card--live > :nth-child(4) { grid-column: 3; grid-row: 2; }
+  .match-card--live > :nth-child(5) { grid-column: 4; grid-row: 2; }
+
+  /* 1 / X / 2 label above each chip */
+  .match-card--live > :nth-child(3)::before,
+  .match-card--live > :nth-child(4)::before,
+  .match-card--live > :nth-child(5)::before {
+    display: block;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .match-card--live > :nth-child(3)::before { content: '1'; }
+  .match-card--live > :nth-child(4)::before { content: 'X'; }
+  .match-card--live > :nth-child(5)::before { content: '2'; }
+
+  /* Selected state — accent border around the whole card */
+  .match-card--live.match-card--selected {
+    border-left: 3px solid #e53e3e;
+    background: rgba(229, 62, 62, 0.10);
+  }
+}
+
 /* ── Quick Bet Strip ────────────────────────────────────── */
 .quick-bet-strip {
   background: rgba(240, 197, 25, 0.06);
