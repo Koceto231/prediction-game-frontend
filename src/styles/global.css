@@ -6250,16 +6250,12 @@ select:focus {
 
 .match-card__team-line {
   font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.match-card__team-line--away {
-  color: var(--text-soft);
-  font-weight: 500;
 }
 
 .match-card__col--score {
