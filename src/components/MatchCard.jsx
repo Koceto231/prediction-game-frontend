@@ -21,11 +21,12 @@ export default function MatchCard({ match, selected, onSelect }) {
         <span className="match-card__league-tag">{dateStr}</span>
       </div>
 
-      {/* FIXTURE */}
+      {/* FIXTURE — home above, away below for compact horizontal footprint */}
       <div className="match-card__col match-card__col--fixture">
-        <span>{match.homeTeamName}</span>
-        <span className="match-card__vs-sep">vs</span>
-        <span>{match.awayTeamName}</span>
+        <div className="match-card__teams-stack">
+          <span className="match-card__team-line">{match.homeTeamName}</span>
+          <span className="match-card__team-line match-card__team-line--away">{match.awayTeamName}</span>
+        </div>
         {match.leagueName && (
           <span className="match-card__league-tag" style={{ marginLeft: 'auto' }}>
             {match.leagueName}
