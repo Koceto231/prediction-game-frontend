@@ -1103,13 +1103,13 @@ export default function LivePage() {
                 <div className="market-table">
 
                   {/* Match Result */}
-                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('winner')}>
+                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.winner && toggleSection('winner')} style={dis.winner ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Match Result</span>
-                      {dcPick && <span className="market-section__lock">🔒 Double Chance active</span>}
-                      <span className="market-section__toggle">{collapsed.winner ? '▼' : '▲'}</span>
+                      {dis.winner && <LiveLock reason={`${groupAPicked} already picked`} />}
+                      <span className="market-section__toggle">{!dis.winner && (collapsed.winner ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.winner && (
+                    {!collapsed.winner && !dis.winner && (
                       <div className="market-options market-options--3">
                         {[
                           { key: 'Home', label: selectedMatch.homeTeamName, odds: selectedMatch.homeOdds },
@@ -1117,8 +1117,7 @@ export default function LivePage() {
                           { key: 'Away', label: selectedMatch.awayTeamName, odds: selectedMatch.awayOdds  },
                         ].map(({ key, label, odds }) => (
                           <button key={key} type="button"
-                            className={`market-option ${winner === key ? 'market-option--active' : ''} ${dcPick ? 'market-option--disabled' : ''}`}
-                            disabled={!!dcPick}
+                            className={`market-option ${winner === key ? 'market-option--active' : ''}`}
                             onClick={() => setField('winner', winner === key ? '' : key)}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
@@ -1129,13 +1128,13 @@ export default function LivePage() {
                   </div>
 
                   {/* Double Chance */}
-                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('dc')}>
+                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.dc && toggleSection('dc')} style={dis.dc ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Double Chance</span>
-                      {winner && <span className="market-section__lock">🔒 Match Result active</span>}
-                      <span className="market-section__toggle">{collapsed.dc ? '▼' : '▲'}</span>
+                      {dis.dc && <LiveLock reason={`${groupAPicked} already picked`} />}
+                      <span className="market-section__toggle">{!dis.dc && (collapsed.dc ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.dc && (
+                    {!collapsed.dc && !dis.dc && (
                       <div className="market-options market-options--3">
                         {DC_OPTIONS.map(({ key }) => {
                           const lbl = key === 'HomeOrDraw' ? `${selectedMatch.homeTeamName} or Draw`
@@ -1143,8 +1142,7 @@ export default function LivePage() {
                                     : `${selectedMatch.homeTeamName} or ${selectedMatch.awayTeamName}`;
                           return (
                             <button key={key} type="button"
-                              className={`market-option ${dcPick === key ? 'market-option--active' : ''} ${winner ? 'market-option--disabled' : ''}`}
-                              disabled={!!winner}
+                              className={`market-option ${dcPick === key ? 'market-option--active' : ''}`}
                               onClick={() => setDCPick(dcPick === key ? '' : key)}>
                               <div className="market-option__label">{lbl}</div>
                               <div className="market-option__odds">{preOdds.dc?.[key] != null ? Number(preOdds.dc[key]).toFixed(2) : '—'}</div>
