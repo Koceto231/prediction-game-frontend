@@ -131,6 +131,10 @@ select {
 .matches-layout .page-grid {
   flex: 1;
   min-width: 0;
+  /* Matches list needs more horizontal room than the right bet panel
+     (which mostly shows AI prediction + mode buttons), so override the
+     default 1fr/1fr split to favour the list. */
+  grid-template-columns: 1.4fr 0.6fr;
 }
 
 .league-sidebar {
