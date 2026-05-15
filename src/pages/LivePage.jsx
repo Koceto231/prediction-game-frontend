@@ -497,7 +497,29 @@ export default function LivePage() {
   useEffect(() => {
     const fetchLive = () => {
       api.get('/Match/live')
-        .then(r => { setLiveMatches(r.data ?? []); setLoadingLive(false); })
+        .then(r => {
+          // Defensive client-side filter — exclude matches that look finished even
+          // if backend hasn't flipped status yet (Sportmonks state lag races backend).
+          const ACTIVE_STATES = ['1H', '2H', 'HT', 'BREAK', 'ET', 'INT', 'PEN_LIVE'];
+          const FINAL_STATES  = ['FT', 'AET', 'FTP', 'ABD', 'CANC', 'WO', 'AWRD'];
+          const filtered = (r.data ?? []).filter(m => {
+            // Backend says explicitly finished → never show
+            if (FINAL_STATES.includes(m.liveState)) return false;
+            // Backend confirms in-play → always show
+            if (m.status === 'IN_PLAY') return true;
+            if (ACTIVE_STATES.includes(m.liveState)) return true;
+            // TIMED fallback — only when wall-clock plausibly mid-match (5–100 min)
+            // 100 min = 90 + ~10 min stoppage cap; matches running longer without
+            // any Sportmonks confirmation are almost certainly finished but not yet synced.
+            if (m.status === 'TIMED') {
+              const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
+              return elapsed >= 5 && elapsed <= 100;
+            }
+            return false;
+          });
+          setLiveMatches(filtered);
+          setLoadingLive(false);
+        })
         .catch(() => setLoadingLive(false));
     };
     fetchLive();
