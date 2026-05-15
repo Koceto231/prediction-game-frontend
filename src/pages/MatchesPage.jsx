@@ -757,6 +757,34 @@ export default function MatchesPage() {
     } finally { setLoading(false); }
   };
 
+  // ── Accumulator conflict prevention ────────────────────────────
+  const groupAPicked =
+       (winner       ? 'Match Result'      : null)
+    || (dcPick       ? 'Double Chance'     : null)
+    || (dnbPick      ? 'Draw No Bet'       : null)
+    || (htftPick     ? 'HT/FT'             : null)
+    || (wtnTeam      ? 'Win to Nil'        : null)
+    || (wbhHomePick || wbhAwayPick ? 'Win Both Halves' : null)
+    || (hcpPick      ? 'Handicap'          : null);
+  const groupBPicked =
+       (htPick       ? 'Half-time Result'  : null)
+    || (htftPick     ? 'HT/FT'             : null);
+  const dis = {
+    winner: groupAPicked && !winner,
+    dc:     groupAPicked && !dcPick,
+    dnb:    groupAPicked && !dnbPick,
+    htft:   (groupAPicked && !htftPick) || (groupBPicked && !htftPick),
+    wtn:    groupAPicked && !wtnTeam,
+    wbh:    groupAPicked && !(wbhHomePick || wbhAwayPick),
+    hcp:    groupAPicked && !hcpPick,
+    ht:     groupBPicked && !htPick,
+  };
+  const LiveLock = ({ reason }) => (
+    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 8, fontStyle: 'italic' }}>
+      🔒 {reason}
+    </span>
+  );
+
   // ── Render ────────────────────────────────────────────────────
   const filteredMatches = selectedLeague
     ? matches.filter(m => m.leagueCode === selectedLeague)
@@ -924,13 +952,13 @@ export default function MatchesPage() {
                 <div className="market-table">
 
                   {/* Match Result */}
-                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('winner')}>
+                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.winner && toggleSection('winner')} style={dis.winner ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Match Result</span>
-                      {dcPick && <span className="market-section__lock">🔒 Double Chance active</span>}
-                      <span className="market-section__toggle">{collapsed.winner ? '▼' : '▲'}</span>
+                      {dis.winner && <LiveLock reason={`${groupAPicked} already picked`} />}
+                      <span className="market-section__toggle">{!dis.winner && (collapsed.winner ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.winner && (
+                    {!collapsed.winner && !dis.winner && (
                       <div className="market-options market-options--3">
                         {[
                           { key: 'Home', label: selectedMatch.homeTeamName, odds: selectedMatch.homeOdds },
@@ -938,8 +966,7 @@ export default function MatchesPage() {
                           { key: 'Away', label: selectedMatch.awayTeamName, odds: selectedMatch.awayOdds  },
                         ].map(({ key, label, odds }) => (
                           <button key={key} type="button"
-                            className={`market-option ${winner === key ? 'market-option--active' : ''} ${dcPick ? 'market-option--disabled' : ''}`}
-                            disabled={!!dcPick}
+                            className={`market-option ${winner === key ? 'market-option--active' : ''}`}
                             onClick={() => setField('winner', winner === key ? '' : key)}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
@@ -950,13 +977,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Double Chance */}
-                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('dc')}>
+                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.dc && toggleSection('dc')} style={dis.dc ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Double Chance</span>
-                      {winner && <span className="market-section__lock">🔒 Match Result active</span>}
-                      <span className="market-section__toggle">{collapsed.dc ? '▼' : '▲'}</span>
+                      {dis.dc && <LiveLock reason={`${groupAPicked} already picked`} />}
+                      <span className="market-section__toggle">{!dis.dc && (collapsed.dc ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.dc && (
+                    {!collapsed.dc && !dis.dc && (
                       <div className="market-options market-options--3">
                         {DC_OPTIONS.map(({ key, label }) => {
                           const lbl = key === 'HomeOrDraw' ? `${selectedMatch.homeTeamName} or Draw`
@@ -964,8 +991,7 @@ export default function MatchesPage() {
                                     : `${selectedMatch.homeTeamName} or ${selectedMatch.awayTeamName}`;
                           return (
                             <button key={key} type="button"
-                              className={`market-option ${dcPick === key ? 'market-option--active' : ''} ${winner ? 'market-option--disabled' : ''}`}
-                              disabled={!!winner}
+                              className={`market-option ${dcPick === key ? 'market-option--active' : ''}`}
                               onClick={() => setDCPick(dcPick === key ? '' : key)}>
                               <div className="market-option__label">{lbl}</div>
                               <div className="market-option__odds">
@@ -1112,13 +1138,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Draw No Bet */}
-                  <div className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('dnb')}>
+                  <div className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}${dis.dnb ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.dnb && toggleSection('dnb')} style={dis.dnb ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊖ Draw No Bet</span>
-                      {dnbPick && <span className="market-section__badge">{dnbPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>}
-                      <span className="market-section__toggle">{collapsed.dnb ? '▼' : '▲'}</span>
+                      {dis.dnb ? <LiveLock reason={`${groupAPicked} already picked`} /> : dnbPick && <span className="market-section__badge">{dnbPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>}
+                      <span className="market-section__toggle">{!dis.dnb && (collapsed.dnb ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.dnb && (
+                    {!collapsed.dnb && !dis.dnb && (
                       <>
                         <div className="muted-text" style={{ fontSize: '0.74rem', padding: '4px 16px 0' }}>If the match ends in a draw, the bet is voided and stake returned.</div>
                         <div className="market-options market-options--2">
@@ -1138,13 +1164,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Win to Nil */}
-                  <div className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('wtn')}>
+                  <div className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.wtn && toggleSection('wtn')} style={dis.wtn ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊘ Win to Nil</span>
-                      {wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
-                      <span className="market-section__toggle">{collapsed.wtn ? '▼' : '▲'}</span>
+                      {dis.wtn ? <LiveLock reason={`${groupAPicked} already picked`} /> : wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
+                      <span className="market-section__toggle">{!dis.wtn && (collapsed.wtn ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.wtn && (
+                    {!collapsed.wtn && !dis.wtn && (
                       <div style={{ padding: '0 16px 12px' }}>
                         <div className="muted-text" style={{ fontSize: '0.74rem', marginBottom: 8 }}>Team wins AND concedes 0 goals.</div>
                         {[{ val: 'Home', lbl: selectedMatch.homeTeamName }, { val: 'Away', lbl: selectedMatch.awayTeamName }].map(({ val, lbl }) => (
@@ -1169,13 +1195,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Handicap */}
-                  <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('hcp')}>
+                  <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.hcp && toggleSection('hcp')} style={dis.hcp ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">± Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
-                      {hcpPick && <span className="market-section__badge">{hcpPick}</span>}
-                      <span className="market-section__toggle">{collapsed.hcp ? '▼' : '▲'}</span>
+                      {dis.hcp ? <LiveLock reason={`${groupAPicked} already picked`} /> : hcpPick && <span className="market-section__badge">{hcpPick}</span>}
+                      <span className="market-section__toggle">{!dis.hcp && (collapsed.hcp ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.hcp && (
+                    {!collapsed.hcp && !dis.hcp && (
                       <div className="market-options market-options--3">
                         {[
                           { key: 'Home', label: selectedMatch.homeTeamName },
@@ -1254,13 +1280,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Half Time Result */}
-                  <div className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('ht')}>
+                  <div className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}${dis.ht ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.ht && toggleSection('ht')} style={dis.ht ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◑ Half Time Result</span>
-                      {htPick && <span className="market-section__badge">{htPick === 'Home' ? selectedMatch.homeTeamName : htPick === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>}
-                      <span className="market-section__toggle">{collapsed.ht ? '▼' : '▲'}</span>
+                      {dis.ht ? <LiveLock reason={`${groupBPicked} already picked`} /> : htPick && <span className="market-section__badge">{htPick === 'Home' ? selectedMatch.homeTeamName : htPick === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>}
+                      <span className="market-section__toggle">{!dis.ht && (collapsed.ht ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.ht && (
+                    {!collapsed.ht && !dis.ht && (
                       <div className="market-options market-options--3">
                         {[
                           { key: 'Home', label: selectedMatch.homeTeamName },
@@ -1532,13 +1558,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Win Both Halves */}
-                  <div className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('wbh')}>
+                  <div className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}${dis.wbh ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.wbh && toggleSection('wbh')} style={dis.wbh ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◆ Win Both Halves</span>
-                      {(wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
-                      <span className="market-section__toggle">{collapsed.wbh ? '▼' : '▲'}</span>
+                      {dis.wbh ? <LiveLock reason={`${groupAPicked} already picked`} /> : (wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
+                      <span className="market-section__toggle">{!dis.wbh && (collapsed.wbh ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.wbh && (
+                    {!collapsed.wbh && !dis.wbh && (
                       <div style={{ padding: '0 16px 12px' }}>
                         <div className="muted-text" style={{ fontSize: '0.74rem', marginBottom: 8 }}>Team wins both the 1st and 2nd half.</div>
                         {[
@@ -1593,13 +1619,13 @@ export default function MatchesPage() {
                   </div>
 
                   {/* HT / FT */}
-                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('htft')}>
+                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${dis.htft ? ' market-section--locked' : ''}`}>
+                    <div className="market-section__header" onClick={() => !dis.htft && toggleSection('htft')} style={dis.htft ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">↕ Half Time / Full Time</span>
-                      {htftPick && <span className="market-section__badge">{htftPick}</span>}
-                      <span className="market-section__toggle">{collapsed.htft ? '▼' : '▲'}</span>
+                      {dis.htft ? <LiveLock reason={`${groupAPicked || groupBPicked} already picked`} /> : htftPick && <span className="market-section__badge">{htftPick}</span>}
+                      <span className="market-section__toggle">{!dis.htft && (collapsed.htft ? '▼' : '▲')}</span>
                     </div>
-                    {!collapsed.htft && (() => {
+                    {!collapsed.htft && !dis.htft && (() => {
                       const H = selectedMatch.homeTeamName, D = 'Draw', A = selectedMatch.awayTeamName;
                       const htftOptions = [
                         { key: 'HH', label: `${H} / ${H}` }, { key: 'HD', label: `${H} / ${D}` }, { key: 'HA', label: `${H} / ${A}` },
