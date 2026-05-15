@@ -320,34 +320,48 @@ function MatchTracker({ match }) {
         </div>
       )}
 
-      {events.length > 0 && (
-        <div className="match-tracker__timeline">
-          <div className="match-tracker__timeline-label">Events Timeline</div>
-          <div className="match-tracker__timeline-track">
-            {events.map((e, i) => {
+      {events.length > 0 && (() => {
+        const homeEvents = events.filter(e => e.team === 'home');
+        const awayEvents = events.filter(e => e.team === 'away');
+        const iconFor = (kind) => kind === 'goal' || kind === 'og' ? '⚽'
+                              : kind === 'red'                   ? '🟥' : '🟨';
+        const eventLabel = (e) =>
+          `${e.minute}' ${e.kind === 'goal' ? 'Goal' : e.kind === 'og' ? 'Own goal' : e.kind === 'red' ? 'Red card' : 'Yellow card'}${e.name ? ' — ' + e.name : ''}`;
+        const renderRow = (rowEvents, side) => (
+          <div className={`tl-row tl-row--${side}`}>
+            {rowEvents.map((e, i) => {
               const pos = Math.min(100, Math.max(0, (e.minute / 90) * 100));
-              const icon = e.kind === 'goal' || e.kind === 'og' ? '⚽'
-                         : e.kind === 'red' ? '🟥'
-                         : '🟨';
               return (
                 <div
-                  key={i}
-                  className={`match-tracker__timeline-marker match-tracker__timeline-marker--${e.team}`}
+                  key={`${side}-${i}`}
+                  className={`tl-marker tl-marker--${side}${e.kind === 'red' ? ' tl-marker--red' : ''}`}
                   style={{ left: `${pos}%` }}
-                  title={`${e.minute}' ${e.name ?? ''}`}
+                  title={eventLabel(e)}
                 >
-                  <span className="match-tracker__timeline-icon">{icon}</span>
-                  <span className="match-tracker__timeline-min">{e.minute}&apos;</span>
+                  <span className="tl-marker__icon">{iconFor(e.kind)}</span>
+                  <span className="tl-marker__min">{e.minute}&apos;</span>
+                  <span className="tl-marker__stem" />
                 </div>
               );
             })}
-            <div className="match-tracker__timeline-half" style={{ left: '50%' }} />
           </div>
-          <div className="match-tracker__timeline-axis">
-            <span>0&apos;</span><span>HT</span><span>90&apos;</span>
+        );
+        return (
+          <div className="match-tracker__timeline">
+            <div className="match-tracker__timeline-label">Events Timeline</div>
+            <div className="tl-stack">
+              {homeEvents.length > 0 && renderRow(homeEvents, 'home')}
+              <div className="tl-line">
+                <div className="tl-line__half" />
+              </div>
+              {awayEvents.length > 0 && renderRow(awayEvents, 'away')}
+            </div>
+            <div className="tl-axis">
+              <span>0&apos;</span><span>HT</span><span>90&apos;</span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -482,13 +496,16 @@ export default function LivePage() {
   };
   // Display priority:
   //   1. Sportmonks says HT          → "HT"
-  //   2. Sportmonks gives real clock → "67'"
+  //   2. Sportmonks gives real clock → "67'" or "45+3'" when stoppage time
   //   3. Sportmonks knows phase only → "~67'"
   //   4. Nothing                     → "LIVE"
   const displayMinute = (m) => {
     if (m.liveState === 'HT' || m.liveState === 'BREAK') return 'HT';
     if (m.liveState === 'FT' || m.liveState === 'AET')   return 'FT';
-    if (m.liveMinute != null) return `${m.liveMinute}'`;
+    if (m.liveMinute != null) {
+      const added = m.liveStats?.addedTime;
+      return added && added > 0 ? `${m.liveMinute}+${added}'` : `${m.liveMinute}'`;
+    }
     const est = estimateMinute(m.matchDate);
     return est != null ? `~${est}'` : 'LIVE';
   };
