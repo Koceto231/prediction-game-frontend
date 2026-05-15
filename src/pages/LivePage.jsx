@@ -852,6 +852,31 @@ export default function LivePage() {
   const liveCorners = selectedMatch?.totalCorners ?? null;
   const liveYellows = selectedMatch?.totalYellowCards ?? null;
 
+  // ── Accumulator conflict prevention ────────────────────────────
+  // Only ONE pick allowed per outcome group — picking any market in a group
+  // disables the rest. Mirrors the backend AccumulatorValidator.
+  const groupAPicked =
+       (winner       ? 'Match Result'      : null)
+    || (dcPick       ? 'Double Chance'     : null)
+    || (dnbPick      ? 'Draw No Bet'       : null)
+    || (htftPick     ? 'HT/FT'             : null)
+    || (wtnTeam      ? 'Win to Nil'        : null)
+    || (wbhHomePick || wbhAwayPick ? 'Win Both Halves' : null)
+    || (hcpPick      ? 'Handicap'          : null);
+  const groupBPicked =
+       (htPick       ? 'Half-time Result'  : null)
+    || (htftPick     ? 'HT/FT'             : null);
+  const dis = {
+    winner: groupAPicked && !winner,
+    dc:     groupAPicked && !dcPick,
+    dnb:    groupAPicked && !dnbPick,
+    htft:   (groupAPicked && !htftPick) || (groupBPicked && !htftPick),
+    wtn:    groupAPicked && !wtnTeam,
+    wbh:    groupAPicked && !(wbhHomePick || wbhAwayPick),
+    hcp:    groupAPicked && !hcpPick,
+    ht:     groupBPicked && !htPick,
+  };
+
   // Wraps a market section header to show a lock message when disabled
   const LiveLock = ({ reason }) => (
     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 8, fontStyle: 'italic' }}>
