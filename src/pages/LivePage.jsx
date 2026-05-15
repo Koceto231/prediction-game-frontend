@@ -102,6 +102,9 @@ function MiniPitch({ match }) {
     const cards = stats?.cardEvents ?? [];
 
     const curr = {
+      // SCORE — primary trigger for goals (most reliable; updates before events on Sportmonks)
+      homeScore:     match.homeScore ?? 0,
+      awayScore:     match.awayScore ?? 0,
       goalsCount:    goals.length,
       cardsCount:    cards.length,
       cornersHome:   stats?.corners?.home ?? 0,
@@ -114,7 +117,6 @@ function MiniPitch({ match }) {
       dangerAway:    stats?.dangerousAttacks?.away ?? 0,
       foulsHome:     stats?.fouls?.home ?? 0,
       foulsAway:     stats?.fouls?.away ?? 0,
-      lastGoal:      goals[goals.length - 1] ?? null,
       lastCard:      cards[cards.length - 1] ?? null,
     };
 
@@ -125,14 +127,26 @@ function MiniPitch({ match }) {
     const newEvents = [];
     const home = match.homeTeamName, away = match.awayTeamName;
 
-    // GOAL — highest priority
-    if (curr.goalsCount > prev.goalsCount && curr.lastGoal) {
-      const g = curr.lastGoal;
+    // GOAL — fire on SCORE change (most reliable; Sportmonks updates score
+    // before events on its API, so relying on goalScorers length alone misses
+    // goals during the 5-15s lag window). Use goalScorers if available for
+    // the player name, otherwise just announce "GOAL! TeamName".
+    if (curr.homeScore > prev.homeScore) {
+      const lastHomeGoal = [...goals].reverse().find(g => g.team === 'home');
       newEvents.push({
-        team: g.team,
+        team: 'home',
         kind: 'goal',
-        title: g.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
-        sub: `${g.team === 'home' ? home : away} — ${g.playerName} ${g.minute}'`,
+        title: lastHomeGoal?.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
+        sub: `${home}${lastHomeGoal ? ` — ${lastHomeGoal.playerName} ${lastHomeGoal.minute}'` : ''}`,
+      });
+    }
+    if (curr.awayScore > prev.awayScore) {
+      const lastAwayGoal = [...goals].reverse().find(g => g.team === 'away');
+      newEvents.push({
+        team: 'away',
+        kind: 'goal',
+        title: lastAwayGoal?.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
+        sub: `${away}${lastAwayGoal ? ` — ${lastAwayGoal.playerName} ${lastAwayGoal.minute}'` : ''}`,
       });
     }
     // CARD
