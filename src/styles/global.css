@@ -7215,6 +7215,185 @@ select:focus {
   font-weight: 600;
 }
 
+/* ── Mini Pitch ─────────────────────────────────────────────── */
+.mini-pitch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(180deg, #0e3a14 0%, #0a3010 50%, #0e3a14 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Pitch markings */
+.mini-pitch__lines {
+  position: absolute;
+  inset: 6%;
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+  border-radius: 2px;
+}
+
+.mini-pitch__half-line {
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  width: 1.5px;
+  background: rgba(255, 255, 255, 0.30);
+}
+
+.mini-pitch__center-circle {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18%; aspect-ratio: 1;
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+  border-radius: 50%;
+}
+
+.mini-pitch__center-spot {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px; height: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+}
+
+.mini-pitch__box {
+  position: absolute;
+  top: 25%; bottom: 25%;
+  width: 12%;
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+}
+
+.mini-pitch__box--left  { left: 0; border-left: none; }
+.mini-pitch__box--right { right: 0; border-right: none; }
+
+.mini-pitch__goal {
+  position: absolute;
+  top: 38%; bottom: 38%;
+  width: 4%;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+}
+
+.mini-pitch__goal--left  { left: 0; border-left: none; }
+.mini-pitch__goal--right { right: 0; border-right: none; }
+
+/* Live minute pill — top center */
+.mini-pitch__time {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: rgba(120, 220, 140, 0.95);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+  z-index: 4;
+}
+
+/* Faint team labels in each half */
+.mini-pitch__team-label {
+  position: absolute;
+  bottom: 8px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.30);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.mini-pitch__team-label--home { left: 12px; }
+.mini-pitch__team-label--away { right: 12px; }
+
+/* Active event overlay — fades in on each new event */
+.mini-pitch__event {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+  animation: mini-pitch-fade 0.35s ease-out;
+}
+
+.mini-pitch__event-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.mini-pitch__event-sub {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 3px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.mini-pitch__event--home .mini-pitch__event-title { color: rgba(255, 240, 130, 0.95); }
+.mini-pitch__event--away .mini-pitch__event-title { color: rgba(150, 200, 255, 0.95); }
+
+/* Team-side wave — radial fill on the team's defending side */
+.mini-pitch__wave {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 60%;
+  z-index: 1;
+  pointer-events: none;
+  animation: mini-pitch-wave 0.6s ease-out;
+}
+
+.mini-pitch__wave--home {
+  left: 0;
+  background: radial-gradient(ellipse at left center,
+    rgba(240, 197, 25, 0.45) 0%,
+    rgba(240, 197, 25, 0.15) 50%,
+    transparent 100%);
+}
+
+.mini-pitch__wave--away {
+  right: 0;
+  background: radial-gradient(ellipse at right center,
+    rgba(80, 165, 245, 0.45) 0%,
+    rgba(80, 165, 245, 0.15) 50%,
+    transparent 100%);
+}
+
+/* Stronger glow for higher-impact events */
+.mini-pitch__wave--goal {
+  animation: mini-pitch-pulse 1.2s ease-out infinite alternate;
+}
+.mini-pitch__wave--red {
+  background: radial-gradient(ellipse, rgba(229, 62, 62, 0.6) 0%, transparent 70%) !important;
+}
+
+@keyframes mini-pitch-fade {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes mini-pitch-wave {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes mini-pitch-pulse {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
 /* ── Match Tracker (Tier 1 live data viz) ──────────────────── */
 .match-tracker {
   background: rgba(255, 255, 255, 0.02);

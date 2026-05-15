@@ -88,6 +88,142 @@ function QuickBetPanel({ match, onBetPlaced }) {
   );
 }
 
+// ── Mini-pitch with live event ticker ──────────────────────────
+function MiniPitch({ match }) {
+  const [activeEvent, setActiveEvent] = useState(null);
+  const prevRef = useRef(null);
+  const queueRef = useRef([]);
+
+  // Detect new events by diffing against previous match snapshot
+  useEffect(() => {
+    if (!match) return;
+    const stats = match.liveStats;
+    const goals = match.goalScorers ?? [];
+    const cards = stats?.cardEvents ?? [];
+
+    const curr = {
+      goalsCount:    goals.length,
+      cardsCount:    cards.length,
+      cornersHome:   stats?.corners?.home ?? 0,
+      cornersAway:   stats?.corners?.away ?? 0,
+      shotsHome:     stats?.shots?.home ?? 0,
+      shotsAway:     stats?.shots?.away ?? 0,
+      sotHome:       stats?.shotsOnTarget?.home ?? 0,
+      sotAway:       stats?.shotsOnTarget?.away ?? 0,
+      dangerHome:    stats?.dangerousAttacks?.home ?? 0,
+      dangerAway:    stats?.dangerousAttacks?.away ?? 0,
+      foulsHome:     stats?.fouls?.home ?? 0,
+      foulsAway:     stats?.fouls?.away ?? 0,
+      lastGoal:      goals[goals.length - 1] ?? null,
+      lastCard:      cards[cards.length - 1] ?? null,
+    };
+
+    const prev = prevRef.current;
+    prevRef.current = curr;
+    if (!prev) return; // first run, just snapshot
+
+    const newEvents = [];
+    const home = match.homeTeamName, away = match.awayTeamName;
+
+    // GOAL — highest priority
+    if (curr.goalsCount > prev.goalsCount && curr.lastGoal) {
+      const g = curr.lastGoal;
+      newEvents.push({
+        team: g.team,
+        kind: 'goal',
+        title: g.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
+        sub: `${g.team === 'home' ? home : away} — ${g.playerName} ${g.minute}'`,
+      });
+    }
+    // CARD
+    if (curr.cardsCount > prev.cardsCount && curr.lastCard) {
+      const c = curr.lastCard;
+      newEvents.push({
+        team: c.team,
+        kind: c.type,
+        title: c.type === 'red' ? 'RED CARD' : 'YELLOW CARD',
+        sub: `${c.team === 'home' ? home : away}${c.playerName ? ' — ' + c.playerName : ''}`,
+      });
+    }
+    // CORNER
+    if (curr.cornersHome > prev.cornersHome) newEvents.push({ team: 'home', kind: 'corner', title: 'Corner Kick',     sub: home });
+    if (curr.cornersAway > prev.cornersAway) newEvents.push({ team: 'away', kind: 'corner', title: 'Corner Kick',     sub: away });
+    // SHOT ON TARGET (loud) vs total shot (quieter)
+    if (curr.sotHome > prev.sotHome)         newEvents.push({ team: 'home', kind: 'shot',   title: 'Shot on Target', sub: home });
+    if (curr.sotAway > prev.sotAway)         newEvents.push({ team: 'away', kind: 'shot',   title: 'Shot on Target', sub: away });
+    // DANGEROUS ATTACK (the iconic Sportmonks event)
+    if (curr.dangerHome > prev.dangerHome)   newEvents.push({ team: 'home', kind: 'danger', title: 'Dangerous Attack', sub: home });
+    if (curr.dangerAway > prev.dangerAway)   newEvents.push({ team: 'away', kind: 'danger', title: 'Dangerous Attack', sub: away });
+    // FOUL (lower priority — only if nothing else)
+    if (newEvents.length === 0) {
+      if (curr.foulsHome > prev.foulsHome) newEvents.push({ team: 'home', kind: 'foul', title: 'Foul', sub: home });
+      if (curr.foulsAway > prev.foulsAway) newEvents.push({ team: 'away', kind: 'foul', title: 'Foul', sub: away });
+    }
+
+    if (newEvents.length > 0) {
+      queueRef.current.push(...newEvents);
+    }
+  }, [match]);
+
+  // Drain the event queue — show one event at a time for ~5s
+  useEffect(() => {
+    if (activeEvent) return; // wait until current finishes
+    const timer = setInterval(() => {
+      if (queueRef.current.length > 0) {
+        setActiveEvent(queueRef.current.shift());
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [activeEvent]);
+
+  // Auto-clear active event after 5s
+  useEffect(() => {
+    if (!activeEvent) return;
+    const t = setTimeout(() => setActiveEvent(null), 5000);
+    return () => clearTimeout(t);
+  }, [activeEvent]);
+
+  const minute = (() => {
+    if (match.liveState === 'HT' || match.liveState === 'BREAK') return 'HT';
+    if (match.liveState === 'FT') return 'FT';
+    if (match.liveMinute != null) return `${match.liveMinute}'`;
+    return null;
+  })();
+
+  return (
+    <div className="mini-pitch">
+      {/* Pitch markings — pure CSS via ::before/::after on the lines container */}
+      <div className="mini-pitch__lines">
+        <div className="mini-pitch__half-line" />
+        <div className="mini-pitch__center-circle" />
+        <div className="mini-pitch__center-spot" />
+        <div className="mini-pitch__box mini-pitch__box--left" />
+        <div className="mini-pitch__box mini-pitch__box--right" />
+        <div className="mini-pitch__goal mini-pitch__goal--left" />
+        <div className="mini-pitch__goal mini-pitch__goal--right" />
+      </div>
+
+      {/* Live minute pill */}
+      {minute && <div className="mini-pitch__time">{minute}</div>}
+
+      {/* Active event overlay */}
+      {activeEvent && (
+        <>
+          <div className={`mini-pitch__wave mini-pitch__wave--${activeEvent.team} mini-pitch__wave--${activeEvent.kind}`} />
+          <div className={`mini-pitch__event mini-pitch__event--${activeEvent.team}`}>
+            <div className="mini-pitch__event-title">{activeEvent.title}</div>
+            <div className="mini-pitch__event-sub">{activeEvent.sub}</div>
+          </div>
+        </>
+      )}
+
+      {/* Team labels (always visible, faint) */}
+      <div className="mini-pitch__team-label mini-pitch__team-label--home">{match.homeTeamName}</div>
+      <div className="mini-pitch__team-label mini-pitch__team-label--away">{match.awayTeamName}</div>
+    </div>
+  );
+}
+
 // ── Live Match Tracker ──────────────────────────────────────────
 function StatRow({ label, home, away, isPercent }) {
   const total = (home || 0) + (away || 0);
@@ -154,6 +290,8 @@ function MatchTracker({ match }) {
   return (
     <div className="match-tracker">
       <div className="match-tracker__title">Match Tracker</div>
+
+      <MiniPitch match={match} />
 
       {hasAnyStats && (
         <div className="match-tracker__stats">
