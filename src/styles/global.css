@@ -117,7 +117,7 @@ select {
 
 .page-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1fr 1fr;
   gap: 22px;
 }
 
