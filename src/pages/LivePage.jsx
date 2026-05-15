@@ -88,6 +88,132 @@ function QuickBetPanel({ match, onBetPlaced }) {
   );
 }
 
+// ── Live Match Tracker ──────────────────────────────────────────
+function StatRow({ label, home, away, isPercent }) {
+  const total = (home || 0) + (away || 0);
+  // For percentage stats use values directly; else compute share for the bar
+  const homeShare = isPercent
+    ? (home || 0)
+    : (total > 0 ? Math.round((home / total) * 100) : 50);
+  const awayShare = 100 - homeShare;
+  const fmt = (v) => v == null ? '–' : isPercent ? `${v}%` : v;
+  return (
+    <div className="stat-row">
+      <div className="stat-row__values">
+        <span className="stat-row__num">{fmt(home)}</span>
+        <span className="stat-row__label">{label}</span>
+        <span className="stat-row__num">{fmt(away)}</span>
+      </div>
+      <div className="stat-row__bar">
+        <div className="stat-row__bar-home" style={{ width: `${homeShare}%` }} />
+        <div className="stat-row__bar-away" style={{ width: `${awayShare}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function MatchTracker({ match }) {
+  const stats = match.liveStats;
+  const goals = match.goalScorers ?? [];
+  const cards = stats?.cardEvents ?? [];
+
+  const hasAnyStats = stats && (
+    stats.possession || stats.shots || stats.corners ||
+    stats.yellowCards || stats.fouls
+  );
+
+  // Combine goals + cards into a single timeline sorted by minute
+  const events = [
+    ...goals.map(g => ({ minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal', name: g.playerName })),
+    ...cards.map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
+  ].sort((a, b) => a.minute - b.minute);
+
+  // Momentum: simple weighted score from possession + shots advantage
+  const momentum = (() => {
+    if (!stats) return null;
+    const ph = stats.possession?.home ?? 50;
+    const sh = stats.shots?.home ?? 0;
+    const sa = stats.shots?.away ?? 0;
+    const sotH = stats.shotsOnTarget?.home ?? 0;
+    const sotA = stats.shotsOnTarget?.away ?? 0;
+    const cH = stats.corners?.home ?? 0;
+    const cA = stats.corners?.away ?? 0;
+    // Weighted: possession 40%, shots 20%, on-target 25%, corners 15%
+    const totalShots = sh + sa || 1;
+    const totalSot   = sotH + sotA || 1;
+    const totalC     = cH + cA || 1;
+    const home = (ph * 0.4)
+               + ((sh / totalShots) * 100 * 0.2)
+               + ((sotH / totalSot) * 100 * 0.25)
+               + ((cH / totalC) * 100 * 0.15);
+    return Math.round(home);
+  })();
+
+  if (!hasAnyStats && events.length === 0) return null;
+
+  return (
+    <div className="match-tracker">
+      <div className="match-tracker__title">Match Tracker</div>
+
+      {hasAnyStats && (
+        <div className="match-tracker__stats">
+          {stats.possession && <StatRow label="Possession"     home={stats.possession.home}    away={stats.possession.away}    isPercent />}
+          {stats.shots         && <StatRow label="Shots"          home={stats.shots.home}         away={stats.shots.away} />}
+          {stats.shotsOnTarget && <StatRow label="On Target"      home={stats.shotsOnTarget.home} away={stats.shotsOnTarget.away} />}
+          {stats.corners       && <StatRow label="Corners"        home={stats.corners.home}       away={stats.corners.away} />}
+          {stats.yellowCards   && <StatRow label="Yellow Cards"   home={stats.yellowCards.home}   away={stats.yellowCards.away} />}
+          {stats.redCards && (stats.redCards.home || stats.redCards.away) ?
+            <StatRow label="Red Cards" home={stats.redCards.home} away={stats.redCards.away} /> : null}
+          {stats.fouls         && <StatRow label="Fouls"          home={stats.fouls.home}         away={stats.fouls.away} />}
+        </div>
+      )}
+
+      {momentum != null && (
+        <div className="match-tracker__momentum">
+          <div className="match-tracker__momentum-label">Match Momentum</div>
+          <div className="match-tracker__momentum-bar">
+            <div className="match-tracker__momentum-home" style={{ width: `${momentum}%` }} />
+            <div className="match-tracker__momentum-away" style={{ width: `${100 - momentum}%` }} />
+          </div>
+          <div className="match-tracker__momentum-percents">
+            <span>{momentum}% {match.homeTeamName}</span>
+            <span>{match.awayTeamName} {100 - momentum}%</span>
+          </div>
+        </div>
+      )}
+
+      {events.length > 0 && (
+        <div className="match-tracker__timeline">
+          <div className="match-tracker__timeline-label">Events Timeline</div>
+          <div className="match-tracker__timeline-track">
+            {events.map((e, i) => {
+              const pos = Math.min(100, Math.max(0, (e.minute / 90) * 100));
+              const icon = e.kind === 'goal' || e.kind === 'og' ? '⚽'
+                         : e.kind === 'red' ? '🟥'
+                         : '🟨';
+              return (
+                <div
+                  key={i}
+                  className={`match-tracker__timeline-marker match-tracker__timeline-marker--${e.team}`}
+                  style={{ left: `${pos}%` }}
+                  title={`${e.minute}' ${e.name ?? ''}`}
+                >
+                  <span className="match-tracker__timeline-icon">{icon}</span>
+                  <span className="match-tracker__timeline-min">{e.minute}&apos;</span>
+                </div>
+              );
+            })}
+            <div className="match-tracker__timeline-half" style={{ left: '50%' }} />
+          </div>
+          <div className="match-tracker__timeline-axis">
+            <span>0&apos;</span><span>HT</span><span>90&apos;</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Enums ────────────────────────────────────────────────────────
 const BET_TYPE    = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder', Goalscorer: 'Goalscorer', Corners: 'Corners', YellowCards: 'YellowCards', DoubleChance: 'DoubleChance', OddEven: 'OddEven', DrawNoBet: 'DrawNoBet', Handicap: 'Handicap', WinToNil: 'WinToNil', TeamGoals: 'TeamGoals', HalfTime: 'HalfTime', CleanSheet: 'CleanSheet', FirstGoal: 'FirstGoal', Btts1stHalf: 'Btts1stHalf', Btts2ndHalf: 'Btts2ndHalf', HalfTimeGoals: 'HalfTimeGoals', SecondHalfGoals: 'SecondHalfGoals', TeamOddEven: 'TeamOddEven', OddEven1stHalf: 'OddEven1stHalf', TeamToScore: 'TeamToScore', WinBothHalves: 'WinBothHalves', LastToScore: 'LastToScore', HtFt: 'HtFt' };
 const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
@@ -681,6 +807,8 @@ export default function LivePage() {
               {feedback.msg}
             </div>
           )}
+
+          <MatchTracker match={selectedMatch} />
 
           {!mode && (
             <>
