@@ -106,7 +106,7 @@ select {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 1400px;
+  max-width: 2005px;
   margin: 0 auto;
   padding: 20px 24px;
 }
@@ -6237,6 +6237,7 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  padding: 10px;
 }
 
 /* Vertical home/away stack — frees horizontal space so long team names fit */
