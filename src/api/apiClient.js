@@ -8,6 +8,14 @@ const api = axios.create({
   withCredentials: true, // send HttpOnly cookies automatically on every request
 });
 
+// ── Idempotency key generator ─────────────────────────────────────────────────
+// Use the same key on retries of the same logical bet — the backend will return
+// the existing bet instead of creating a duplicate. Generate ONCE per user
+// action (e.g. when "Place Bet" is clicked).
+export function newIdempotencyKey() {
+  return crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 // ── In-memory token store ─────────────────────────────────────────────────────
 // Used as fallback when cross-origin HttpOnly cookies are blocked
 // (Safari ITP, Brave shields, Chrome strict privacy mode).

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import api from '../api/apiClient';
+import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 
 // ── Quick 1/X/2 bet panel (reused from MatchesPage) ─────────────
@@ -22,7 +22,7 @@ function QuickBetPanel({ match, onBetPlaced }) {
     if (!pick || stakeNum <= 0) return;
     setLoading(true); setFeedback(null);
     try {
-      await api.post('/Bet', { matchId: match.id, betType: 'Winner', pick, amount: stakeNum });
+      await api.post('/Bet', { matchId: match.id, betType: 'Winner', pick, amount: stakeNum }, { headers: { 'X-Idempotency-Key': newIdempotencyKey() } });
       await refreshBalance();
       setFeedback({ ok: true, text: '✅ Bet placed!' });
       setPick(''); setAmount('');
@@ -728,11 +728,13 @@ export default function LivePage() {
   const placeBet = async () => {
     if (!selectedMatch || loading) return;
     setLoading(true); setFeedback(null);
+    const idemKey = newIdempotencyKey();   // one key for this bet attempt — survives retries
+    const idemCfg = { headers: { 'X-Idempotency-Key': idemKey } };
     try {
       let betPlaced = false;
       if (betAmt > 0 && hasBetOdds) {
         if (isExact && home !== null && away !== null) {
-          await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.ExactScore, scoreHome: home, scoreAway: away, amount: betAmt });
+          await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.ExactScore, scoreHome: home, scoreAway: away, amount: betAmt }, idemCfg);
           betPlaced = true;
         } else if (isMarket) {
           const legs = [];
@@ -767,10 +769,10 @@ export default function LivePage() {
           if (htftPick && mpOdds.htft != null) legs.push({ betType: BET_TYPE.HtFt, stringPick: htftPick });
 
           if (legs.length === 1) {
-            await api.post('/Bet', { matchId: selectedMatch.id, ...legs[0], amount: betAmt });
+            await api.post('/Bet', { matchId: selectedMatch.id, ...legs[0], amount: betAmt }, idemCfg);
             betPlaced = true;
           } else if (legs.length > 1) {
-            await api.post('/Bet/accumulator', { matchId: selectedMatch.id, legs, amount: betAmt });
+            await api.post('/Bet/accumulator', { matchId: selectedMatch.id, legs, amount: betAmt }, idemCfg);
             betPlaced = true;
           }
         }
