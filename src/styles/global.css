@@ -6257,6 +6257,13 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 3px 0;
+}
+
+/* Thin divider between home (first) and away (second) — matches the
+   column-separator nuance used on the odds cells. */
+.match-card__team-line:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .match-card__col--score {
