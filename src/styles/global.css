@@ -6299,6 +6299,19 @@ select:focus {
   text-transform: uppercase;
 }
 
+.match-card__time-clock {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.match-card__time-date {
+  font-size: 0.62rem;
+  color: var(--text-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
 .match-card__vs-sep {
   color: var(--text-soft);
   font-size: 0.72rem;

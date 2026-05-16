@@ -17,8 +17,8 @@ export default function MatchCard({ match, selected, onSelect }) {
     >
       {/* TIME */}
       <div className="match-card__col match-card__col--time">
-        <span>{timeStr}</span>
-        <span className="match-card__league-tag">{dateStr}</span>
+        <span className="match-card__time-clock">{timeStr}</span>
+        <span className="match-card__time-date">{dateStr}</span>
       </div>
 
       {/* FIXTURE — home above, away below for compact horizontal footprint */}
