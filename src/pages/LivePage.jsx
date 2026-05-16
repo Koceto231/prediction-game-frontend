@@ -1153,14 +1153,19 @@ export default function LivePage() {
                     {!collapsed.dc && !dis.dc && (
                       <div className="market-options market-options--3">
                         {DC_OPTIONS.map(({ key }) => {
-                          const lbl = key === 'HomeOrDraw' ? `${selectedMatch.homeTeamName} or Draw`
-                                    : key === 'DrawOrAway' ? `Draw or ${selectedMatch.awayTeamName}`
-                                    : `${selectedMatch.homeTeamName} or ${selectedMatch.awayTeamName}`;
+                          const [a, b] = key === 'HomeOrDraw' ? [selectedMatch.homeTeamName, 'Draw']
+                                       : key === 'DrawOrAway' ? ['Draw', selectedMatch.awayTeamName]
+                                       : [selectedMatch.homeTeamName, selectedMatch.awayTeamName];
                           return (
                             <button key={key} type="button"
-                              className={`market-option ${dcPick === key ? 'market-option--active' : ''}`}
+                              className={`market-option market-option--htft ${dcPick === key ? 'market-option--active' : ''}`}
+                              title={`${a} or ${b}`}
                               onClick={() => setDCPick(dcPick === key ? '' : key)}>
-                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__label htft-stack">
+                                <span className="htft-stack__line">{a}</span>
+                                <span className="htft-stack__sep">or</span>
+                                <span className="htft-stack__line">{b}</span>
+                              </div>
                               <div className="market-option__odds">{preOdds.dc?.[key] != null ? Number(preOdds.dc[key]).toFixed(2) : '—'}</div>
                             </button>
                           );
