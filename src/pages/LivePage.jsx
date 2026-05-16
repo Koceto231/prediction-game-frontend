@@ -539,12 +539,14 @@ export default function LivePage() {
             // Backend confirms in-play → always show
             if (m.status === 'IN_PLAY') return true;
             if (ACTIVE_STATES.includes(m.liveState)) return true;
-            // TIMED fallback — only when wall-clock plausibly mid-match (5–100 min)
-            // 100 min = 90 + ~10 min stoppage cap; matches running longer without
-            // any Sportmonks confirmation are almost certainly finished but not yet synced.
+            // TIMED fallback — keep visible until 130 min wall-clock (matches the
+            // backend FixStaleInPlayAsync cutoff). 100 min was too tight: a normal
+            // 90-min match with HT (15) and ~10 min total stoppage runs to ~115
+            // wall-clock, so the previous cap was hiding matches in the final
+            // ~10 minutes of play.
             if (m.status === 'TIMED') {
               const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
-              return elapsed >= 5 && elapsed <= 100;
+              return elapsed >= 5 && elapsed <= 130;
             }
             return false;
           });
