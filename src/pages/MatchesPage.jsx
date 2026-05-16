@@ -1628,17 +1628,22 @@ export default function MatchesPage() {
                     {!collapsed.htft && !dis.htft && (() => {
                       const H = selectedMatch.homeTeamName, D = 'Draw', A = selectedMatch.awayTeamName;
                       const htftOptions = [
-                        { key: 'HH', label: `${H} / ${H}` }, { key: 'HD', label: `${H} / ${D}` }, { key: 'HA', label: `${H} / ${A}` },
-                        { key: 'DH', label: `${D} / ${H}` }, { key: 'DD', label: `${D} / ${D}` }, { key: 'DA', label: `${D} / ${A}` },
-                        { key: 'AH', label: `${A} / ${H}` }, { key: 'AD', label: `${A} / ${D}` }, { key: 'AA', label: `${A} / ${A}` },
+                        { key: 'HH', ht: H, ft: H }, { key: 'HD', ht: H, ft: D }, { key: 'HA', ht: H, ft: A },
+                        { key: 'DH', ht: D, ft: H }, { key: 'DD', ht: D, ft: D }, { key: 'DA', ht: D, ft: A },
+                        { key: 'AH', ht: A, ft: H }, { key: 'AD', ht: A, ft: D }, { key: 'AA', ht: A, ft: A },
                       ];
                       return (
                         <div className="market-options market-options--3">
-                          {htftOptions.map(({ key, label }) => (
+                          {htftOptions.map(({ key, ht, ft }) => (
                             <button key={key} type="button"
-                              className={`market-option ${htftPick === key ? 'market-option--active' : ''}`}
+                              className={`market-option market-option--htft ${htftPick === key ? 'market-option--active' : ''}`}
+                              title={`${ht} / ${ft}`}
                               onClick={() => setHtftPick(htftPick === key ? '' : key)}>
-                              <div className="market-option__label" style={{ fontSize: '0.72rem' }}>{label}</div>
+                              <div className="market-option__label htft-stack">
+                                <span className="htft-stack__line">{ht}</span>
+                                <span className="htft-stack__sep">↓</span>
+                                <span className="htft-stack__line">{ft}</span>
+                              </div>
                               <div className="market-option__odds">
                                 {preOdds.htft?.[key] != null ? Number(preOdds.htft[key]).toFixed(2) : '—'}
                               </div>

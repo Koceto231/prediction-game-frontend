@@ -7235,6 +7235,47 @@ select:focus {
   font-weight: 600;
 }
 
+/* ── HT/FT stacked option — fits long team names in narrow cells ── */
+.market-option--htft {
+  min-width: 0;        /* override any inherited min-width so 3 cols always fit */
+  padding: 8px 4px;
+}
+
+.htft-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+}
+
+.htft-stack__line {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-main);
+}
+
+.htft-stack__sep {
+  font-size: 0.6rem;
+  color: var(--text-soft);
+  line-height: 1;
+  opacity: 0.6;
+}
+
+/* On very narrow screens shrink the stack text so 3 columns still fit */
+@media (max-width: 480px) {
+  .htft-stack__line { font-size: 0.62rem; }
+  .htft-stack__sep  { font-size: 0.5rem; }
+  .market-option--htft { padding: 6px 2px; }
+}
+
 /* ── Mini Pitch ─────────────────────────────────────────────── */
 .mini-pitch {
   position: relative;
