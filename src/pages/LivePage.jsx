@@ -102,6 +102,7 @@ function MiniPitch({ match }) {
     const cards = stats?.cardEvents ?? [];
 
     const curr = {
+      matchId:       match.id,
       // SCORE — primary trigger for goals (most reliable; updates before events on Sportmonks)
       homeScore:     match.homeScore ?? 0,
       awayScore:     match.awayScore ?? 0,
@@ -122,7 +123,16 @@ function MiniPitch({ match }) {
 
     const prev = prevRef.current;
     prevRef.current = curr;
-    if (!prev) return; // first run, just snapshot
+
+    // Reset event queue + skip detection when switching to a different match —
+    // otherwise the diff between match A (old prev) and match B (new curr)
+    // fires phantom GOAL / card / corner events for things that already
+    // happened in match B before the user opened it.
+    if (!prev || prev.matchId !== curr.matchId) {
+      queueRef.current = [];
+      setActiveEvent(null);
+      return;
+    }
 
     const newEvents = [];
     const home = match.homeTeamName, away = match.awayTeamName;
@@ -536,7 +546,13 @@ export default function LivePage() {
           const filtered = (r.data ?? []).filter(m => {
             // Backend says explicitly finished → never show
             if (FINAL_STATES.includes(m.liveState)) return false;
-            // Backend confirms in-play → always show
+            // Wall-clock guard applies to every match — protects against stuck
+            // IN_PLAY rows when backend FixStaleInPlayAsync hasn't run yet
+            // (post-restart, paused job, etc.). 150 min covers full 90 + HT +
+            // stoppage + ET + brief penalty shootout.
+            const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
+            if (elapsed > 150) return false;
+            // Backend confirms in-play → show (within wall-clock window above)
             if (m.status === 'IN_PLAY') return true;
             if (ACTIVE_STATES.includes(m.liveState)) return true;
             // TIMED fallback — keep visible until 130 min wall-clock (matches the
@@ -545,7 +561,6 @@ export default function LivePage() {
             // wall-clock, so the previous cap was hiding matches in the final
             // ~10 minutes of play.
             if (m.status === 'TIMED') {
-              const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
               return elapsed >= 5 && elapsed <= 130;
             }
             return false;
