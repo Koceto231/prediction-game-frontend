@@ -608,6 +608,49 @@ export default function AdminPage() {
             </div>
             <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
             <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
+              <b>Duplicate teams</b> — обедини "Leeds United" + "Leeds United FC" в едно. Преади matches/bets/predictions, после изтрива дублиращия Team ред.
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'dup-teams-preview'}
+                onClick={() => run('dup-teams-preview', () => api.get('/admin/sync/cleanup/duplicate-teams-preview'))}>
+                {loading === 'dup-teams-preview' ? 'Loading…' : '🔍 Preview duplicate teams'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'dup-teams-dry'}
+                onClick={() => run('dup-teams-dry', () => api.post('/admin/sync/cleanup/duplicate-teams?dryRun=true'))}>
+                {loading === 'dup-teams-dry' ? 'Checking…' : '🔍 Dry run merge plan'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'dup-teams-merge'}
+                onClick={() => {
+                  if (!window.confirm('Това ще обедини duplicate teams и ще изтрие дублиращите Match рoeve. Сигурен ли си?')) return;
+                  run('dup-teams-merge', () => api.post('/admin/sync/cleanup/duplicate-teams?dryRun=false'));
+                }}>
+                {loading === 'dup-teams-merge' ? 'Merging…' : '🔧 Merge duplicate teams'}
+              </button>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
+              <b>Stuck statuses</b> — IN_PLAY/TIMED мачове с MatchDate &gt; 6 ч назад → FINISHED, IN_PLAY мачове &gt; 12 ч напред → TIMED. Поправя Liverpool-from-Friday и Arsenal-tomorrow видими като live.
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn" type="button" disabled={loading === 'stuck-dry'}
+                onClick={() => run('stuck-dry', () => api.post('/admin/sync/cleanup/fix-stuck-statuses?dryRun=true'))}>
+                {loading === 'stuck-dry' ? 'Checking…' : '🔍 Preview stuck statuses'}
+              </button>
+            </div>
+            <div className="admin-actions" style={{ marginTop: 8 }}>
+              <button className="admin-btn admin-btn--danger" type="button" disabled={loading === 'stuck-fix'}
+                onClick={() => run('stuck-fix', () => api.post('/admin/sync/cleanup/fix-stuck-statuses?dryRun=false'))}>
+                {loading === 'stuck-fix' ? 'Fixing…' : '🔧 Fix stuck statuses'}
+              </button>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-soft)', marginBottom: 8 }}>
               Намери мач по отбор → виж ID → изтрий го директно
             </div>
             <TeamMatchSearch />
