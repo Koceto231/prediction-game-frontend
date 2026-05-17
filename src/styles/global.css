@@ -7296,6 +7296,191 @@ select:focus {
   .market-option--htft { padding: 6px 2px; }
 }
 
+/* ── Cash Out badge + modal ─────────────────────────────────── */
+.cashout-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(240, 197, 25, 0.10), rgba(240, 197, 25, 0.04));
+  border: 1px solid rgba(240, 197, 25, 0.35);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: all 0.15s ease;
+}
+
+.cashout-badge:hover {
+  background: linear-gradient(135deg, rgba(240, 197, 25, 0.20), rgba(240, 197, 25, 0.08));
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.cashout-badge__label {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cashout-badge__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-left: auto;
+}
+
+.cashout-badge__delta {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.cashout-badge--profit .cashout-badge__delta { color: #4ade80; }
+.cashout-badge--loss   .cashout-badge__delta { color: #f87171; }
+.cashout-badge--even   .cashout-badge__delta { color: var(--text-muted); }
+
+.cashout-badge--profit { border-color: rgba(74, 222, 128, 0.4); }
+.cashout-badge--loss   { border-color: rgba(248, 113, 113, 0.4); }
+
+.cashout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.cashout-modal {
+  background: var(--bg-card, #0c0c0c);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.cashout-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cashout-modal__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.cashout-modal__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.cashout-modal__body {
+  padding: 16px 18px;
+}
+
+.cashout-modal__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.cashout-modal__row strong {
+  color: var(--text-main);
+}
+
+.cashout-modal__big {
+  margin-top: 14px;
+  padding: 16px;
+  background: rgba(240, 197, 25, 0.06);
+  border: 1px solid rgba(240, 197, 25, 0.25);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cashout-modal__big > span:first-child {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.cashout-modal__big > strong {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.cashout-modal__big.cashout-badge--profit > strong { color: #4ade80; }
+.cashout-modal__big.cashout-badge--loss   > strong { color: #f87171; }
+
+.cashout-modal__delta {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cashout-modal__delta.cashout-badge--profit { color: #4ade80; }
+.cashout-modal__delta.cashout-badge--loss   { color: #f87171; }
+
+.cashout-modal__footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cashout-modal__btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.cashout-modal__btn--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.cashout-modal__btn--primary {
+  background: var(--accent);
+  color: #000;
+}
+
+.cashout-modal__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bet-status--cashed { background: rgba(240, 197, 25, 0.15); color: var(--accent); }
+
 /* ── Mini Pitch ─────────────────────────────────────────────── */
 .mini-pitch {
   position: relative;
