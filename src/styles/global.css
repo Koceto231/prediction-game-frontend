@@ -8154,6 +8154,335 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  QUICK BET — floating launcher + slide-in panel              │
+   │  (matches stitch mockup upgraded_my_bets_overview_6)         │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.quickbet-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 64px;
+  z-index: 38;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: #06120a;
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(240, 197, 25, 0.32);
+  transition: transform 0.12s, filter 0.12s;
+}
+
+.quickbet-fab:hover  { filter: brightness(1.08); }
+.quickbet-fab:active { transform: translateY(1px); }
+
+.quickbet-fab__icon  { font-size: 1.05rem; line-height: 1; }
+.quickbet-fab__label { line-height: 1; }
+
+.quickbet-fab--on {
+  background: linear-gradient(135deg, #ffd84d 0%, var(--accent) 100%);
+  box-shadow: 0 0 0 3px rgba(240, 197, 25, 0.18), 0 6px 22px rgba(240, 197, 25, 0.32);
+}
+
+.quickbet-fab__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #06120a;
+  margin-left: 2px;
+  box-shadow: 0 0 0 2px rgba(6, 18, 10, 0.18);
+}
+
+/* Panel */
+.quickbet-panel {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--surface-shell);
+  border-left: 1px solid var(--border-soft);
+  padding: 20px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transform: translateX(100%);
+  transition: transform 0.24s ease;
+  z-index: 40;
+  box-shadow: -16px 0 32px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
+
+.quickbet-panel--open { transform: translateX(0); }
+
+.quickbet-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quickbet-panel__title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  color: var(--accent);
+}
+
+.quickbet-panel__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+.quickbet-panel__close:hover { color: var(--text-main); }
+
+.quickbet-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+/* Custom toggle switch */
+.quickbet-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.quickbet-toggle__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.18s, background 0.18s;
+}
+
+.quickbet-toggle--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.quickbet-toggle--on .quickbet-toggle__knob {
+  transform: translateX(20px);
+  background: #06120a;
+}
+
+.quickbet-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quickbet-panel__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.quickbet-panel__stake {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+.quickbet-panel__stake input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 1.4rem;
+  font-weight: 800;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.quickbet-panel__stake span {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.quickbet-panel__quick-adds {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.quickbet-panel__quick-add {
+  padding: 7px 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.quickbet-panel__quick-add:hover {
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+  color: var(--accent);
+}
+
+.quickbet-panel__last {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quickbet-panel__last-head {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.quickbet-panel__last-card {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quickbet-panel__last-fixture {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.86rem;
+}
+
+.quickbet-panel__last-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.quickbet-panel__last-pick   { color: var(--accent); font-weight: 700; }
+.quickbet-panel__last-odds   { font-variant-numeric: tabular-nums; }
+.quickbet-panel__last-stake  { margin-left: auto; color: var(--text-main); font-weight: 700; }
+
+.quickbet-panel__last-empty {
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-soft);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.quickbet-panel__feedback {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+.quickbet-panel__feedback--ok      { background: rgba(74,222,128,0.15); color: #4ade80; }
+.quickbet-panel__feedback--error   { background: rgba(248,113,113,0.15); color: #f87171; }
+.quickbet-panel__feedback--loading { background: var(--accent-soft);     color: var(--accent); }
+
+.quickbet-panel__hint {
+  margin-top: auto;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.quickbet-panel__scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 39;
+  animation: quickbet-scrim-in 0.18s ease;
+}
+
+@keyframes quickbet-scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Mobile: full-width sheet */
+@media (max-width: 600px) {
+  .quickbet-panel { width: 100%; top: 56px; }
+  .quickbet-fab   { bottom: 70px; right: 12px; }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MATCHES page polish — small tweaks to match stitch mockup
+   (upgraded_upcoming_matches)
+   ──────────────────────────────────────────────────────────────── */
+
+/* Time column: pill-style wrapper, accent-coloured clock */
+.match-card__col--time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.match-card__time-clock {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Odds cells: subtle hover lift + clearer hit area */
+.match-card__col--odds {
+  margin: 6px 4px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.match-card__col--odds:hover {
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+}
+
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  LIVE PAGE — redesigned list rows (matches stitch mockup 3)  │
    ╰──────────────────────────────────────────────────────────────╯ */
 
