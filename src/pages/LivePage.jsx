@@ -3,6 +3,9 @@ import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
+import {
+  is1H, is2H, isHT, isET, isFT, isActive, isFinal,
+} from '../utils/liveState';
 
 // ── League metadata for the small league chip on each live row ─────
 const LEAGUE_META = {
@@ -219,8 +222,8 @@ function MiniPitch({ match }) {
   }, [activeEvent]);
 
   const minute = (() => {
-    if (match.liveState === 'HT' || match.liveState === 'BREAK') return 'HT';
-    if (match.liveState === 'FT') return 'FT';
+    if (isHT(match.liveState)) return 'HT';
+    if (isFT(match.liveState)) return 'FT';
     if (match.liveMinute != null) return `${match.liveMinute}'`;
     return null;
   })();
@@ -460,14 +463,12 @@ export default function LivePage() {
 
   // Defensive client-side filter — keep stale-data guards from the old polling path
   const liveMatches = (() => {
-    const ACTIVE_STATES = ['1H', '2H', 'HT', 'BREAK', 'ET', 'INT', 'PEN_LIVE'];
-    const FINAL_STATES  = ['FT', 'AET', 'FTP', 'ABD', 'CANC', 'WO', 'AWRD'];
     return (rawLiveMatches ?? []).filter(m => {
-      if (FINAL_STATES.includes(m.liveState)) return false;
+      if (isFinal(m.liveState)) return false;
       const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
       if (elapsed > 150) return false;
       if (m.status === 'IN_PLAY') return true;
-      if (ACTIVE_STATES.includes(m.liveState)) return true;
+      if (isActive(m.liveState)) return true;
       if (m.status === 'TIMED') return elapsed >= 5 && elapsed <= 130;
       return false;
     });
@@ -567,8 +568,8 @@ export default function LivePage() {
   //   6. Nothing but scheduled MatchDate           → "~67'" (wall-clock guess)
   //   7. Nothing at all                            → "LIVE"
   const displayMinute = (m) => {
-    if (m.liveState === 'HT' || m.liveState === 'BREAK') return 'HT';
-    if (m.liveState === 'FT' || m.liveState === 'AET')   return 'FT';
+    if (isHT(m.liveState)) return 'HT';
+    if (isFT(m.liveState)) return 'FT';
 
     if (m.liveMinute != null) {
       const added = m.liveStats?.addedTime;
@@ -576,13 +577,13 @@ export default function LivePage() {
     }
 
     // Use real 2H start when known — exact, no guessing about HT duration
-    if (m.liveState === '2H' || m.liveState === 'ET') {
+    if (is2H(m.liveState) || isET(m.liveState)) {
       const min2H = minutesSince(m.secondHalfStartedAt);
       if (min2H != null) return `${Math.min(120, 45 + min2H)}'`;
     }
 
     // Use real 1H start when known
-    if (m.liveState === '1H') {
+    if (is1H(m.liveState)) {
       const min1H = minutesSince(m.firstHalfStartedAt);
       if (min1H != null) return `${Math.min(50, Math.max(1, min1H))}'`;
     }
@@ -895,11 +896,10 @@ export default function LivePage() {
   // authoritative signal. Fall back to minute > 45 only when phase is missing.
   const liveMin       = selectedMatch?.liveMinute ?? null;
   const liveState     = selectedMatch?.liveState ?? null;
-  const isHalfTime    = liveState === 'HT' || liveState === 'BREAK';
+  const isHalfTime    = isHT(liveState);
   // "isSecondHalf" = 1H is done (HT, BREAK, 2H, ET all qualify). Used to lock
   // every 1H market deterministically — no more minute-based guessing.
-  const isSecondHalf  = liveState === 'HT' || liveState === 'BREAK'
-                     || liveState === '2H' || liveState === 'ET'
+  const isSecondHalf  = isHT(liveState) || is2H(liveState) || isET(liveState)
                      || (liveState == null && liveMin != null && liveMin > 45);
   const liveHomeScore = selectedMatch?.homeScore ?? 0;
   const liveAwayScore = selectedMatch?.awayScore ?? 0;

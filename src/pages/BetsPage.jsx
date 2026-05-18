@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
+import { isActive } from '../utils/liveState';
 
 // ── Constants ────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
@@ -46,8 +47,7 @@ function formatPick(bet) {
 
 function isMatchLive(bet) {
   if (bet.matchStatus === 'IN_PLAY') return true;
-  const active = ['1H', '2H', 'HT', 'BREAK', 'ET', 'INT', 'PEN_LIVE'];
-  return active.includes(bet.liveState);
+  return isActive(bet.liveState);
 }
 
 // ── The right-side Cash Out CTA (3 visual states) ────────────────────────
