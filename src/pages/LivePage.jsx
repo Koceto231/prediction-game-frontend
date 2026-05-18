@@ -1,6 +1,7 @@
 ﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
+import CashOutBadge from '../components/CashOutBadge';
 
 // ── Quick 1/X/2 bet panel (reused from MatchesPage) ─────────────
 function QuickBetPanel({ match, onBetPlaced }) {
@@ -496,6 +497,9 @@ export default function LivePage() {
   const [lastScorePick, setLastScorePick] = useState('');
   const [htftPick, setHtftPick]         = useState('');
 
+  // Active bets the user has on the currently-selected match (for cash-out display)
+  const [myActiveBets, setMyActiveBets] = useState([]);
+
   const [preOdds, setPreOdds]               = useState({});
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
@@ -590,6 +594,23 @@ export default function LivePage() {
     const t = setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     return () => clearTimeout(t);
   }, [selectedMatch?.id]);
+
+  // Load user's active bets on the selected match (for cash-out display)
+  useEffect(() => {
+    if (!selectedMatch) { setMyActiveBets([]); return; }
+    api.get('/Bet/me')
+      .then(r => {
+        const mine = (r.data ?? [])
+          .filter(b => b.matchId === selectedMatch.id && b.status === 'Pending');
+        setMyActiveBets(mine);
+      })
+      .catch(() => setMyActiveBets([]));
+  }, [selectedMatch?.id]);
+
+  // When a bet is cashed out from the live panel, remove it from local list
+  const handleLiveBetCashedOut = (betId) => {
+    setMyActiveBets(prev => prev.filter(b => b.id !== betId));
+  };
 
   // Load players when scorer expanded
   useEffect(() => {
@@ -1044,6 +1065,27 @@ export default function LivePage() {
           )}
 
           <MatchTracker match={selectedMatch} />
+
+          {myActiveBets.length > 0 && (
+            <div className="my-live-bets">
+              <div className="my-live-bets__header">
+                <span className="my-live-bets__title">Your active bets on this match</span>
+                <span className="my-live-bets__count">{myActiveBets.length}</span>
+              </div>
+              {myActiveBets.map(bet => (
+                <div key={bet.id} className="my-live-bets__row">
+                  <div className="my-live-bets__info">
+                    <span className="my-live-bets__pick">{bet.betDescription}</span>
+                    <span className="my-live-bets__meta">
+                      €{Number(bet.amount).toFixed(2)} @ {Number(bet.oddsAtBetTime).toFixed(2)}
+                      → €{Number(bet.potentialPayout).toFixed(2)}
+                    </span>
+                  </div>
+                  <CashOutBadge bet={bet} onCashedOut={handleLiveBetCashedOut} compact />
+                </div>
+              ))}
+            </div>
+          )}
 
           {!mode && (
             <>
