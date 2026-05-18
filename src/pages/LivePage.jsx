@@ -2,6 +2,7 @@
 import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
+import useLiveMatchStream from '../hooks/useLiveMatchStream';
 
 // ── Quick 1/X/2 bet panel (reused from MatchesPage) ─────────────
 function QuickBetPanel({ match, onBetPlaced }) {
@@ -444,8 +445,24 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
 export default function LivePage() {
   const { refreshBalance } = useWallet();
 
-  const [liveMatches, setLiveMatches]     = useState([]);
-  const [loadingLive, setLoadingLive]     = useState(true);
+  // Live matches arrive via SSE (with automatic polling fallback if the
+  // stream can't open). See useLiveMatchStream for details.
+  const { matches: rawLiveMatches, loading: loadingLive, mode: streamMode } = useLiveMatchStream();
+
+  // Defensive client-side filter — keep stale-data guards from the old polling path
+  const liveMatches = (() => {
+    const ACTIVE_STATES = ['1H', '2H', 'HT', 'BREAK', 'ET', 'INT', 'PEN_LIVE'];
+    const FINAL_STATES  = ['FT', 'AET', 'FTP', 'ABD', 'CANC', 'WO', 'AWRD'];
+    return (rawLiveMatches ?? []).filter(m => {
+      if (FINAL_STATES.includes(m.liveState)) return false;
+      const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
+      if (elapsed > 150) return false;
+      if (m.status === 'IN_PLAY') return true;
+      if (ACTIVE_STATES.includes(m.liveState)) return true;
+      if (m.status === 'TIMED') return elapsed >= 5 && elapsed <= 130;
+      return false;
+    });
+  })();
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [mode, setMode]                   = useState('');
   const [fields, setFields]               = useState(EMPTY);
@@ -566,46 +583,7 @@ export default function LivePage() {
     return est != null ? `~${est}'` : 'LIVE';
   };
 
-  // ── Fetch live matches every 5 s — DB query is cheap; backend syncs every 15 s ───
-  useEffect(() => {
-    const fetchLive = () => {
-      api.get('/Match/live')
-        .then(r => {
-          // Defensive client-side filter — exclude matches that look finished even
-          // if backend hasn't flipped status yet (Sportmonks state lag races backend).
-          const ACTIVE_STATES = ['1H', '2H', 'HT', 'BREAK', 'ET', 'INT', 'PEN_LIVE'];
-          const FINAL_STATES  = ['FT', 'AET', 'FTP', 'ABD', 'CANC', 'WO', 'AWRD'];
-          const filtered = (r.data ?? []).filter(m => {
-            // Backend says explicitly finished → never show
-            if (FINAL_STATES.includes(m.liveState)) return false;
-            // Wall-clock guard applies to every match — protects against stuck
-            // IN_PLAY rows when backend FixStaleInPlayAsync hasn't run yet
-            // (post-restart, paused job, etc.). 150 min covers full 90 + HT +
-            // stoppage + ET + brief penalty shootout.
-            const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
-            if (elapsed > 150) return false;
-            // Backend confirms in-play → show (within wall-clock window above)
-            if (m.status === 'IN_PLAY') return true;
-            if (ACTIVE_STATES.includes(m.liveState)) return true;
-            // TIMED fallback — keep visible until 130 min wall-clock (matches the
-            // backend FixStaleInPlayAsync cutoff). 100 min was too tight: a normal
-            // 90-min match with HT (15) and ~10 min total stoppage runs to ~115
-            // wall-clock, so the previous cap was hiding matches in the final
-            // ~10 minutes of play.
-            if (m.status === 'TIMED') {
-              return elapsed >= 5 && elapsed <= 130;
-            }
-            return false;
-          });
-          setLiveMatches(filtered);
-          setLoadingLive(false);
-        })
-        .catch(() => setLoadingLive(false));
-    };
-    fetchLive();
-    const id = setInterval(fetchLive, 5_000);
-    return () => clearInterval(id);
-  }, []);
+  // Polling removed — useLiveMatchStream above pushes updates via SSE.
 
   // Keep selectedMatch in sync with refreshed live data
   useEffect(() => {
