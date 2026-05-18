@@ -4,6 +4,15 @@ import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 
+// ── League metadata for the small league chip on each live row ─────
+const LEAGUE_META = {
+  PL:  { short: 'EPL',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  BGL: { short: 'EFBET LIGA',  flag: '🇧🇬' },
+  BL1: { short: 'BUNDESLIGA',  flag: '🇩🇪' },
+  SA:  { short: 'SERIE A',     flag: '🇮🇹' },
+  PD:  { short: 'LA LIGA',     flag: '🇪🇸' },
+};
+
 // ── Quick 1/X/2 bet panel (reused from MatchesPage) ─────────────
 function QuickBetPanel({ match, onBetPlaced }) {
   const { refreshBalance } = useWallet();
@@ -986,48 +995,71 @@ export default function LivePage() {
         )}
 
         {liveMatches.length > 0 && (
-          <div className="cards-grid">
-            <div className="matches-table-head">
-              <span>MIN</span>
-              <span>FIXTURE</span>
-              <span style={{ textAlign: 'center' }}>1</span>
-              <span style={{ textAlign: 'center' }}>X</span>
-              <span style={{ textAlign: 'center' }}>2</span>
-            </div>
-            {liveMatches.map(match => (
-              <React.Fragment key={match.id}>
-              <div
-                className={`match-card match-card--live${selectedMatch?.id === match.id ? ' match-card--selected' : ''}`}
-                onClick={() => {
-                  if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
-                  else { setSelectedMatch(match); resetPanel(); }
-                }}
-              >
-                <span className="match-card__time" style={{ color: 'var(--red, #e53e3e)', fontWeight: 700 }}>
-                  {displayMinute(match)}
-                </span>
-                <span className="match-card__fixture" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <span>
-                    {match.homeTeamName} <strong style={{ margin: '0 6px' }}>{match.homeScore ?? 0} – {match.awayScore ?? 0}</strong> {match.awayTeamName}
-                  </span>
-                  {match.goalScorers?.length > 0 && (
-                    <span style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px', marginTop: 3, fontSize: '0.70rem', color: 'var(--text-muted)' }}>
-                      {match.goalScorers.map((g, i) => (
-                        <span key={i} style={{ whiteSpace: 'nowrap' }}>
-                          {g.team === 'home'
-                            ? <>⚽ {g.isOwnGoal ? <em>(OG) </em> : null}{g.playerName} {g.minute}&apos;</>
-                            : <>{g.playerName}{g.isOwnGoal ? <em> (OG)</em> : null} {g.minute}&apos; ⚽</>}
-                        </span>
-                      ))}
+          <div className="live-list">
+            {liveMatches.map(match => {
+              const isSel    = selectedMatch?.id === match.id;
+              const league   = LEAGUE_META[match.leagueCode];
+              const goalsH   = match.goalScorers?.filter(g => g.team === 'home').length ?? 0;
+              const goalsA   = match.goalScorers?.filter(g => g.team === 'away').length ?? 0;
+              const ycH      = match.liveStats?.yellowCards?.home ?? 0;
+              const ycA      = match.liveStats?.yellowCards?.away ?? 0;
+              const corH     = match.liveStats?.corners?.home ?? 0;
+              const corA     = match.liveStats?.corners?.away ?? 0;
+              const homeScore = match.homeScore ?? 0;
+              const awayScore = match.awayScore ?? 0;
+
+              return (
+                <div
+                  key={match.id}
+                  className={`live-row${isSel ? ' live-row--selected' : ''}`}
+                  onClick={() => {
+                    if (isSel) { setSelectedMatch(null); resetPanel(); }
+                    else       { setSelectedMatch(match); resetPanel(); }
+                  }}
+                >
+                  {/* Left: league + minute */}
+                  <div className="live-row__meta">
+                    {league && (
+                      <span className="live-row__league">
+                        <span className="live-row__league-flag">{league.flag}</span>
+                        <span className="live-row__league-name">{league.short}</span>
+                      </span>
+                    )}
+                    <span className="live-row__minute">
+                      <span className="live-dot" />
+                      {displayMinute(match)}
                     </span>
-                  )}
-                </span>
-                <span className="match-card__odds">{match.homeOdds ? Number(match.homeOdds).toFixed(2) : '—'}</span>
-                <span className="match-card__odds">{match.drawOdds ? Number(match.drawOdds).toFixed(2) : '—'}</span>
-                <span className="match-card__odds">{match.awayOdds ? Number(match.awayOdds).toFixed(2) : '—'}</span>
-              </div>
-              </React.Fragment>
-            ))}
+                  </div>
+
+                  {/* Middle: teams + big score + chips */}
+                  <div className="live-row__fixture">
+                    <div className="live-row__teams">
+                      <span className="live-row__team">{match.homeTeamName}</span>
+                      <span className="live-row__score">{homeScore} : {awayScore}</span>
+                      <span className="live-row__team live-row__team--away">{match.awayTeamName}</span>
+                    </div>
+                    <div className="live-row__chips">
+                      <span className="live-chip"><span className="live-chip__icon">⚽</span>{goalsH}–{goalsA}</span>
+                      {(ycH + ycA) > 0 && (
+                        <span className="live-chip live-chip--yellow"><span className="live-chip__icon">🟨</span>{ycH}–{ycA}</span>
+                      )}
+                      {(corH + corA) > 0 && (
+                        <span className="live-chip"><span className="live-chip__icon">⛳</span>{corH}–{corA}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: 1 / X / 2 odds + LIVE pill */}
+                  <div className="live-row__odds">
+                    <span className="live-odd"><span className="live-odd__label">1</span><span className="live-odd__value">{match.homeOdds ? Number(match.homeOdds).toFixed(2) : '—'}</span></span>
+                    <span className="live-odd"><span className="live-odd__label">X</span><span className="live-odd__value">{match.drawOdds ? Number(match.drawOdds).toFixed(2) : '—'}</span></span>
+                    <span className="live-odd"><span className="live-odd__label">2</span><span className="live-odd__value">{match.awayOdds ? Number(match.awayOdds).toFixed(2) : '—'}</span></span>
+                  </div>
+
+                  <span className="live-pill">LIVE</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -1036,16 +1068,25 @@ export default function LivePage() {
       {selectedMatch && (
         <section className="shell-card panel" ref={panelRef} style={{ scrollMarginTop: 64 }}>
 
-          <div className="match-hero">
-            <div className="match-hero__badge" style={{ background: 'var(--red, #e53e3e)', color: '#fff' }}>
-              <span className="live-dot" style={{ marginRight: 6 }} />
-              LIVE — {displayMinute(selectedMatch)}
+          <div className="match-hero match-hero--live-v2">
+            <div className="match-hero__topbar">
+              {LEAGUE_META[selectedMatch.leagueCode] && (
+                <span className="match-hero__league-chip">
+                  <span className="match-hero__league-flag">{LEAGUE_META[selectedMatch.leagueCode].flag}</span>
+                  <span>{LEAGUE_META[selectedMatch.leagueCode].short}</span>
+                </span>
+              )}
+              <span className="match-hero__live-pill">
+                <span className="live-dot" /> LIVE
+              </span>
             </div>
-            <h2 className="match-hero__title">
-              <span>{selectedMatch.homeTeamName}</span>
-              <span className="match-hero__vs">{selectedMatch.homeScore ?? 0} – {selectedMatch.awayScore ?? 0}</span>
-              <span>{selectedMatch.awayTeamName}</span>
-            </h2>
+            <div className="match-hero__fixture-line">
+              {selectedMatch.homeTeamName} <span className="match-hero__vs-word">vs</span> {selectedMatch.awayTeamName}
+            </div>
+            <div className="match-hero__bigscore">
+              {selectedMatch.homeScore ?? 0} <span className="match-hero__bigscore-dash">-</span> {selectedMatch.awayScore ?? 0}
+            </div>
+            <div className="match-hero__minute-line">{displayMinute(selectedMatch)}</div>
             {selectedMatch.goalScorers?.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', gap: 8 }}>
                 {/* Home goals — left-aligned */}
