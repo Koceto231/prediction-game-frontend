@@ -510,31 +510,59 @@ export default function LivePage() {
   const panelRef = useRef(null);
   const setField = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
-  // Wall-clock estimate — used only when Sportmonks gives us a phase (1H/2H)
-  // but no clock.minute. Slightly conservative (small buffer) so we never
-  // show a minute AHEAD of the real game state — being a minute behind is
-  // always safer for betting decisions than being ahead.
-  const estimateMinute = (matchDate) => {
+  // Computes game minute from a known phase start instant.
+  //   secondHalfStartedAt → 45 + minutes elapsed since 2H kick-off (exact)
+  //   firstHalfStartedAt  → minutes since 1H kick-off
+  // Returns null if the timestamp is missing or in the future.
+  const minutesSince = (iso) => {
+    if (!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return null;
+    return Math.floor(ms / 60000);
+  };
+
+  // Wall-clock estimate from scheduled MatchDate — last-resort fallback only.
+  // Used when we don't have liveMinute AND haven't observed a state transition.
+  const estimateFromMatchDate = (matchDate) => {
     const kickoff = new Date(matchDate);
     const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60000);
     if (elapsed <= 0)  return null;
-    if (elapsed <= 45) return Math.max(1, elapsed - 2);       // 1H: -2 buffer
-    if (elapsed <= 60) return 45;                             // HT zone fallback
-    return Math.min(85, elapsed - 20);                        // 2H: -15 HT - 5 buffer
+    if (elapsed <= 45) return Math.max(1, elapsed - 2);
+    if (elapsed <= 60) return 45;
+    return Math.min(85, elapsed - 20);
   };
-  // Display priority:
-  //   1. Sportmonks says HT          → "HT"
-  //   2. Sportmonks gives real clock → "67'" or "45+3'" when stoppage time
-  //   3. Sportmonks knows phase only → "~67'"
-  //   4. Nothing                     → "LIVE"
+
+  // Display priority (most accurate → least):
+  //   1. Sportmonks phase is HT/BREAK              → "HT"
+  //   2. Sportmonks phase is FT/AET                → "FT"
+  //   3. Sportmonks gave real clock.minute         → "67'" or "45+3'"
+  //   4. We observed 2H transition timestamp       → 45 + minutes since 2H (exact)
+  //   5. We observed 1H transition timestamp       → minutes since 1H (exact)
+  //   6. Nothing but scheduled MatchDate           → "~67'" (wall-clock guess)
+  //   7. Nothing at all                            → "LIVE"
   const displayMinute = (m) => {
     if (m.liveState === 'HT' || m.liveState === 'BREAK') return 'HT';
     if (m.liveState === 'FT' || m.liveState === 'AET')   return 'FT';
+
     if (m.liveMinute != null) {
       const added = m.liveStats?.addedTime;
       return added && added > 0 ? `${m.liveMinute}+${added}'` : `${m.liveMinute}'`;
     }
-    const est = estimateMinute(m.matchDate);
+
+    // Use real 2H start when known — exact, no guessing about HT duration
+    if (m.liveState === '2H' || m.liveState === 'ET') {
+      const min2H = minutesSince(m.secondHalfStartedAt);
+      if (min2H != null) return `${Math.min(120, 45 + min2H)}'`;
+    }
+
+    // Use real 1H start when known
+    if (m.liveState === '1H') {
+      const min1H = minutesSince(m.firstHalfStartedAt);
+      if (min1H != null) return `${Math.min(50, Math.max(1, min1H))}'`;
+    }
+
+    // Last-resort fallback — wall-clock from scheduled MatchDate
+    const est = estimateFromMatchDate(m.matchDate);
     return est != null ? `~${est}'` : 'LIVE';
   };
 
