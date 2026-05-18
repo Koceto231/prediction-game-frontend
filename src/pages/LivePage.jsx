@@ -3,8 +3,9 @@ import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
+import useNowTicker from '../hooks/useNowTicker';
 import {
-  is1H, is2H, isHT, isET, isFT, isActive, isFinal,
+  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay,
 } from '../utils/liveState';
 
 // ── League metadata for the small league chip on each live row ─────
@@ -221,12 +222,9 @@ function MiniPitch({ match }) {
     return () => clearTimeout(t);
   }, [activeEvent]);
 
-  const minute = (() => {
-    if (isHT(match.liveState)) return 'HT';
-    if (isFT(match.liveState)) return 'FT';
-    if (match.liveMinute != null) return `${match.liveMinute}'`;
-    return null;
-  })();
+  // Re-render once per second so the minute keeps ticking between SSE updates.
+  const nowMs  = useNowTicker(1000);
+  const minute = liveClockDisplay(match, nowMs);
 
   return (
     <div className="mini-pitch">
@@ -456,6 +454,8 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
 
 export default function LivePage() {
   const { refreshBalance } = useWallet();
+  // 1s ticker — drives the smooth live-minute display between SSE cycles.
+  const nowMs = useNowTicker(1000);
 
   // Live matches arrive via SSE (with automatic polling fallback if the
   // stream can't open). See useLiveMatchStream for details.
@@ -568,21 +568,18 @@ export default function LivePage() {
   //   6. Nothing but scheduled MatchDate           → "~67'" (wall-clock guess)
   //   7. Nothing at all                            → "LIVE"
   const displayMinute = (m) => {
-    if (isHT(m.liveState)) return 'HT';
-    if (isFT(m.liveState)) return 'FT';
+    // Primary: smooth-ticking clock from Sportmonks `periods` snapshot
+    // (handles HT/FT short-circuits, round-up at 45:01→46, and 90+N injury).
+    const live = liveClockDisplay(m, nowMs);
+    if (live != null) return live;
 
-    if (m.liveMinute != null) {
-      const added = m.liveStats?.addedTime;
-      return added && added > 0 ? `${m.liveMinute}+${added}'` : `${m.liveMinute}'`;
-    }
-
-    // Use real 2H start when known — exact, no guessing about HT duration
+    // Fallback 1: use real 2H start when known — exact, no guessing about HT duration
     if (is2H(m.liveState) || isET(m.liveState)) {
       const min2H = minutesSince(m.secondHalfStartedAt);
       if (min2H != null) return `${Math.min(120, 45 + min2H)}'`;
     }
 
-    // Use real 1H start when known
+    // Fallback 2: use real 1H start when known
     if (is1H(m.liveState)) {
       const min1H = minutesSince(m.firstHalfStartedAt);
       if (min1H != null) return `${Math.min(50, Math.max(1, min1H))}'`;

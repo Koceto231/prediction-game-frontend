@@ -33,3 +33,50 @@ export const isET = s => s === 'INPLAY_ET' || s === 'ET' || s === 'EXTRA_TIME_BR
 export const isFT = s => s === 'FT' || s === 'AET' || s === 'FT_PEN' || s === 'FTP';
 export const isFinal = s => FINAL_STATES.has(s);
 export const isActive = s => ACTIVE_STATES.has(s);
+
+// ──────────────────────────────────────────────────────────────────────────
+// Live clock helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a string suitable for the LIVE minute badge.
+ * Inputs:
+ *   liveMinute         — Sportmonks `periods.minutes` (cumulative — 67 means 67th min overall)
+ *   liveSeconds        — `periods.seconds` at the moment the API was sampled
+ *   liveClockUpdatedAt — ISO UTC string of when we received those values
+ *   liveState          — for HT / FT / pre-match short-circuits
+ *
+ * Display rules (per user request):
+ *   • Round UP — at 45:01 we show "46'", not "45'".
+ *   • Once the rounded value exceeds 90, switch to "90+N'" injury-time format.
+ *   • Once the rounded value exceeds 45 (and we're still in 1H), switch to "45+N'".
+ *   • Interpolate locally — between API cycles we keep ticking by adding
+ *     (now − liveClockUpdatedAt) onto the snapshot, so the badge feels smooth.
+ *   • Returns null if we don't have the data — callers should fall back.
+ */
+export function liveClockDisplay({
+  liveMinute,
+  liveSeconds,
+  liveClockUpdatedAt,
+  liveState,
+}, nowMs = Date.now()) {
+  if (isHT(liveState)) return 'HT';
+  if (isFT(liveState)) return 'FT';
+  if (liveMinute == null) return null;
+
+  const baseSec   = liveMinute * 60 + (liveSeconds ?? 0);
+  const elapsedMs = liveClockUpdatedAt
+    ? Math.max(0, nowMs - new Date(liveClockUpdatedAt).getTime())
+    : 0;
+  // Cap interpolation at +90s — if backend hasn't refreshed in 90s the value
+  // is probably stale (Sportmonks dropped data) and we don't want to drift forever.
+  const totalSec  = baseSec + Math.min(elapsedMs, 90_000) / 1000;
+  // Round UP per user request: 45:01 → 46
+  const display   = Math.floor(totalSec / 60) + (totalSec % 60 > 0 ? 1 : 0);
+
+  // 2H stoppage time
+  if (display > 90) return `90+${display - 90}'`;
+  // 1H stoppage time (still in 1H)
+  if (display > 45 && is1H(liveState)) return `45+${display - 45}'`;
+  return `${display}'`;
+}
