@@ -8152,3 +8152,332 @@ select:focus {
 .market-section--locked {
   opacity: 0.6;
 }
+
+/* ╭──────────────────────────────────────────────────────────────╮
+   │  MY BETS — redesigned cards (matches reference mock-up)      │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+/* Top summary cards ──────────────────────────────────────── */
+.mybets-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.mybets-summary__card {
+  background: var(--surface-shell);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.mybets-summary__label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.mybets-summary__value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.01em;
+}
+
+.mybets-summary__value--gold { color: var(--accent); }
+
+/* Filter tabs ────────────────────────────────────────────── */
+.mybets-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.mybets-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.mybets-tab:hover { color: var(--text-main); }
+
+.mybets-tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Bet card list ──────────────────────────────────────────── */
+.mybets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mybet-card {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 0;
+  background: var(--surface-shell);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 110px;
+}
+
+.mybet-card__body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mybet-card__top {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.mybet-card__title-wrap {
+  min-width: 0;
+}
+
+.mybet-card__fixture {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mybet-card__vs {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin: 0 4px;
+}
+
+.mybet-card__subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Pending / Won / Lost / Cashed / Void pill */
+.mybet-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.mybet-pill--pending { background: rgba(240, 165, 0, 0.18);  color: #ffb400; }
+.mybet-pill--won     { background: rgba(74, 222, 128, 0.18); color: #4ade80; }
+.mybet-pill--lost    { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+.mybet-pill--cashed  { background: var(--accent-soft);       color: var(--accent); }
+.mybet-pill--void    { background: var(--surface-2);         color: var(--text-muted); }
+
+/* POINTS column */
+.mybet-card__points {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.mybet-card__points-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.mybet-card__points-value {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* Horizontal stats row */
+.mybet-card__stats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+}
+
+.mybet-card__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mybet-card__stat span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.mybet-card__stat strong {
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.mybet-card__stat--gold { color: var(--accent) !important; }
+
+/* Right-side Cash Out CTA ────────────────────────────────── */
+.mybet-card__cashout-wrap {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.mybet-cashout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 18px;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  color: #06120a;
+  transition: filter 0.15s, transform 0.05s;
+  text-align: center;
+}
+
+.mybet-cashout:hover  { filter: brightness(1.08); }
+.mybet-cashout:active { transform: translateY(1px); }
+
+.mybet-cashout__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.mybet-cashout__value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.mybet-cashout__delta {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+/* Variants */
+.mybet-cashout--profit {
+  background: linear-gradient(180deg, #2eb87a 0%, #1e9a62 100%);
+  color: #06120a;
+}
+
+.mybet-cashout--loss {
+  background: linear-gradient(180deg, #c84a4a 0%, #a83a3a 100%);
+  color: #fff;
+}
+
+.mybet-cashout--static {
+  cursor: default;
+}
+
+.mybet-cashout--static:hover  { filter: none; }
+.mybet-cashout--static:active { transform: none; }
+
+.mybet-cashout--suspended {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  cursor: default;
+  gap: 6px;
+}
+
+.mybet-cashout--suspended:hover  { filter: none; }
+.mybet-cashout--suspended:active { transform: none; }
+
+.mybet-cashout__suspended-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.mybet-cashout__suspended-sub,
+.mybet-cashout__suspended-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Tiny spinner used inside the suspended panel */
+.spinner-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.7;
+  animation: spinner-dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes spinner-dot-pulse {
+  0%, 100% { transform: scale(0.7); opacity: 0.35; }
+  50%      { transform: scale(1.0); opacity: 0.9; }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 780px) {
+  .mybets-summary { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mybets-summary__card { padding: 12px 8px; }
+  .mybets-summary__value { font-size: 1.25rem; }
+
+  .mybet-card {
+    grid-template-columns: 1fr;
+  }
+  .mybet-card__cashout-wrap {
+    border-top: 1px solid var(--border-soft);
+    min-height: 64px;
+  }
+  .mybet-card__top {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title  pill"
+      "points points";
+  }
+  .mybet-card__title-wrap { grid-area: title; }
+  .mybet-pill             { grid-area: pill;  justify-self: end; }
+  .mybet-card__points     { grid-area: points; flex-direction: row; align-items: center; gap: 8px; }
+
+  .mybet-card__stats { gap: 14px; }
+  .mybet-cashout__value { font-size: 1.25rem; }
+}
+
