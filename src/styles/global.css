@@ -9129,6 +9129,478 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  GRIDIRON VELOCITY — Matches page (8+4 grid)                 │
+   │  (stitch "Upcoming Matches" + "Live Now" sidebar)            │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.gvm-page {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.gvm-page__main { min-width: 0; }
+
+.gvm-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.gvm-page__title {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.gvm-page__filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.gvm-filter-pill {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.gvm-filter-pill:hover { color: var(--text-main); }
+
+.gvm-filter-pill--active {
+  background: var(--surface-container-high, #2a2a2a);
+  color: var(--accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.gvm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Match card */
+.gvm-card {
+  background: var(--surface-container, #201f1f);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border-left: 4px solid transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  cursor: pointer;
+}
+.gvm-card:hover {
+  background: var(--surface-container-high, #2a2a2a);
+  border-left-color: rgba(240, 197, 25, 0.5);
+}
+.gvm-card--selected {
+  background: var(--surface-container-high, #2a2a2a);
+  border-left-color: var(--accent);
+}
+
+.gvm-card__row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) minmax(260px, 280px);
+  align-items: center;
+  gap: 24px;
+}
+
+/* Time */
+.gvm-card__time {
+  text-align: center;
+}
+.gvm-card__time-clock {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.gvm-card__time-clock--accent { color: var(--accent); }
+.gvm-card__time-day {
+  margin-top: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Teams */
+.gvm-card__teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.gvm-card__team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gvm-card__crest {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.gvm-card__crest__img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+.gvm-card__crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 0.92rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.gvm-card__team-name {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.gvm-card__vs {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.35;
+}
+
+/* Odds buttons */
+.gvm-card__odds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.gvm-card__odds--missing {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  padding: 12px;
+}
+
+.gvm-odd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 11px 0;
+  background: var(--surface-container-highest, #353534);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.gvm-odd:hover {
+  background: var(--accent);
+  color: #06120a;
+}
+.gvm-odd__label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  transition: color 0.12s;
+}
+.gvm-odd:hover .gvm-odd__label { color: rgba(6, 18, 10, 0.7); }
+.gvm-odd__val {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.12s;
+}
+.gvm-odd:hover .gvm-odd__val { color: #06120a; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .gvm-page { grid-template-columns: 1fr; }
+  .gvm-livenow { display: none; } /* hide right sidebar */
+}
+@media (max-width: 720px) {
+  .gvm-card__row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .gvm-card__time { display: flex; align-items: center; justify-content: space-between; }
+  .gvm-card__time-clock { font-size: 1.2rem; }
+}
+
+/* ── LIVE NOW sidebar ─────────────────────────────────────────── */
+.gvm-livenow {
+  position: sticky;
+  top: 80px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gvm-livenow__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gvm-livenow__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.gvm-livenow__pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: gvm-livenow-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gvm-livenow-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+.gvm-livenow__viewall {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+.gvm-livenow__viewall:hover { text-decoration: underline; }
+
+.gvm-livenow__empty {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  background: var(--surface-container-high, #2a2a2a);
+  border-radius: 8px;
+}
+
+.gvm-livenow__match {
+  background: var(--surface-container-high, #2a2a2a);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.gvm-livenow__fixture {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.gvm-livenow__score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.gvm-livenow__min {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gvm-livenow__sval {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.gvm-livenow__block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gvm-livenow__block-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Possession */
+.gvm-livenow__poss {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+.gvm-livenow__poss-h, .gvm-livenow__poss-a {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+.gvm-livenow__poss-h { color: var(--accent); }
+.gvm-livenow__poss-bar {
+  height: 6px;
+  background: var(--surface-container-highest, #353534);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+.gvm-livenow__poss-bar-h { background: var(--accent); }
+.gvm-livenow__poss-bar-a { background: rgba(209, 198, 172, 0.3); }
+
+/* Events timeline */
+.gvm-livenow__events {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gvm-livenow__events::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--border-soft, #4d4633);
+}
+
+.gvm-livenow__event {
+  position: relative;
+  padding-left: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.gvm-livenow__event-dot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 4px solid var(--surface-2, #1c1b1b);
+}
+.gvm-livenow__event-dot--goal,
+.gvm-livenow__event-dot--og   { background: var(--accent); }
+.gvm-livenow__event-dot--yellow { background: #facc15; }
+.gvm-livenow__event-dot--red    { background: #ef4444; }
+
+.gvm-livenow__event-min {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gvm-livenow__event-body {
+  font-size: 0.7rem;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.gvm-livenow__event-kind  { color: var(--text-main); font-weight: 700; }
+.gvm-livenow__event-team  { color: var(--accent); }
+.gvm-livenow__event-name  { color: var(--text-muted); }
+
+/* Statistics */
+.gvm-livenow__statgrid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gvm-livenow__stat {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: center;
+  padding: 8px 10px;
+  background: rgba(53, 53, 52, 0.3);
+  border-radius: 5px;
+}
+.gvm-livenow__stat-h, .gvm-livenow__stat-a {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 0.88rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gvm-livenow__stat-h { color: var(--accent); }
+.gvm-livenow__stat-a { color: var(--text-main); }
+.gvm-livenow__stat-label {
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Bet Slip sidebar (right rail)           │
    ╰──────────────────────────────────────────────────────────────╯ */
 

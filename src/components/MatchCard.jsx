@@ -1,5 +1,15 @@
 import TeamCrest from './TeamCrest';
 
+/**
+ * Match row card — stitch "Gridiron Velocity" Matches design.
+ * Layout: TIME column | Teams (crest+name | VS | crest+name) | 3 odds buttons.
+ *
+ * On selection, the left border turns amber (3px) and the background
+ * lifts. Clicking either the card body OR one of the odd buttons selects
+ * the match; the odd button additionally dispatches the
+ * `bpfl:quickbet:place` event when Quick Bet Mode is on (handled by
+ * QuickBetSidebar elsewhere).
+ */
 export default function MatchCard({ match, selected, onSelect }) {
   const hasOdds = match.homeOdds != null;
 
@@ -17,59 +27,78 @@ export default function MatchCard({ match, selected, onSelect }) {
     return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
   })();
 
-  return (
-    <button
-      className={`match-card ${selected ? 'match-card--selected' : ''}`}
-      onClick={() => onSelect?.(match)}
-      type="button"
-    >
-      {/* TIME */}
-      <div className="match-card__col match-card__col--time">
-        <span className="match-card__time-clock">{timeStr}</span>
-        <span className="match-card__time-date">{dayLabel}</span>
-      </div>
+  const handleOddClick = (e, pick, oddVal) => {
+    e.stopPropagation();
+    // Quick Bet Mode: dispatch event for QuickBetSidebar to place a bet immediately
+    const qb = window.bpflQuickBet;
+    if (qb?.enabled && oddVal != null) {
+      window.dispatchEvent(new CustomEvent('bpfl:quickbet:place', {
+        detail: {
+          matchId: match.id,
+          pick,
+          betType: 'Winner',
+          meta: {
+            fixture: `${match.homeTeamName} vs ${match.awayTeamName}`,
+            pickLabel: pick === 'Home' ? match.homeTeamName : pick === 'Away' ? match.awayTeamName : 'Draw',
+            odds: oddVal,
+          },
+        },
+      }));
+      return;
+    }
+    onSelect?.(match);
+  };
 
-      {/* FIXTURE — team logo circles inline (stitch "Matches with Live Stats" pass) */}
-      <div className="match-card__col match-card__col--fixture">
-        <div className="match-card__fixture-row">
-          <div className="match-card__side">
-            <TeamCrest className="match-card__crest" logoUrl={match.homeTeamLogo} name={match.homeTeamName} />
-            <span className="match-card__team-line">{match.homeTeamName}</span>
+  return (
+    <div
+      className={`gvm-card${selected ? ' gvm-card--selected' : ''}`}
+      onClick={() => onSelect?.(match)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect?.(match); }}
+    >
+      <div className="gvm-card__row">
+        {/* TIME column */}
+        <div className="gvm-card__time">
+          <div className={`gvm-card__time-clock${selected ? ' gvm-card__time-clock--accent' : ''}`}>{timeStr}</div>
+          <div className="gvm-card__time-day">{dayLabel}</div>
+        </div>
+
+        {/* Teams */}
+        <div className="gvm-card__teams">
+          <div className="gvm-card__team">
+            <TeamCrest className="gvm-card__crest" logoUrl={match.homeTeamLogo} name={match.homeTeamName} />
+            <span className="gvm-card__team-name">{match.homeTeamName}</span>
           </div>
-          <span className="match-card__vs">vs</span>
-          <div className="match-card__side match-card__side--away">
-            <TeamCrest className="match-card__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
-            <span className="match-card__team-line match-card__team-line--away">{match.awayTeamName}</span>
+          <span className="gvm-card__vs">VS</span>
+          <div className="gvm-card__team">
+            <TeamCrest className="gvm-card__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
+            <span className="gvm-card__team-name">{match.awayTeamName}</span>
           </div>
         </div>
-        {match.leagueName && (
-          <span className="match-card__league-tag" style={{ marginLeft: 'auto' }}>
-            {match.leagueName}
-          </span>
+
+        {/* Odds */}
+        {hasOdds ? (
+          <div className="gvm-card__odds">
+            <button type="button" className="gvm-odd" onClick={(e) => handleOddClick(e, 'Home', match.homeOdds)}>
+              <span className="gvm-odd__label">1</span>
+              <span className="gvm-odd__val">{Number(match.homeOdds).toFixed(2)}</span>
+            </button>
+            <button type="button" className="gvm-odd" onClick={(e) => handleOddClick(e, 'Draw', match.drawOdds)}>
+              <span className="gvm-odd__label">X</span>
+              <span className="gvm-odd__val">{Number(match.drawOdds).toFixed(2)}</span>
+            </button>
+            <button type="button" className="gvm-odd" onClick={(e) => handleOddClick(e, 'Away', match.awayOdds)}>
+              <span className="gvm-odd__label">2</span>
+              <span className="gvm-odd__val">{Number(match.awayOdds).toFixed(2)}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="gvm-card__odds gvm-card__odds--missing">
+            <span>NO ODDS YET</span>
+          </div>
         )}
       </div>
-
-      {/* ODDS */}
-      {hasOdds ? (
-        <>
-          <div className="match-card__col match-card__col--odds">
-            <span className="match-card__odds-val">{Number(match.homeOdds).toFixed(2)}</span>
-            <span className="match-card__odds-lbl">1</span>
-          </div>
-          <div className="match-card__col match-card__col--odds">
-            <span className="match-card__odds-val">{Number(match.drawOdds).toFixed(2)}</span>
-            <span className="match-card__odds-lbl">X</span>
-          </div>
-          <div className="match-card__col match-card__col--odds">
-            <span className="match-card__odds-val">{Number(match.awayOdds).toFixed(2)}</span>
-            <span className="match-card__odds-lbl">2</span>
-          </div>
-        </>
-      ) : (
-        <div className="match-card__col" style={{ gridColumn: '3 / 6', opacity: 0.35, fontSize: '0.72rem', justifyContent: 'center' }}>
-          NO ODDS
-        </div>
-      )}
-    </button>
+    </div>
   );
 }

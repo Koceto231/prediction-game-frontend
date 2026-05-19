@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { newIdempotencyKey } from '../api/apiClient';
 import MatchCard from '../components/MatchCard';
+import LiveNowSidebar from '../components/LiveNowSidebar';
 import { useWallet } from '../context/WalletContext';
 
 // ── Enums ────────────────────────────────────────────────────────
@@ -802,39 +803,33 @@ export default function MatchesPage() {
     : matches;
 
   return (
-    <div className="matches-layout">
+    <div className="gvm-page">
 
-      {/* League sidebar */}
-      <aside className="league-sidebar">
-        <div className="league-sidebar__title">LEAGUES</div>
-        {LEAGUE_LIST.map(({ code, label, flag }) => (
-          <button
-            key={code ?? 'all'}
-            className={`league-sidebar__item${selectedLeague === code ? ' league-sidebar__item--active' : ''}`}
-            onClick={() => { setSelectedLeague(code); setSelectedMatch(null); resetPanel(); }}
-          >
-            <span className="league-sidebar__flag">{flag}</span>
-            <span className="league-sidebar__label">{label}</span>
-          </button>
-        ))}
-      </aside>
-
-      <div className="page-grid">
-
-      {/* Match list */}
-      <section className="shell-card panel">
-        <div className="section-head">
-          <div>
-            <h2>Upcoming Matches</h2>
-            <p>{selectedLeague ? LEAGUE_LIST.find(l => l.code === selectedLeague)?.label : 'All Leagues'}</p>
+      {/* Main column (8/12): heading + filter pills + matches list */}
+      <div className="gvm-page__main">
+        <div className="gvm-page__head">
+          <h2 className="gvm-page__title">Upcoming Matches</h2>
+          <div className="gvm-page__filters">
+            {LEAGUE_LIST.map(({ code, label }) => (
+              <button
+                key={code ?? 'all'}
+                type="button"
+                className={`gvm-filter-pill${selectedLeague === code ? ' gvm-filter-pill--active' : ''}`}
+                onClick={() => { setSelectedLeague(code); setSelectedMatch(null); resetPanel(); }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Match list */}
         {loadError && <div className="alert alert-error">{loadError}</div>}
         {pageLoading && <div className="empty-box">Loading matches...</div>}
         {!pageLoading && !filteredMatches.length && !loadError && <div className="empty-box">No upcoming matches found.</div>}
-        <div className="cards-grid">
+        <div className="gvm-list">
           {filteredMatches.length > 0 && (
-            <div className="matches-table-head">
+            <div className="matches-table-head" style={{ display: 'none' }}>
               <span>TIME</span>
               <span>FIXTURE</span>
               <span style={{ textAlign: 'center' }}>1</span>
@@ -850,7 +845,6 @@ export default function MatchesPage() {
               }} />
           ))}
         </div>
-      </section>
 
       {/* Bet + prediction panel */}
       {selectedMatch && (
@@ -1962,7 +1956,10 @@ export default function MatchesPage() {
 
         </section>
       )}
-      </div>
+      </div>{/* end .gvm-page__main */}
+
+      {/* Right sidebar — Live Now */}
+      <LiveNowSidebar />
     </div>
   );
 }
