@@ -13,10 +13,6 @@ const STATUS_LABELS = {
   CashedOut: { label: 'Cashed Out',  cls: 'mybet-pill--cashed'  },
 };
 
-const PICK_SHORTHAND = {
-  Home: '1', Draw: 'X', Away: '2',
-};
-
 const BET_TYPE_LABEL = {
   Winner:        '1X2',
   ExactScore:    'Exact Score',
@@ -32,6 +28,14 @@ const BET_TYPE_LABEL = {
   DrawNoBet:     'Draw No Bet',
 };
 
+const LEAGUE_LABEL = {
+  PL:  'Premier League',
+  BGL: 'efbet Liga',
+  BL1: 'Bundesliga',
+  SA:  'Serie A',
+  PD:  'La Liga',
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 function formatPick(bet) {
   if (bet.betType === 'Accumulator') {
@@ -39,9 +43,9 @@ function formatPick(bet) {
     return `${n}-leg accumulator`;
   }
   if (bet.betType === 'Winner') {
-    if (bet.betDescription?.includes('Home')) return `1 - ${bet.homeTeam}`;
-    if (bet.betDescription?.includes('Away')) return `2 - ${bet.awayTeam}`;
-    return 'X - Draw';
+    if (bet.betDescription?.includes('Home')) return `${bet.homeTeam} Win`;
+    if (bet.betDescription?.includes('Away')) return `${bet.awayTeam} Win`;
+    return 'Draw';
   }
   return bet.betDescription;
 }
@@ -51,15 +55,54 @@ function isMatchLive(bet) {
   return isActive(bet.liveState);
 }
 
-// ── The right-side Cash Out CTA (3 visual states) ────────────────────────
-function CashOutCta({ bet, onCashedOut }) {
+function formatLeagueAndTime(bet) {
+  const league = LEAGUE_LABEL[bet.leagueCode] ?? bet.leagueCode ?? '';
+  const d = bet.matchKickoff ? new Date(bet.matchKickoff) : null;
+  if (!d) return league;
+  const today    = new Date(); today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const target   = new Date(d); target.setHours(0, 0, 0, 0);
+  let when;
+  if (target.getTime() === today.getTime())    when = 'TODAY';
+  else if (target.getTime() === tomorrow.getTime()) when = 'TOMORROW';
+  else when = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${league} • ${when} ${time}`;
+}
+
+function relativeTime(iso) {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 'just now';
+  const m = Math.floor(ms / 60_000);
+  if (m < 1)   return 'just now';
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)   return `${d}d ago`;
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+function formatSettledDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const today    = new Date(); today.setHours(0, 0, 0, 0);
+  const yest     = new Date(today); yest.setDate(yest.getDate() - 1);
+  const target   = new Date(d); target.setHours(0, 0, 0, 0);
+  if (target.getTime() === today.getTime()) return 'TODAY';
+  if (target.getTime() === yest.getTime())  return 'YESTERDAY';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+}
+
+// ── Cash-out CTA (3 visual states) — preserved from previous version ────
+function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
   const [quote, setQuote]     = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const { refreshBalance }    = useWallet();
 
-  // Poll the cash-out value every 5s while the match is live
   useEffect(() => {
     let cancelled = false;
     const fetch = () =>
@@ -84,46 +127,26 @@ function CashOutCta({ bet, onCashedOut }) {
     } finally { setLoading(false); }
   };
 
-  // ── Loading / Suspended ───────────────────────────────────────
   if (!quote) {
-    return (
-      <div className="mybet-cashout mybet-cashout--suspended">
-        <span className="spinner-dot" />
-        <div className="mybet-cashout__suspended-label">Loading…</div>
-      </div>
-    );
+    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled>Loading…</button>;
   }
-
   if (!quote.eligible) {
-    return (
-      <div className="mybet-cashout mybet-cashout--suspended">
-        <div className="mybet-cashout__suspended-title">Unavailable</div>
-        <div className="mybet-cashout__suspended-sub">{quote.reason || 'Not available'}</div>
-      </div>
-    );
+    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled title={quote.reason || ''}>Unavailable</button>;
   }
 
-  // ── Active cash-out (green / red) ─────────────────────────────
   const value  = Number(quote.value);
   const stake  = Number(bet.amount);
   const profit = value - stake;
   const isLoss = profit < -0.01;
-  const variant = isLoss ? 'mybet-cashout--loss' : 'mybet-cashout--profit';
 
   return (
     <>
       <button
         type="button"
-        className={`mybet-cashout ${variant}`}
+        className={`gvb-cashout-btn ${variant === 'live' ? 'gvb-cashout-btn--gold' : 'gvb-cashout-btn--ghost'}`}
         onClick={() => setConfirm(true)}
       >
-        <div className="mybet-cashout__label">Cash Out</div>
-        <div className="mybet-cashout__value">€{value.toFixed(2)}</div>
-        <div className="mybet-cashout__delta">
-          {profit >= 0
-            ? <>+{profit.toFixed(2)}</>
-            : <>-{Math.abs(profit).toFixed(2)}</>}
-        </div>
+        Cash Out €{value.toFixed(2)}
       </button>
 
       {confirm && (
@@ -163,127 +186,78 @@ function CashOutCta({ bet, onCashedOut }) {
   );
 }
 
-// ── The right-side panel for non-live / settled bets ─────────────────────
-function SettledCta({ bet }) {
-  const status = STATUS_LABELS[bet.status] ?? { label: bet.status };
-
-  if (bet.status === 'Pending') {
-    return (
-      <div className="mybet-cashout mybet-cashout--suspended">
-        <div className="mybet-cashout__suspended-title">Pre-match</div>
-        <div className="mybet-cashout__suspended-sub">
-          {new Date(bet.matchDate).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-        </div>
-      </div>
-    );
-  }
-
-  if (bet.status === 'Won') {
-    return (
-      <div className="mybet-cashout mybet-cashout--profit mybet-cashout--static">
-        <div className="mybet-cashout__label">Won</div>
-        <div className="mybet-cashout__value">€{Number(bet.actualPayout ?? 0).toFixed(2)}</div>
-        <div className="mybet-cashout__delta">+{(Number(bet.actualPayout ?? 0) - Number(bet.amount)).toFixed(2)}</div>
-      </div>
-    );
-  }
-
-  if (bet.status === 'Lost') {
-    return (
-      <div className="mybet-cashout mybet-cashout--loss mybet-cashout--static">
-        <div className="mybet-cashout__label">Lost</div>
-        <div className="mybet-cashout__value">-€{Number(bet.amount).toFixed(2)}</div>
-        <div className="mybet-cashout__delta">stake lost</div>
-      </div>
-    );
-  }
-
-  if (bet.status === 'CashedOut') {
-    const v = Number(bet.cashedOutAmount ?? bet.actualPayout ?? 0);
-    const p = v - Number(bet.amount);
-    return (
-      <div className={`mybet-cashout mybet-cashout--static ${p >= 0 ? 'mybet-cashout--profit' : 'mybet-cashout--loss'}`}>
-        <div className="mybet-cashout__label">Cashed Out</div>
-        <div className="mybet-cashout__value">€{v.toFixed(2)}</div>
-        <div className="mybet-cashout__delta">{p >= 0 ? `+${p.toFixed(2)}` : p.toFixed(2)}</div>
-      </div>
-    );
-  }
+// ── Active bet card (stitch "Gold Edition" pass) ───────────────────────
+function ActiveBetCard({ bet, onCashedOut }) {
+  const live = isMatchLive(bet);
+  const placedAgo = relativeTime(bet.createdAt);
 
   return (
-    <div className="mybet-cashout mybet-cashout--suspended">
-      <div className="mybet-cashout__suspended-title">{status.label}</div>
-      <div className="mybet-cashout__suspended-sub">Refunded</div>
+    <div className={`gvb-bet${live ? ' gvb-bet--live' : ''}`}>
+      <div className="gvb-bet__body">
+        <div className="gvb-bet__head">
+          <div className="gvb-bet__head-left">
+            <div className="gvb-bet__crest-box">
+              <TeamCrest className="gvb-bet__crest" logoUrl={bet.homeTeamLogo} name={bet.homeTeam} />
+            </div>
+            <div className="gvb-bet__title-wrap">
+              <p className="gvb-bet__fixture">{bet.homeTeam} vs {bet.awayTeam}</p>
+              <p className="gvb-bet__meta">{formatLeagueAndTime(bet)}</p>
+            </div>
+          </div>
+          {live && <span className="gvb-bet__live-pill">LIVE</span>}
+        </div>
+
+        <div className="gvb-bet__stats">
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label">SELECTION</span>
+            <span className="gvb-bet__stat-val">{formatPick(bet)}</span>
+          </div>
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label">ODDS</span>
+            <span className="gvb-bet__stat-val gvb-bet__stat-val--accent">{Number(bet.oddsAtBetTime).toFixed(2)}</span>
+          </div>
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label">STAKE</span>
+            <span className="gvb-bet__stat-val">€{Number(bet.amount).toFixed(2)}</span>
+          </div>
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label">RETURN</span>
+            <span className="gvb-bet__stat-val">€{Number(bet.potentialPayout).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="gvb-bet__foot">
+        <div className="gvb-bet__placed">
+          <span className="gvb-bet__placed-icon">{live ? '⏱' : '📅'}</span>
+          <span>{live ? `Bet placed ${placedAgo}` : 'Pending Start'}</span>
+        </div>
+        <CashOutCta bet={bet} onCashedOut={onCashedOut} variant={live ? 'live' : 'pending'} />
+      </div>
     </div>
   );
 }
 
-// ── One My Bets card ─────────────────────────────────────────────────────
-function MyBetCard({ bet, onCashedOut }) {
-  const live      = isMatchLive(bet);
-  const isAccum   = bet.betType === 'Accumulator';
-  const status    = STATUS_LABELS[bet.status] ?? { label: bet.status, cls: '' };
-  const subtitle  = isAccum
-    ? `Accumulator ${bet.accumulatorLegs?.length ?? 0} legs`
-    : BET_TYPE_LABEL[bet.betType] ?? bet.betType;
-  const maxPts    = bet.maxPoints ?? 3;
+// ── Settled bet row in the right sidebar ────────────────────────────────
+function SettledBetRow({ bet }) {
+  const won = bet.status === 'Won' || bet.status === 'CashedOut';
+  const payout = Number(bet.actualPayout ?? bet.cashedOutAmount ?? 0);
+  const stake  = Number(bet.amount ?? 0);
+  const profit = payout - stake;
+  const dateLabel = formatSettledDate(bet.createdAt);
+  const resultLabel = bet.status === 'CashedOut' ? 'CASHED OUT' : (won ? 'WIN' : bet.status === 'Lost' ? 'LOSS' : bet.status.toUpperCase());
 
   return (
-    <div className="mybet-card">
-      <div className="mybet-card__body">
-        <div className="mybet-card__top">
-          <div className="mybet-card__title-wrap">
-            <h3 className="mybet-card__fixture">
-              <TeamCrest className="mybet-card__crest" logoUrl={bet.homeTeamLogo} name={bet.homeTeam} />
-              {bet.homeTeam}
-              <span className="mybet-card__vs">vs</span>
-              <TeamCrest className="mybet-card__crest" logoUrl={bet.awayTeamLogo} name={bet.awayTeam} />
-              {bet.awayTeam}
-            </h3>
-            <div className="mybet-card__subtitle">{subtitle}</div>
-          </div>
-
-          <span className={`mybet-pill ${status.cls}`}>{status.label}</span>
-
-          <div className="mybet-card__points">
-            <span className="mybet-card__points-label">POINTS</span>
-            <span className="mybet-card__points-value">0/{maxPts} pts possible</span>
-          </div>
-        </div>
-
-        <div className="mybet-card__stats">
-          <div className="mybet-card__stat">
-            <span>Pick:</span>
-            <strong>{formatPick(bet)}</strong>
-          </div>
-          <div className="mybet-card__stat">
-            <span>Odds:</span>
-            <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong>
-          </div>
-          <div className="mybet-card__stat">
-            <span>Stake:</span>
-            <strong>{Number(bet.amount).toFixed(0)} €</strong>
-          </div>
-          <div className="mybet-card__stat">
-            <span>Potential:</span>
-            <strong className="mybet-card__stat--gold">
-              {Number(bet.potentialPayout).toFixed(2)} €
-            </strong>
-          </div>
-          {live && (bet.homeScore != null || bet.awayScore != null) && (
-            <div className="mybet-card__stat">
-              <span>Score:</span>
-              <strong>{bet.homeScore ?? 0} : {bet.awayScore ?? 0}</strong>
-            </div>
-          )}
-        </div>
+    <div className={`gvb-settled${won ? ' gvb-settled--win' : ' gvb-settled--loss'}`}>
+      <div className="gvb-settled__top">
+        <span className="gvb-settled__date">{dateLabel} • {resultLabel}</span>
+        <span className={`gvb-settled__amount${won ? ' gvb-settled__amount--win' : ' gvb-settled__amount--loss'}`}>
+          {won ? `+€${Math.max(0, profit).toFixed(2)}` : `−€${Number(stake).toFixed(2)}`}
+        </span>
       </div>
-
-      <div className="mybet-card__cashout-wrap">
-        {bet.status === 'Pending' && live
-          ? <CashOutCta bet={bet} onCashedOut={onCashedOut} />
-          : <SettledCta bet={bet} />}
-      </div>
+      <p className="gvb-settled__fixture">{bet.homeTeam} vs {bet.awayTeam}</p>
+      <p className="gvb-settled__pick">{formatPick(bet)} • Odds {Number(bet.oddsAtBetTime).toFixed(2)}</p>
+      <div className="gvb-settled__bar" />
     </div>
   );
 }
@@ -293,7 +267,6 @@ export default function BetsPage() {
   const [bets, setBets]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [filter, setFilter]   = useState('active');  // active | history
 
   useEffect(() => {
     api.get('/Bet/me')
@@ -309,71 +282,105 @@ export default function BetsPage() {
   };
 
   const activeBets  = bets.filter(b => b.status === 'Pending');
-  const historyBets = bets.filter(b => b.status !== 'Pending');
-  const list        = filter === 'active' ? activeBets : historyBets;
+  const settledBets = bets.filter(b => b.status !== 'Pending')
+                          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // ── Overview stats ─────────────────────────────────────────
+  const totalExposure  = activeBets.reduce((s, b) => s + Number(b.amount), 0);
+  const projectedProfit = activeBets.reduce(
+    (s, b) => s + (Number(b.potentialPayout ?? 0) - Number(b.amount)),
+    0
+  );
+
+  // Win rate (last 30 days) — count won + lost only, ignore void
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recent = settledBets.filter(b => new Date(b.createdAt).getTime() >= cutoff);
+  const wins   = recent.filter(b => b.status === 'Won' || b.status === 'CashedOut').length;
+  const losses = recent.filter(b => b.status === 'Lost').length;
+  const wr     = (wins + losses) > 0 ? (wins / (wins + losses)) * 100 : 0;
 
   if (loading) return (
-    <div style={{ padding: '12px 22px 80px' }}>
-      <div className="shell-card panel"><div className="empty-box">Loading bets…</div></div>
+    <div className="gvb-page">
+      <div className="empty-box" style={{ gridColumn: '1 / -1' }}>Loading bets…</div>
     </div>
   );
 
-  const totalStaked    = activeBets.reduce((s, b) => s + Number(b.amount), 0);
-  const totalPotential = activeBets.reduce((s, b) => s + Number(b.potentialPayout ?? 0), 0);
-
   return (
-    <div style={{ padding: '12px 22px 80px' }}>
-      <div className="section-head" style={{ marginBottom: 16 }}>
-        <div>
-          <h2 style={{ margin: 0 }}>My Bets</h2>
-          <p style={{ margin: 0, color: 'var(--text-muted)' }}>Cash out live bets or browse your history.</p>
-        </div>
-      </div>
-
+    <div className="gvb-page-wrap">
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="mybets-summary">
-        <div className="mybets-summary__card">
-          <span className="mybets-summary__label">Active Bets</span>
-          <strong className="mybets-summary__value">{activeBets.length}</strong>
+      {/* Betting Overview heading + 3 stat cards */}
+      <section className="gvb-overview">
+        <h1 className="gvb-overview__title">Betting Overview</h1>
+        <div className="gvb-overview__grid">
+          <div className="gvb-stat">
+            <div className="gvb-stat__bg-icon">💼</div>
+            <p className="gvb-stat__label">TOTAL EXPOSURE</p>
+            <p className="gvb-stat__value">€{totalExposure.toFixed(2)}</p>
+            <p className="gvb-stat__hint">
+              <span className="gvb-stat__hint-icon">ℹ</span> Active stakes across all markets
+            </p>
+          </div>
+          <div className="gvb-stat">
+            <div className="gvb-stat__bg-icon">📈</div>
+            <p className="gvb-stat__label">PROJECTED PROFIT</p>
+            <p className="gvb-stat__value gvb-stat__value--accent">
+              {projectedProfit >= 0 ? '+' : ''}€{projectedProfit.toFixed(2)}
+            </p>
+            <p className="gvb-stat__hint">
+              <span className="gvb-stat__hint-icon">⚡</span> Calculated at current odds
+            </p>
+          </div>
+          <div className="gvb-stat">
+            <div className="gvb-stat__bg-icon">📊</div>
+            <p className="gvb-stat__label">WIN RATE (LAST 30D)</p>
+            <p className="gvb-stat__value">{wr.toFixed(1)}%</p>
+            <div className="gvb-stat__bar">
+              <div className="gvb-stat__bar-fill" style={{ width: `${Math.max(0, Math.min(100, wr))}%` }} />
+            </div>
+          </div>
         </div>
-        <div className="mybets-summary__card">
-          <span className="mybets-summary__label">Total Staked</span>
-          <strong className="mybets-summary__value">{totalStaked.toFixed(0)} €</strong>
-        </div>
-        <div className="mybets-summary__card">
-          <span className="mybets-summary__label">Potential Win</span>
-          <strong className="mybets-summary__value mybets-summary__value--gold">
-            {totalPotential.toFixed(2)} €
-          </strong>
-        </div>
-      </div>
+      </section>
 
-      <div className="mybets-tabs">
-        <button type="button"
-          className={`mybets-tab ${filter === 'active' ? 'mybets-tab--active' : ''}`}
-          onClick={() => setFilter('active')}>
-          Active ({activeBets.length})
-        </button>
-        <button type="button"
-          className={`mybets-tab ${filter === 'history' ? 'mybets-tab--active' : ''}`}
-          onClick={() => setFilter('history')}>
-          History ({historyBets.length})
-        </button>
-      </div>
+      {/* Main bento: Current Bets (8) + Settled Bets sidebar (4) */}
+      <div className="gvb-page">
+        <div className="gvb-page__main">
+          <div className="gvb-current-head">
+            <h2 className="gvb-current-head__title">Current Bets</h2>
+            <span className="gvb-current-head__pill">{activeBets.length} ACTIVE</span>
+          </div>
 
-      {list.length === 0 && (
-        <div className="empty-box" style={{ padding: '40px 0' }}>
-          {filter === 'active'
-            ? 'No active bets. Head to Matches to place your first bet!'
-            : 'No bet history yet.'}
+          {activeBets.length === 0 && (
+            <div className="empty-box" style={{ padding: '40px 0' }}>
+              No active bets. Head to Matches to place your first bet!
+            </div>
+          )}
+
+          <div className="gvb-bets-list">
+            {activeBets.map(bet => (
+              <ActiveBetCard key={bet.id} bet={bet} onCashedOut={handleCashedOut} />
+            ))}
+          </div>
         </div>
-      )}
 
-      <div className="mybets-list">
-        {list.map(bet => (
-          <MyBetCard key={bet.id} bet={bet} onCashedOut={handleCashedOut} />
-        ))}
+        <aside className="gvb-settled-aside">
+          <div className="gvb-settled-aside__head">
+            <h2 className="gvb-settled-aside__title">SETTLED BETS</h2>
+          </div>
+          <div className="gvb-settled-aside__list">
+            {settledBets.length === 0 && (
+              <div className="gvb-settled-aside__empty">No settled bets yet.</div>
+            )}
+            {settledBets.slice(0, 8).map(bet => (
+              <SettledBetRow key={bet.id} bet={bet} />
+            ))}
+          </div>
+          {settledBets.length > 0 && (
+            <button className="gvb-settled-aside__viewall" type="button">
+              View Betting History →
+            </button>
+          )}
+        </aside>
       </div>
     </div>
   );

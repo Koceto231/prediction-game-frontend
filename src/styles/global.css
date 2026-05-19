@@ -9129,6 +9129,450 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  GRIDIRON VELOCITY — My Bets / Betting Overview              │
+   │  (stitch "Gold Edition")                                     │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.gvb-page-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 80px;
+}
+
+/* ── Overview heading + 3 stat cards ───────────────────────────── */
+.gvb-overview { display: flex; flex-direction: column; gap: 24px; }
+.gvb-overview__title {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.gvb-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.gvb-stat {
+  position: relative;
+  background: var(--surface-container-high, #2a2a2a);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 22px 22px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+.gvb-stat:hover { transform: translateY(-1px); }
+
+.gvb-stat__bg-icon {
+  position: absolute;
+  right: -8px;
+  bottom: -16px;
+  font-size: 7rem;
+  opacity: 0.05;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+.gvb-stat__label {
+  margin: 0 0 10px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.gvb-stat__value {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 2.4rem;
+  color: var(--text-main);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.gvb-stat__value--accent { color: var(--accent); }
+
+.gvb-stat__hint {
+  margin: 16px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.gvb-stat__hint-icon { color: var(--accent); font-size: 0.85rem; }
+
+.gvb-stat__bar {
+  margin-top: 16px;
+  height: 6px;
+  background: var(--surface-container-low, #1c1b1b);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.gvb-stat__bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* ── Main bento: 8 + 4 grid ────────────────────────────────────── */
+.gvb-page {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.gvb-page__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.gvb-current-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gvb-current-head__title {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+.gvb-current-head__pill {
+  background: var(--accent);
+  color: #06120a;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.gvb-bets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Active bet card ───────────────────────────────────────────── */
+.gvb-bet {
+  background: var(--surface-container-low, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.25s, transform 0.05s;
+}
+.gvb-bet:hover { border-color: rgba(240, 197, 25, 0.5); }
+.gvb-bet--live {
+  border-color: rgba(240, 197, 25, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(240, 197, 25, 0.10);
+}
+
+.gvb-bet__body { padding: 22px; }
+
+.gvb-bet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 12px;
+}
+.gvb-bet__head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.gvb-bet__crest-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--surface-container-highest, #353534);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gvb-bet__crest {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gvb-bet__crest__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.gvb-bet__crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.gvb-bet__title-wrap { min-width: 0; }
+
+.gvb-bet__fixture {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gvb-bet__meta {
+  margin: 6px 0 0;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.gvb-bet__live-pill {
+  background: rgba(240, 197, 25, 0.10);
+  color: var(--accent);
+  border: 1px solid rgba(240, 197, 25, 0.25);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  flex-shrink: 0;
+}
+
+.gvb-bet__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-container, #201f1f);
+  border: 1px solid rgba(77, 70, 51, 0.3);
+  border-radius: 8px;
+}
+
+.gvb-bet__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.gvb-bet__stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.gvb-bet__stat-val {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gvb-bet__stat-val--accent { color: var(--accent); }
+
+/* Foot row */
+.gvb-bet__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  background: var(--surface-container-highest, #353534);
+  border-top: 1px solid var(--border-soft, #4d4633);
+}
+.gvb-bet__placed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.gvb-bet__placed-icon { color: var(--accent); }
+
+/* Cash out button (shared) */
+.gvb-cashout-btn {
+  border: 1px solid transparent;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.05s, background 0.15s;
+  white-space: nowrap;
+}
+.gvb-cashout-btn:active { transform: scale(0.97); }
+
+.gvb-cashout-btn--gold {
+  background: var(--accent);
+  color: #06120a;
+  box-shadow: 0 4px 14px rgba(240, 197, 25, 0.30);
+}
+.gvb-cashout-btn--gold:hover { filter: brightness(1.08); }
+
+.gvb-cashout-btn--ghost {
+  background: var(--surface-container-high, #2a2a2a);
+  color: var(--text-main);
+  border-color: var(--border-soft, #4d4633);
+}
+.gvb-cashout-btn--ghost:hover { background: var(--surface-container-highest, #353534); }
+
+.gvb-cashout-btn--muted {
+  background: transparent;
+  border-color: var(--border-soft, #4d4633);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* ── Settled bets sidebar ─────────────────────────────────────── */
+.gvb-settled-aside {
+  position: sticky;
+  top: 80px;
+  background: var(--surface-container, #201f1f);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.gvb-settled-aside__head {
+  padding: 18px 22px;
+  background: var(--surface-container-high, #2a2a2a);
+  border-bottom: 1px solid var(--border-soft, #4d4633);
+}
+.gvb-settled-aside__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-main);
+}
+
+.gvb-settled-aside__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gvb-settled-aside__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.gvb-settled {
+  padding: 14px 22px;
+  border-bottom: 1px solid rgba(77, 70, 51, 0.5);
+  transition: background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.gvb-settled:hover { background: var(--surface-container-highest, #353534); }
+.gvb-settled:last-child { border-bottom: none; }
+
+.gvb-settled__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.gvb-settled__date {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.gvb-settled__amount {
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.gvb-settled__amount--win  { color: #4ade80; }
+.gvb-settled__amount--loss { color: #f87171; }
+
+.gvb-settled__fixture {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.gvb-settled__pick {
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.gvb-settled__bar {
+  margin-top: 8px;
+  height: 2px;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.gvb-settled--loss .gvb-settled__bar { background: #f87171; }
+.gvb-settled:hover .gvb-settled__bar { width: 100%; }
+
+.gvb-settled-aside__viewall {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-soft, #4d4633);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.gvb-settled-aside__viewall:hover {
+  color: var(--accent);
+  background: var(--surface-container-highest, #353534);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .gvb-overview__grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+  .gvb-page { grid-template-columns: 1fr; }
+  .gvb-settled-aside { position: static; }
+}
+@media (max-width: 640px) {
+  .gvb-bet__stats { grid-template-columns: repeat(2, 1fr); }
+  .gvb-bet__foot { flex-direction: column; align-items: stretch; }
+  .gvb-cashout-btn { width: 100%; }
+}
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Matches page (8+4 grid)                 │
    │  (stitch "Upcoming Matches" + "Live Now" sidebar)            │
    ╰──────────────────────────────────────────────────────────────╯ */
