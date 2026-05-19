@@ -8898,6 +8898,16 @@ select:focus {
    │  (stitch "Streamlined Live Dashboard")                       │
    ╰──────────────────────────────────────────────────────────────╯ */
 
+/* On LivePage, give the selected-match panel WAY more horizontal real-estate
+   than the default 50/50 page-grid split — collapse the live-matches list to
+   a narrow rail when a match is selected. */
+.gv-live-page--has-detail {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+}
+@media (max-width: 1100px) {
+  .gv-live-page--has-detail { grid-template-columns: 1fr; }
+}
+
 .gv-live-grid {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -9214,6 +9224,17 @@ select:focus {
 .gv-pitch-tracker__shield span {
   font-size: 1.6rem;
   color: var(--accent);
+}
+
+/* Team-initials fallback when there's no Sportmonks crest URL yet. */
+.gv-pitch-tracker__shield-fallback {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif !important;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.1rem !important;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  line-height: 1;
 }
 
 .gv-pitch-tracker__teamname {

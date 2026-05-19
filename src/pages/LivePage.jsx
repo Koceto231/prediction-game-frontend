@@ -8,6 +8,16 @@ import {
   is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay,
 } from '../utils/liveState';
 
+// Helper: derive 1–3 letter initials from a club name to use as a placeholder
+// inside the pitch tracker shield when the team has no Sportmonks logo yet.
+function getTeamInitials(name) {
+  if (!name) return '?';
+  const words = String(name).trim().split(/\s+/).filter(w => !/^(FC|CF|AC|SC|AFC|CFR|JK|KS|US|RB)$/i.test(w));
+  if (words.length === 0) return name.slice(0, 3).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return (words[0][0] + words[1][0] + (words[2]?.[0] ?? '')).toUpperCase();
+}
+
 // ── League metadata for the small league chip on each live row ─────
 const LEAGUE_META = {
   PL:  { short: 'EPL',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
@@ -1088,7 +1098,7 @@ export default function LivePage() {
 
   // ── Render ────────────────────────────────────────────────────
   return (
-    <div className="page-grid">
+    <div className={`page-grid gv-live-page${selectedMatch ? ' gv-live-page--has-detail' : ''}`}>
 
       {/* Live match list */}
       <section className="shell-card panel">
@@ -1231,8 +1241,8 @@ export default function LivePage() {
                 <div className="gv-pitch-tracker__team gv-pitch-tracker__team--home">
                   <div className="gv-pitch-tracker__shield gv-pitch-tracker__shield--home">
                     {selectedMatch.homeTeamLogo
-                      ? <img src={selectedMatch.homeTeamLogo} alt={selectedMatch.homeTeamName} />
-                      : <span>⚽</span>}
+                      ? <img src={selectedMatch.homeTeamLogo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      : <span className="gv-pitch-tracker__shield-fallback">{getTeamInitials(selectedMatch.homeTeamName)}</span>}
                   </div>
                   <div className="gv-pitch-tracker__teamname">{selectedMatch.homeTeamName}</div>
                 </div>
@@ -1247,29 +1257,13 @@ export default function LivePage() {
                 <div className="gv-pitch-tracker__team gv-pitch-tracker__team--away">
                   <div className="gv-pitch-tracker__shield">
                     {selectedMatch.awayTeamLogo
-                      ? <img src={selectedMatch.awayTeamLogo} alt={selectedMatch.awayTeamName} />
-                      : <span>⚽</span>}
+                      ? <img src={selectedMatch.awayTeamLogo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      : <span className="gv-pitch-tracker__shield-fallback">{getTeamInitials(selectedMatch.awayTeamName)}</span>}
                   </div>
                   <div className="gv-pitch-tracker__teamname">{selectedMatch.awayTeamName}</div>
                 </div>
               </div>
             </div>
-            {selectedMatch.goalScorers?.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', gap: 8 }}>
-                {/* Home goals — left-aligned */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {selectedMatch.goalScorers.filter(g => g.team === 'home').map((g, i) => (
-                    <span key={i}>⚽ {g.isOwnGoal ? <em>(OG) </em> : null}{g.playerName} {g.minute}&apos;</span>
-                  ))}
-                </div>
-                {/* Away goals — right-aligned */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                  {selectedMatch.goalScorers.filter(g => g.team === 'away').map((g, i) => (
-                    <span key={i}>{g.playerName}{g.isOwnGoal ? <em> (OG)</em> : null} {g.minute}&apos; ⚽</span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {feedback && (
