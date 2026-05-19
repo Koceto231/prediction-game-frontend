@@ -8481,6 +8481,78 @@ select:focus {
   box-shadow: 0 2px 8px rgba(240, 197, 25, 0.25);
 }
 
+/* Exact Score quick-pick tile grid (mockup upgraded_my_bets_overview_5) */
+.exact-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.exact-score-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.05s;
+}
+
+.exact-score-tile:hover {
+  background: rgba(240, 197, 25, 0.08);
+  border-color: var(--border-accent);
+}
+
+.exact-score-tile:active { transform: translateY(1px); }
+
+.exact-score-tile__score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.exact-score-tile__odds {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.exact-score-tile--selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06120a;
+  box-shadow: 0 2px 12px rgba(240, 197, 25, 0.32);
+}
+.exact-score-tile--selected .exact-score-tile__odds { color: #06120a; }
+
+.exact-score-custom {
+  margin-top: 4px;
+}
+
+.exact-score-custom summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 8px 0;
+  user-select: none;
+}
+.exact-score-custom summary:hover { color: var(--text-main); }
+
+@media (max-width: 600px) {
+  .exact-score-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .exact-score-tile { padding: 10px 4px; }
+  .exact-score-tile__score { font-size: 0.95rem; }
+}
+
 /* Hide market sections whose data-cat doesn't match the active tab.
    Falls back gracefully when no data-cat is set (sections stay visible). */
 .market-table[data-cat="main"]    .market-section:not([data-cat="main"]),
