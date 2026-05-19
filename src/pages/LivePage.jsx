@@ -1040,12 +1040,22 @@ export default function LivePage() {
                     </span>
                   </div>
 
-                  {/* Middle: teams + big score + chips */}
+                  {/* Middle: teams + big score + chips (with team crests) */}
                   <div className="live-row__fixture">
                     <div className="live-row__teams">
-                      <span className="live-row__team">{match.homeTeamName}</span>
+                      <span className="live-row__team">
+                        <span className="live-row__crest">
+                          {match.homeTeamLogo ? <img src={match.homeTeamLogo} alt="" /> : <span>⚽</span>}
+                        </span>
+                        {match.homeTeamName}
+                      </span>
                       <span className="live-row__score">{homeScore} : {awayScore}</span>
-                      <span className="live-row__team live-row__team--away">{match.awayTeamName}</span>
+                      <span className="live-row__team live-row__team--away">
+                        {match.awayTeamName}
+                        <span className="live-row__crest">
+                          {match.awayTeamLogo ? <img src={match.awayTeamLogo} alt="" /> : <span>⚽</span>}
+                        </span>
+                      </span>
                     </div>
                     <div className="live-row__chips">
                       <span className="live-chip"><span className="live-chip__icon">⚽</span>{goalsH}–{goalsA}</span>
@@ -1077,25 +1087,58 @@ export default function LivePage() {
       {selectedMatch && (
         <section className="shell-card panel" ref={panelRef} style={{ scrollMarginTop: 64 }}>
 
-          <div className="match-hero match-hero--live-v2">
-            <div className="match-hero__topbar">
-              {LEAGUE_META[selectedMatch.leagueCode] && (
-                <span className="match-hero__league-chip">
-                  <span className="match-hero__league-flag">{LEAGUE_META[selectedMatch.leagueCode].flag}</span>
-                  <span>{LEAGUE_META[selectedMatch.leagueCode].short}</span>
+          {/* Pitch Tracker hero — stitch "Gridiron Velocity" design */}
+          <div className="gv-pitch-tracker">
+            <div className="gv-pitch-tracker__bg">
+              {/* Decorative pitch markings */}
+              <div className="gv-pitch-tracker__pitch">
+                <div className="gv-pitch-tracker__halfline" />
+                <div className="gv-pitch-tracker__centercircle" />
+                <div className="gv-pitch-tracker__box gv-pitch-tracker__box--left" />
+                <div className="gv-pitch-tracker__box gv-pitch-tracker__box--right" />
+              </div>
+
+              {/* Top-row league chip + live pill */}
+              <div className="gv-pitch-tracker__topbar">
+                {LEAGUE_META[selectedMatch.leagueCode] && (
+                  <span className="gv-pitch-tracker__league">
+                    <span>{LEAGUE_META[selectedMatch.leagueCode].flag}</span>
+                    <span>{LEAGUE_META[selectedMatch.leagueCode].short}</span>
+                  </span>
+                )}
+                <span className="gv-pitch-tracker__live">
+                  <span className="gv-pitch-tracker__live-dot" /> LIVE
                 </span>
-              )}
-              <span className="match-hero__live-pill">
-                <span className="live-dot" /> LIVE
-              </span>
+              </div>
+
+              {/* Score + shields */}
+              <div className="gv-pitch-tracker__main">
+                <div className="gv-pitch-tracker__team gv-pitch-tracker__team--home">
+                  <div className="gv-pitch-tracker__shield gv-pitch-tracker__shield--home">
+                    {selectedMatch.homeTeamLogo
+                      ? <img src={selectedMatch.homeTeamLogo} alt={selectedMatch.homeTeamName} />
+                      : <span>⚽</span>}
+                  </div>
+                  <div className="gv-pitch-tracker__teamname">{selectedMatch.homeTeamName}</div>
+                </div>
+
+                <div className="gv-pitch-tracker__scorecol">
+                  <div className="gv-pitch-tracker__score">
+                    {selectedMatch.homeScore ?? 0} <span>-</span> {selectedMatch.awayScore ?? 0}
+                  </div>
+                  <div className="gv-pitch-tracker__minute">{displayMinute(selectedMatch)}</div>
+                </div>
+
+                <div className="gv-pitch-tracker__team gv-pitch-tracker__team--away">
+                  <div className="gv-pitch-tracker__shield">
+                    {selectedMatch.awayTeamLogo
+                      ? <img src={selectedMatch.awayTeamLogo} alt={selectedMatch.awayTeamName} />
+                      : <span>⚽</span>}
+                  </div>
+                  <div className="gv-pitch-tracker__teamname">{selectedMatch.awayTeamName}</div>
+                </div>
+              </div>
             </div>
-            <div className="match-hero__fixture-line">
-              {selectedMatch.homeTeamName} <span className="match-hero__vs-word">vs</span> {selectedMatch.awayTeamName}
-            </div>
-            <div className="match-hero__bigscore">
-              {selectedMatch.homeScore ?? 0} <span className="match-hero__bigscore-dash">-</span> {selectedMatch.awayScore ?? 0}
-            </div>
-            <div className="match-hero__minute-line">{displayMinute(selectedMatch)}</div>
             {selectedMatch.goalScorers?.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)', gap: 8 }}>
                 {/* Home goals — left-aligned */}

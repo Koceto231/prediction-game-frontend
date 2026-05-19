@@ -233,7 +233,20 @@ function MyBetCard({ bet, onCashedOut }) {
         <div className="mybet-card__top">
           <div className="mybet-card__title-wrap">
             <h3 className="mybet-card__fixture">
-              {bet.homeTeam} <span className="mybet-card__vs">vs</span> {bet.awayTeam}
+              {/* Team crest circles inline — stitch "Gold Edition" pass */}
+              <span className="mybet-card__crest">
+                {bet.homeTeamLogo
+                  ? <img src={bet.homeTeamLogo} alt="" />
+                  : <span>⚽</span>}
+              </span>
+              {bet.homeTeam}
+              <span className="mybet-card__vs">vs</span>
+              <span className="mybet-card__crest">
+                {bet.awayTeamLogo
+                  ? <img src={bet.awayTeamLogo} alt="" />
+                  : <span>⚽</span>}
+              </span>
+              {bet.awayTeam}
             </h3>
             <div className="mybet-card__subtitle">{subtitle}</div>
           </div>

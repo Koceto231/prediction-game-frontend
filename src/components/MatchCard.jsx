@@ -5,9 +5,17 @@ export default function MatchCard({ match, selected, onSelect }) {
   const timeStr = dateObj
     ? dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     : '—';
-  const dateStr = dateObj
-    ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-    : '';
+  // Stitch "Matches with Live Stats" shows TODAY / TOMORROW as a sub-label.
+  // Compute it on the client so we don't need a backend field.
+  const dayLabel = (() => {
+    if (!dateObj) return '';
+    const today    = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+    const target   = new Date(dateObj); target.setHours(0, 0, 0, 0);
+    if (target.getTime() === today.getTime())    return 'TODAY';
+    if (target.getTime() === tomorrow.getTime()) return 'TOMORROW';
+    return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+  })();
 
   return (
     <button
@@ -18,14 +26,29 @@ export default function MatchCard({ match, selected, onSelect }) {
       {/* TIME */}
       <div className="match-card__col match-card__col--time">
         <span className="match-card__time-clock">{timeStr}</span>
-        <span className="match-card__time-date">{dateStr}</span>
+        <span className="match-card__time-date">{dayLabel}</span>
       </div>
 
-      {/* FIXTURE — home above, away below for compact horizontal footprint */}
+      {/* FIXTURE — team logo circles inline (stitch "Matches with Live Stats" pass) */}
       <div className="match-card__col match-card__col--fixture">
-        <div className="match-card__teams-stack">
-          <span className="match-card__team-line">{match.homeTeamName}</span>
-          <span className="match-card__team-line match-card__team-line--away">{match.awayTeamName}</span>
+        <div className="match-card__fixture-row">
+          <div className="match-card__side">
+            <div className="match-card__crest">
+              {match.homeTeamLogo
+                ? <img src={match.homeTeamLogo} alt="" />
+                : <span>⚽</span>}
+            </div>
+            <span className="match-card__team-line">{match.homeTeamName}</span>
+          </div>
+          <span className="match-card__vs">vs</span>
+          <div className="match-card__side match-card__side--away">
+            <div className="match-card__crest">
+              {match.awayTeamLogo
+                ? <img src={match.awayTeamLogo} alt="" />
+                : <span>⚽</span>}
+            </div>
+            <span className="match-card__team-line match-card__team-line--away">{match.awayTeamName}</span>
+          </div>
         </div>
         {match.leagueName && (
           <span className="match-card__league-tag" style={{ marginLeft: 'auto' }}>
