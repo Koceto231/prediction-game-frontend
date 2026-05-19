@@ -417,6 +417,115 @@ const POS_ORDER   = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 const parseScore = v => { if (v === '' || v == null) return null; const n = Number(v); return Number.isNaN(n) ? null : n; };
 const EMPTY = { homeScore: '', awayScore: '', winner: '', btts: '', ouLine: '', ouPick: '' };
 
+// ── Live Stats sidebar — stitch "Streamlined Live Dashboard" left rail ──
+function LiveStatsAside({ match }) {
+  const stats = match?.liveStats;
+  const goals = match?.goalScorers ?? [];
+
+  const ph = stats?.possession?.home ?? null;
+  const pa = stats?.possession?.away ?? null;
+  const possessionKnown = ph != null && pa != null;
+
+  // Match events — combine goals + cards into a chronological list (newest first)
+  const events = [
+    ...goals.map(g => ({ minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal', name: g.playerName })),
+    ...(stats?.cardEvents ?? []).map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
+  ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 6);
+
+  const iconFor = (kind) => {
+    if (kind === 'goal' || kind === 'og') return '⚽';
+    if (kind === 'red')                   return '🟥';
+    return '🟨';
+  };
+
+  return (
+    <aside className="gv-livestats">
+      <h3 className="gv-livestats__title">LIVE STATS</h3>
+
+      {/* Possession bar */}
+      {possessionKnown && (
+        <div className="gv-livestats__block">
+          <div className="gv-livestats__row-labels">
+            <span>{(match.homeTeamName || 'HOME').toUpperCase()}</span>
+            <span>{(match.awayTeamName || 'AWAY').toUpperCase()}</span>
+          </div>
+          <div className="gv-livestats__possbar">
+            <div className="gv-livestats__possbar-home" style={{ width: `${ph}%` }} />
+            <div className="gv-livestats__possbar-away" style={{ width: `${pa}%` }} />
+          </div>
+          <div className="gv-livestats__poss-numbers">
+            <span>{ph}%</span>
+            <span className="gv-livestats__poss-label">POSSESSION</span>
+            <span>{pa}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Match Events */}
+      {events.length > 0 && (
+        <div className="gv-livestats__block">
+          <h4 className="gv-livestats__subtitle">MATCH EVENTS</h4>
+          <div className="gv-livestats__events">
+            {events.map((e, i) => (
+              <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team}`}>
+                <span className="gv-livestats__event-min">{e.minute}'</span>
+                <span className="gv-livestats__event-icon">{iconFor(e.kind)}</span>
+                <span className="gv-livestats__event-name">{e.name || '—'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Match Statistics */}
+      {stats && (stats.corners || stats.shotsOnTarget || stats.yellowCards || stats.redCards) && (
+        <div className="gv-livestats__block">
+          <h4 className="gv-livestats__subtitle">MATCH STATISTICS</h4>
+          {stats.corners && (
+            <div className="gv-livestats__statrow">
+              <span className="gv-livestats__statval">{stats.corners.home ?? 0}</span>
+              <span className="gv-livestats__statlabel">CORNERS</span>
+              <span className="gv-livestats__statval">{stats.corners.away ?? 0}</span>
+            </div>
+          )}
+          {stats.shotsOnTarget && (
+            <div className="gv-livestats__statrow">
+              <span className="gv-livestats__statval">{stats.shotsOnTarget.home ?? 0}</span>
+              <span className="gv-livestats__statlabel">SHOTS ON TARGET</span>
+              <span className="gv-livestats__statval">{stats.shotsOnTarget.away ?? 0}</span>
+            </div>
+          )}
+          {stats.shots && (
+            <div className="gv-livestats__statrow">
+              <span className="gv-livestats__statval">{stats.shots.home ?? 0}</span>
+              <span className="gv-livestats__statlabel">SHOTS TOTAL</span>
+              <span className="gv-livestats__statval">{stats.shots.away ?? 0}</span>
+            </div>
+          )}
+          {(stats.yellowCards || stats.redCards) && (
+            <div className="gv-livestats__statrow">
+              <span className="gv-livestats__statval">
+                {(stats.yellowCards?.home ?? 0) + (stats.redCards?.home ?? 0)}
+              </span>
+              <span className="gv-livestats__statlabel">CARDS</span>
+              <span className="gv-livestats__statval">
+                {(stats.yellowCards?.away ?? 0) + (stats.redCards?.away ?? 0)}
+              </span>
+            </div>
+          )}
+          {stats.fouls && (
+            <div className="gv-livestats__statrow">
+              <span className="gv-livestats__statval">{stats.fouls.home ?? 0}</span>
+              <span className="gv-livestats__statlabel">FOULS</span>
+              <span className="gv-livestats__statval">{stats.fouls.away ?? 0}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </aside>
+  );
+}
+
 async function fetchOdds(matchId, betType, params = {}) {
   const qs = new URLSearchParams({ betType, ...params });
   try { const r = await api.get(`/Odds/${matchId}?${qs}`); return r.data ?? null; }
@@ -1083,9 +1192,15 @@ export default function LivePage() {
         )}
       </section>
 
-      {/* Bet panel */}
+      {/* Bet panel — stitch "Streamlined Live Dashboard" 3-col layout */}
       {selectedMatch && (
-        <section className="shell-card panel" ref={panelRef} style={{ scrollMarginTop: 64 }}>
+        <section className="shell-card panel gv-live-grid" ref={panelRef} style={{ scrollMarginTop: 64 }}>
+
+          {/* LEFT column — Live Stats sidebar (hidden on tablet/mobile) */}
+          <LiveStatsAside match={selectedMatch} />
+
+          {/* CENTER column — pitch tracker + markets */}
+          <div className="gv-live-center">
 
           {/* Pitch Tracker hero — stitch "Gridiron Velocity" design */}
           <div className="gv-pitch-tracker">
@@ -1163,7 +1278,11 @@ export default function LivePage() {
             </div>
           )}
 
-          <MatchTracker match={selectedMatch} />
+          {/* MatchTracker (mini pitch + stats) replaced by LiveStatsAside sidebar
+              on desktop; shown only on narrow viewports where the sidebar collapses. */}
+          <div className="gv-mobile-tracker">
+            <MatchTracker match={selectedMatch} />
+          </div>
 
           {myActiveBets.length > 0 && (
             <div className="my-live-bets">
@@ -2103,6 +2222,8 @@ export default function LivePage() {
             )}
 
           </div>{/* end prediction-form */}
+
+          </div>{/* end .gv-live-center */}
         </section>
       )}
 

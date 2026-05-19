@@ -8894,6 +8894,185 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  GRIDIRON VELOCITY — Live page 3-col layout + sidebar        │
+   │  (stitch "Streamlined Live Dashboard")                       │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.gv-live-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.gv-live-center {
+  min-width: 0; /* keeps the grid from blowing out on long content */
+}
+
+/* MatchTracker fallback — hide on desktop where LiveStatsAside has it */
+.gv-mobile-tracker { display: none; }
+
+@media (max-width: 1100px) {
+  .gv-live-grid {
+    grid-template-columns: 1fr;
+  }
+  .gv-livestats { display: none; }
+  .gv-mobile-tracker { display: block; }
+}
+
+/* Live Stats sidebar */
+.gv-livestats {
+  background: var(--surface-container, #201f1f);
+  border: 1px solid var(--outline-variant, #4d4633);
+  border-radius: 14px;
+  padding: 22px 18px;
+  position: sticky;
+  top: 80px;
+  box-shadow: 0 0 15px rgba(240, 197, 25, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.gv-livestats__title {
+  margin: 0;
+  color: var(--accent);
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+}
+
+.gv-livestats__subtitle {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gv-livestats__block {
+  border-top: 1px solid var(--outline-variant, #4d4633);
+  padding-top: 16px;
+}
+.gv-livestats__block:first-of-type { border-top: none; padding-top: 0; }
+
+/* Possession bar */
+.gv-livestats__row-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+.gv-livestats__possbar {
+  display: flex;
+  height: 6px;
+  width: 100%;
+  background: var(--surface-container-highest, #353534);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.gv-livestats__possbar-home { background: var(--accent); }
+.gv-livestats__possbar-away { background: var(--outline, #999079); }
+
+.gv-livestats__poss-numbers {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+.gv-livestats__poss-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  align-self: end;
+  padding-bottom: 4px;
+}
+
+/* Match events list */
+.gv-livestats__events {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gv-livestats__event {
+  display: grid;
+  grid-template-columns: 28px 18px 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.gv-livestats__event--away {
+  direction: rtl;
+}
+.gv-livestats__event--away > * {
+  direction: ltr;
+}
+.gv-livestats__event-min {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.gv-livestats__event-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.gv-livestats__event-name {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Statistics rows */
+.gv-livestats__statrow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.gv-livestats__statrow + .gv-livestats__statrow {
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.gv-livestats__statval {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.gv-livestats__statlabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Pitch Tracker hero                      │
    │  (stitch screen 4f0e56c4… "Streamlined Live Dashboard")      │
    ╰──────────────────────────────────────────────────────────────╯ */
