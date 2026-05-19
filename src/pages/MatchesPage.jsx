@@ -229,6 +229,17 @@ export default function MatchesPage() {
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
+  // Market category tabs (mockup upgraded_my_bets_overview_4).
+  // Same pattern as LivePage — drives [data-cat] CSS filtering on .market-table.
+  const [marketCategory, setMarketCategory] = useState('main');
+  const MARKET_TABS = [
+    { id: 'main',    label: 'Main'    },
+    { id: 'goals',   label: 'Goals'   },
+    { id: 'halves',  label: 'Halves'  },
+    { id: 'corners', label: 'Corners' },
+    { id: 'special', label: 'Special' },
+  ];
+
   const panelRef  = useRef(null);
   const aiRef     = useRef(null);
   const aiCache   = useRef({});   // matchId → AIPredictionResponseDTO
@@ -949,10 +960,23 @@ export default function MatchesPage() {
                   <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU(''); setScorerPlayer(null); setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick(''); setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU(''); setHtPick(''); setCsPick(''); setCsYN(''); setFgPick(''); setBtts1hPick(''); setBtts2hPick(''); setHtGoalsLine(''); setHtGoalsOU(''); setShGoalsLine(''); setShGoalsOU(''); setHomeOEPick(''); setAwayOEPick(''); setOe1hPick(''); setHomeTsPick(''); setAwayTsPick(''); setWbhHomePick(''); setWbhAwayPick(''); setLastScorePick(''); setHtftPick(''); setRbtPick(''); }}>Change type</button>
                 </div>
 
-                <div className="market-table">
+                <div className="market-tabs">
+                  {MARKET_TABS.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`market-tab${marketCategory === t.id ? ' market-tab--active' : ''}`}
+                      onClick={() => setMarketCategory(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="market-table" data-cat={marketCategory}>
 
                   {/* Match Result */}
-                  <div className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.winner && toggleSection('winner')} style={dis.winner ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Match Result</span>
                       {dis.winner && <LiveLock reason={`${groupAPicked} already picked`} />}
@@ -977,7 +1001,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Double Chance */}
-                  <div className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dc && toggleSection('dc')} style={dis.dc ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Double Chance</span>
                       {dis.dc && <LiveLock reason={`${groupAPicked} already picked`} />}
@@ -1010,7 +1034,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Goals O/U */}
-                  <div className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('goals')}>
                       <span className="market-section__name">Goals — Over / Under</span>
                       {ouLine && ouPick && <span className="market-section__badge">{ouPick} {ouLine.replace('Line','').replace(/(\d)(\d)/,'$1.$2')}</span>}
@@ -1039,7 +1063,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* BTTS */}
-                  <div className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts')}>
                       <span className="market-section__name">Both Teams to Score</span>
                       {btts && <span className="market-section__badge">{btts === 'true' ? 'Yes' : 'No'}</span>}
@@ -1062,7 +1086,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Corners */}
-                  <div className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="corners" className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('corners')}>
                       <span className="market-section__name">⌐ Corners — Over / Under</span>
                       {cornersLine && cornersOU && <span className="market-section__badge">{cornersOU} {cornersLine}</span>}
@@ -1091,7 +1115,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Yellow Cards */}
-                  <div className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="special" className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('yellows')}>
                       <span className="market-section__name">▬ Yellow Cards — Over / Under</span>
                       {yellowsLine && yellowsOU && <span className="market-section__badge">{yellowsOU} {yellowsLine}</span>}
@@ -1120,7 +1144,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Odd / Even Goals */}
-                  <div className={`market-section ${collapsed.oddEven ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.oddEven ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oddEven')}>
                       <span className="market-section__name">≈ Odd / Even Goals</span>
                       {oddEvenPick && <span className="market-section__badge">{oddEvenPick === 'true' ? 'Odd' : 'Even'}</span>}
@@ -1143,7 +1167,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Draw No Bet */}
-                  <div className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}${dis.dnb ? ' market-section--locked' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}${dis.dnb ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dnb && toggleSection('dnb')} style={dis.dnb ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊖ Draw No Bet</span>
                       {dis.dnb ? <LiveLock reason={`${groupAPicked} already picked`} /> : dnbPick && <span className="market-section__badge">{dnbPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>}
@@ -1169,7 +1193,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Win to Nil */}
-                  <div className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
+                  <div data-cat="special" className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wtn && toggleSection('wtn')} style={dis.wtn ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊘ Win to Nil</span>
                       {dis.wtn ? <LiveLock reason={`${groupAPicked} already picked`} /> : wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
@@ -1200,7 +1224,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Handicap */}
-                  <div className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
+                  <div data-cat="special" className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.hcp && toggleSection('hcp')} style={dis.hcp ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">± Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
                       {dis.hcp ? <LiveLock reason={`${groupAPicked} already picked`} /> : hcpPick && <span className="market-section__badge">{hcpPick}</span>}
@@ -1227,7 +1251,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Home Team Goals O/U */}
-                  <div className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
                       <span className="market-section__name">△ {selectedMatch.homeTeamName} Goals</span>
                       {hGoalsLine && hGoalsOU && <span className="market-section__badge">{hGoalsOU} {hGoalsLine}</span>}
@@ -1256,7 +1280,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Away Team Goals O/U */}
-                  <div className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
                       <span className="market-section__name">▽ {selectedMatch.awayTeamName} Goals</span>
                       {aGoalsLine && aGoalsOU && <span className="market-section__badge">{aGoalsOU} {aGoalsLine}</span>}
@@ -1285,7 +1309,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Half Time Result */}
-                  <div className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}${dis.ht ? ' market-section--locked' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}${dis.ht ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.ht && toggleSection('ht')} style={dis.ht ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◑ Half Time Result</span>
                       {dis.ht ? <LiveLock reason={`${groupBPicked} already picked`} /> : htPick && <span className="market-section__badge">{htPick === 'Home' ? selectedMatch.homeTeamName : htPick === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>}
@@ -1312,7 +1336,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Clean Sheet */}
-                  <div className={`market-section ${collapsed.cs ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="special" className={`market-section ${collapsed.cs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('cs')}>
                       <span className="market-section__name">○ Clean Sheet</span>
                       {csPick && csYN && <span className="market-section__badge">{csPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {csYN === 'true' ? 'Yes' : 'No'}</span>}
@@ -1343,7 +1367,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* First Goal */}
-                  <div className={`market-section ${collapsed.fg ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.fg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('fg')}>
                       <span className="market-section__name">◎ First Goal</span>
                       {fgPick && <span className="market-section__badge">{fgPick === 'Home' ? selectedMatch.homeTeamName : fgPick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
@@ -1370,7 +1394,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* BTTS 1st Half */}
-                  <div className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts1h')}>
                       <span className="market-section__name">◐ BTTS — 1st Half</span>
                       {btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
@@ -1393,7 +1417,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* BTTS 2nd Half */}
-                  <div className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
                       <span className="market-section__name">◑ BTTS — 2nd Half</span>
                       {btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
@@ -1416,7 +1440,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* 1st Half Goals O/U */}
-                  <div className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htGoals')}>
                       <span className="market-section__name">◐ 1st Half Goals — Over / Under</span>
                       {htGoalsLine && htGoalsOU && <span className="market-section__badge">{htGoalsOU} {htGoalsLine}</span>}
@@ -1445,7 +1469,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* 2nd Half Goals O/U */}
-                  <div className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('shGoals')}>
                       <span className="market-section__name">◑ 2nd Half Goals — Over / Under</span>
                       {shGoalsLine && shGoalsOU && <span className="market-section__badge">{shGoalsOU} {shGoalsLine}</span>}
@@ -1474,7 +1498,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Team Odd / Even Goals */}
-                  <div className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamOE')}>
                       <span className="market-section__name">≈ Team Goals — Odd / Even</span>
                       {(homeOEPick || awayOEPick) && <span className="market-section__badge">selected</span>}
@@ -1507,7 +1531,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Odd / Even Goals — 1st Half */}
-                  <div className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe1h')}>
                       <span className="market-section__name">≈ Odd / Even Goals — 1st Half</span>
                       {oe1hPick && <span className="market-section__badge">{oe1hPick === 'true' ? 'Odd' : 'Even'}</span>}
@@ -1530,7 +1554,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Team to Score */}
-                  <div className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="special" className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
                       <span className="market-section__name">→ Team to Score</span>
                       {(homeTsPick || awayTsPick) && <span className="market-section__badge">selected</span>}
@@ -1563,7 +1587,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Win Both Halves */}
-                  <div className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}${dis.wbh ? ' market-section--locked' : ''}`}>
+                  <div data-cat="halves" className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}${dis.wbh ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wbh && toggleSection('wbh')} style={dis.wbh ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◆ Win Both Halves</span>
                       {dis.wbh ? <LiveLock reason={`${groupAPicked} already picked`} /> : (wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
@@ -1597,7 +1621,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Last Team to Score */}
-                  <div className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('lastScore')}>
                       <span className="market-section__name">◇ Last Team to Score</span>
                       {lastScorePick && <span className="market-section__badge">{lastScorePick === 'Home' ? selectedMatch.homeTeamName : lastScorePick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
@@ -1624,7 +1648,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* HT / FT */}
-                  <div className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${dis.htft ? ' market-section--locked' : ''}`}>
+                  <div data-cat="main" className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${dis.htft ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.htft && toggleSection('htft')} style={dis.htft ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">↕ Half Time / Full Time</span>
                       {dis.htft ? <LiveLock reason={`${groupAPicked || groupBPicked} already picked`} /> : htftPick && <span className="market-section__badge">{htftPick}</span>}
@@ -1660,7 +1684,7 @@ export default function MatchesPage() {
                   </div>
 
                   {/* Goalscorer */}
-                  <div className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="goals" className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('scorer')}>
                       <span className="market-section__name">◉ Goalscorer</span>
                       {scorerPlayer && <span className="market-section__badge">{scorerPlayer.name} · {Number(scorerPlayer.odds).toFixed(2)}</span>}

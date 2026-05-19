@@ -8440,6 +8440,57 @@ select:focus {
   .quickbet-fab   { bottom: 70px; right: 12px; }
 }
 
+/* ╭──────────────────────────────────────────────────────────────╮
+   │  MARKET TABS — Main / Goals / Halves / Corners / Special     │
+   │  (stitch mockup upgraded_my_bets_overview_4)                 │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.market-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.market-tab {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.market-tab:hover { color: var(--text-main); }
+
+.market-tab--active {
+  background: var(--accent);
+  color: #06120a;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(240, 197, 25, 0.25);
+}
+
+/* Hide market sections whose data-cat doesn't match the active tab.
+   Falls back gracefully when no data-cat is set (sections stay visible). */
+.market-table[data-cat="main"]    .market-section:not([data-cat="main"]),
+.market-table[data-cat="goals"]   .market-section:not([data-cat="goals"]),
+.market-table[data-cat="halves"]  .market-section:not([data-cat="halves"]),
+.market-table[data-cat="corners"] .market-section:not([data-cat="corners"]),
+.market-table[data-cat="special"] .market-section:not([data-cat="special"]) {
+  display: none;
+}
+
 /* ────────────────────────────────────────────────────────────────
    MATCHES page polish — small tweaks to match stitch mockup
    (upgraded_upcoming_matches)
