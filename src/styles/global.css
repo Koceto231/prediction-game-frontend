@@ -9129,6 +9129,334 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  GRIDIRON VELOCITY — Quick Stake modal                       │
+   │  (opens when tapping a 1/X/2 odd on the Matches page)        │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.gvb-stake-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(8, 8, 8, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: gvb-stake-fade-in 0.16s ease-out;
+}
+
+@keyframes gvb-stake-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.gvb-stake-modal {
+  position: relative;
+  background: var(--surface-container, #201f1f);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 26px 24px 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(240, 197, 25, 0.10);
+  animation: gvb-stake-pop-in 0.18s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+@keyframes gvb-stake-pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);   }
+}
+
+.gvb-stake-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+.gvb-stake-modal__close:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gvb-stake-modal__head {
+  margin-bottom: 14px;
+}
+.gvb-stake-modal__eyebrow {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.gvb-stake-modal__fixture {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* Pick row */
+.gvb-stake-modal__pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.gvb-stake-modal__pick-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.gvb-stake-modal__pick-crest {
+  width: 36px;
+  height: 36px;
+  background: var(--surface-container-highest, #353534);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.gvb-stake-modal__pick-crest__img { width: 80%; height: 80%; object-fit: contain; }
+.gvb-stake-modal__pick-crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+.gvb-stake-modal__pick-x {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-soft, rgba(240, 197, 25, 0.12));
+  color: var(--accent);
+  border: 1px solid rgba(240, 197, 25, 0.3);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1rem;
+}
+.gvb-stake-modal__pick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gvb-stake-modal__pick-short {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.gvb-stake-modal__pick-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+}
+.gvb-stake-modal__pick-odds {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.6rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stake input + chips */
+.gvb-stake-modal__stake { margin-bottom: 18px; }
+.gvb-stake-modal__stake-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.gvb-stake-modal__stake-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+.gvb-stake-modal__stake-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(240, 197, 25, 0.10);
+}
+.gvb-stake-modal__stake-input input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.8rem;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+.gvb-stake-modal__stake-input span {
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.gvb-stake-modal__chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.gvb-stake-modal__chip {
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  color: var(--text-main);
+  padding: 6px 0;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  font-variant-numeric: tabular-nums;
+}
+.gvb-stake-modal__chip:hover {
+  background: var(--accent-soft, rgba(240, 197, 25, 0.12));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Summary lines */
+.gvb-stake-modal__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.gvb-stake-modal__summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.gvb-stake-modal__summary-row strong {
+  color: var(--text-main);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gvb-stake-modal__summary-row--big {
+  padding-top: 8px;
+  border-top: 1px solid rgba(77, 70, 51, 0.5);
+}
+.gvb-stake-modal__summary-row--big span {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 0.86rem;
+}
+.gvb-stake-modal__potential {
+  color: var(--accent) !important;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900 !important;
+  font-size: 1.1rem;
+}
+
+.gvb-stake-modal__balance {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-align: right;
+}
+.gvb-stake-modal__balance--over { color: #f87171; font-weight: 700; }
+
+/* Feedback */
+.gvb-stake-modal__feedback {
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.gvb-stake-modal__feedback--error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+.gvb-stake-modal__feedback--ok    { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+
+/* Actions */
+.gvb-stake-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+.gvb-stake-modal__btn {
+  padding: 11px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.05s, background 0.15s;
+  border: 1px solid transparent;
+}
+.gvb-stake-modal__btn:active:not(:disabled) { transform: scale(0.98); }
+.gvb-stake-modal__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.gvb-stake-modal__btn--ghost {
+  background: var(--surface-container-high, #2a2a2a);
+  color: var(--text-main);
+  border-color: var(--border-soft, #4d4633);
+}
+.gvb-stake-modal__btn--ghost:hover:not(:disabled) {
+  background: var(--surface-container-highest, #353534);
+}
+.gvb-stake-modal__btn--gold {
+  background: var(--accent);
+  color: #06120a;
+  box-shadow: 0 4px 14px rgba(240, 197, 25, 0.30);
+}
+.gvb-stake-modal__btn--gold:hover:not(:disabled) { filter: brightness(1.08); }
+
+@media (max-width: 480px) {
+  .gvb-stake-modal { padding: 22px 18px 18px; }
+  .gvb-stake-modal__pick-odds { font-size: 1.4rem; }
+  .gvb-stake-modal__stake-input input { font-size: 1.5rem; }
+}
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — My Bets / Betting Overview              │
    │  (stitch "Gold Edition")                                     │
    ╰──────────────────────────────────────────────────────────────╯ */

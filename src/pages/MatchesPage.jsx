@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { newIdempotencyKey } from '../api/apiClient';
 import MatchCard from '../components/MatchCard';
 import LiveNowSidebar from '../components/LiveNowSidebar';
+import QuickStakeModal from '../components/QuickStakeModal';
 import { useWallet } from '../context/WalletContext';
 
 // ── Enums ────────────────────────────────────────────────────────
@@ -159,6 +160,8 @@ export default function MatchesPage() {
   const [matches, setMatches]             = useState([]);
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
+  // Quick Stake modal — opens when the user taps a 1/X/2 odd in a match card
+  const [quickStake, setQuickStake] = useState(null);  // { match, pick, odds } | null
   const [mode, setMode]                   = useState('');
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
@@ -838,11 +841,16 @@ export default function MatchesPage() {
             </div>
           )}
           {filteredMatches.map(match => (
-            <MatchCard key={match.id} match={match} selected={selectedMatch?.id === match.id}
+            <MatchCard
+              key={match.id}
+              match={match}
+              selected={selectedMatch?.id === match.id}
               onSelect={() => {
                 if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
                 else { setSelectedMatch(match); resetPanel(); }
-              }} />
+              }}
+              onOddPick={(m, pick, odds) => setQuickStake({ match: m, pick, odds })}
+            />
           ))}
         </div>
 
@@ -1960,6 +1968,15 @@ export default function MatchesPage() {
 
       {/* Right sidebar — Live Now */}
       <LiveNowSidebar />
+
+      {/* Quick Stake modal — opens when the user taps an odd */}
+      <QuickStakeModal
+        open={!!quickStake}
+        match={quickStake?.match}
+        pick={quickStake?.pick}
+        odds={quickStake?.odds}
+        onClose={() => setQuickStake(null)}
+      />
     </div>
   );
 }

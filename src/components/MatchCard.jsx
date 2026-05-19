@@ -10,7 +10,7 @@ import TeamCrest from './TeamCrest';
  * `bpfl:quickbet:place` event when Quick Bet Mode is on (handled by
  * QuickBetSidebar elsewhere).
  */
-export default function MatchCard({ match, selected, onSelect }) {
+export default function MatchCard({ match, selected, onSelect, onOddPick }) {
   const hasOdds = match.homeOdds != null;
 
   const dateObj = match.matchDate ? new Date(match.matchDate) : null;
@@ -29,9 +29,10 @@ export default function MatchCard({ match, selected, onSelect }) {
 
   const handleOddClick = (e, pick, oddVal) => {
     e.stopPropagation();
+    if (oddVal == null) return;
     // Quick Bet Mode: dispatch event for QuickBetSidebar to place a bet immediately
     const qb = window.bpflQuickBet;
-    if (qb?.enabled && oddVal != null) {
+    if (qb?.enabled) {
       window.dispatchEvent(new CustomEvent('bpfl:quickbet:place', {
         detail: {
           matchId: match.id,
@@ -46,6 +47,8 @@ export default function MatchCard({ match, selected, onSelect }) {
       }));
       return;
     }
+    // Otherwise — open the Quick Stake modal in the parent page
+    if (onOddPick) { onOddPick(match, pick, oddVal); return; }
     onSelect?.(match);
   };
 
