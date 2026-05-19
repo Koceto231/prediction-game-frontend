@@ -566,6 +566,51 @@ function LiveStatsAside({ match }) {
   );
 }
 
+// ── Bet Slip sidebar — stitch "Streamlined Live Dashboard" right rail ──
+function BetSlipAside({ match, activeBets = [], onCashedOut }) {
+  const count = activeBets.length;
+  return (
+    <aside className="gv-betslip">
+      <div className="gv-betslip__head">
+        <h3 className="gv-betslip__title">BET SLIP</h3>
+        {count > 0 && <span className="gv-betslip__count">{count}</span>}
+      </div>
+
+      <div className="gv-betslip__body">
+        {count === 0 ? (
+          <div className="gv-betslip__empty">
+            <div className="gv-betslip__empty-icon">🎯</div>
+            <div className="gv-betslip__empty-text">No bets on this match yet</div>
+            <div className="gv-betslip__empty-hint">
+              Tap any odd in the markets section below to place a bet.
+            </div>
+          </div>
+        ) : (
+          <>
+            {activeBets.map(bet => (
+              <div key={bet.id} className="gv-betslip__pick">
+                <div className="gv-betslip__pick-top">
+                  <span className="gv-betslip__pick-label">{bet.betDescription}</span>
+                </div>
+                <div className="gv-betslip__pick-row">
+                  <span className="gv-betslip__pick-stake">€{Number(bet.amount).toFixed(2)} @ {Number(bet.oddsAtBetTime).toFixed(2)}</span>
+                  <span className="gv-betslip__pick-odds">€{Number(bet.potentialPayout).toFixed(2)}</span>
+                </div>
+                <div className="gv-betslip__pick-cashout">
+                  <CashOutBadge bet={bet} onCashedOut={onCashedOut} compact />
+                </div>
+              </div>
+            ))}
+            <div className="gv-betslip__footer">
+              <span className="gv-betslip__secure">🔒 SECURE TRANSACTION</span>
+            </div>
+          </>
+        )}
+      </div>
+    </aside>
+  );
+}
+
 async function fetchOdds(matchId, betType, params = {}) {
   const qs = new URLSearchParams({ betType, ...params });
   try { const r = await api.get(`/Odds/${matchId}?${qs}`); return r.data ?? null; }
@@ -1130,7 +1175,8 @@ export default function LivePage() {
   return (
     <div className={`page-grid gv-live-page${selectedMatch ? ' gv-live-page--has-detail' : ''}`}>
 
-      {/* Live match list */}
+      {/* Live match list — hidden when a specific match is selected (per stitch detail view) */}
+      {!selectedMatch && (
       <section className="shell-card panel">
         <div className="section-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1231,6 +1277,7 @@ export default function LivePage() {
           </div>
         )}
       </section>
+      )}
 
       {/* Bet panel — stitch "Streamlined Live Dashboard" 3-col layout */}
       {selectedMatch && (
@@ -1241,6 +1288,11 @@ export default function LivePage() {
 
           {/* CENTER column — pitch tracker + markets */}
           <div className="gv-live-center">
+            <button
+              type="button"
+              className="gv-back-btn"
+              onClick={() => { setSelectedMatch(null); resetPanel(); }}
+            >← All live matches</button>
 
           {/* Pitch Tracker hero — stitch "Gridiron Velocity" design */}
           <div className="gv-pitch-tracker">
@@ -1292,6 +1344,21 @@ export default function LivePage() {
                   </div>
                   <div className="gv-pitch-tracker__teamname">{selectedMatch.awayTeamName}</div>
                 </div>
+              </div>
+
+              {/* Status pill at bottom — pulsing dot + phase text (stitch detail view) */}
+              <div className="gv-pitch-tracker__status">
+                <span className="gv-pitch-tracker__status-dot" />
+                <span className="gv-pitch-tracker__status-text">
+                  {(() => {
+                    if (isHT(selectedMatch.liveState)) return 'HALF TIME';
+                    if (isFT(selectedMatch.liveState)) return 'FULL TIME';
+                    if (is1H(selectedMatch.liveState)) return 'FIRST HALF — IN PLAY';
+                    if (is2H(selectedMatch.liveState)) return 'SECOND HALF — IN PLAY';
+                    if (isET(selectedMatch.liveState)) return 'EXTRA TIME — IN PLAY';
+                    return 'IN PLAY';
+                  })()}
+                </span>
               </div>
             </div>
           </div>
@@ -2248,6 +2315,13 @@ export default function LivePage() {
           </div>{/* end prediction-form */}
 
           </div>{/* end .gv-live-center */}
+
+          {/* RIGHT column — Bet Slip (sticky, hidden on tablet/mobile) */}
+          <BetSlipAside
+            match={selectedMatch}
+            activeBets={myActiveBets}
+            onCashedOut={handleLiveBetCashedOut}
+          />
         </section>
       )}
 

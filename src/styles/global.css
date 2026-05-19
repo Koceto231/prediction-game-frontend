@@ -8898,21 +8898,26 @@ select:focus {
    │  (stitch "Streamlined Live Dashboard")                       │
    ╰──────────────────────────────────────────────────────────────╯ */
 
-/* On LivePage, give the selected-match panel WAY more horizontal real-estate
-   than the default 50/50 page-grid split — collapse the live-matches list to
-   a narrow rail when a match is selected. */
+/* When a live match is selected, the live-matches list is hidden and the
+   detail panel takes the full viewport width. Inside the panel, `.gv-live-grid`
+   handles the 3-col split (LiveStats | center | BetSlip). */
 .gv-live-page--has-detail {
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
-}
-@media (max-width: 1100px) {
-  .gv-live-page--has-detail { grid-template-columns: 1fr; }
+  grid-template-columns: 1fr;
 }
 
 .gv-live-grid {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px minmax(0, 1fr) 320px;
   gap: 22px;
   align-items: start;
+}
+
+@media (max-width: 1280px) {
+  .gv-live-grid { grid-template-columns: 280px minmax(0, 1fr); }
+  .gv-betslip   { display: none; } /* hide right rail first */
+}
+@media (max-width: 1100px) {
+  .gv-live-grid { grid-template-columns: 1fr; }
 }
 
 .gv-live-center {
@@ -9114,6 +9119,147 @@ select:focus {
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
+   │  GRIDIRON VELOCITY — Bet Slip sidebar (right rail)           │
+   ╰──────────────────────────────────────────────────────────────╯ */
+
+.gv-betslip {
+  background: var(--surface-container, #201f1f);
+  border: 1px solid var(--outline-variant, #4d4633);
+  border-radius: 14px;
+  overflow: hidden;
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gv-betslip__head {
+  background: var(--accent);
+  color: #06120a;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gv-betslip__title {
+  margin: 0;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+}
+
+.gv-betslip__count {
+  background: #06120a;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 2px 9px;
+  border-radius: 999px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.gv-betslip__body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gv-betslip__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 12px;
+  gap: 8px;
+}
+.gv-betslip__empty-icon { font-size: 1.6rem; opacity: 0.45; }
+.gv-betslip__empty-text {
+  color: var(--text-main);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.gv-betslip__empty-hint {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.gv-betslip__pick {
+  background: var(--surface-2, #1c1b1b);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gv-betslip__pick-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gv-betslip__pick-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+}
+.gv-betslip__pick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gv-betslip__pick-odds {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.gv-betslip__pick-cashout {
+  margin-top: 4px;
+}
+
+.gv-betslip__footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--outline-variant, #4d4633);
+  text-align: center;
+}
+.gv-betslip__secure {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.10em;
+}
+
+/* Back-to-list button */
+.gv-back-btn {
+  align-self: flex-start;
+  background: var(--surface-2, #1c1b1b);
+  color: var(--text-main);
+  border: 1px solid var(--outline-variant, #4d4633);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.gv-back-btn:hover {
+  background: var(--accent-soft, rgba(240, 197, 25, 0.12));
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Pitch Tracker hero                      │
    │  (stitch screen 4f0e56c4… "Streamlined Live Dashboard")      │
    ╰──────────────────────────────────────────────────────────────╯ */
@@ -9312,6 +9458,51 @@ select:focus {
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
+}
+
+/* Status pill at bottom of pitch tracker (mockup "CITY ATTACKING: PENALTY AREA") */
+.gv-pitch-tracker__status {
+  position: relative;
+  z-index: 2;
+  margin: auto auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: rgba(19, 19, 19, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(240, 197, 25, 0.3);
+  border-radius: 999px;
+  align-self: center;
+}
+.gv-pitch-tracker__status-dot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+}
+.gv-pitch-tracker__status-dot::before,
+.gv-pitch-tracker__status-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.gv-pitch-tracker__status-dot::before {
+  animation: gv-status-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.7;
+}
+@keyframes gv-status-ping {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  75%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.gv-pitch-tracker__status-text {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
 }
 
 /* Responsive — squeeze on small screens */
