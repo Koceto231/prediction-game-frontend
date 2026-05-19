@@ -8952,6 +8952,37 @@ select:focus {
   font-size: 0.86rem;
   font-weight: 800;
   letter-spacing: 0.10em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gv-livestats__beat {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(240, 197, 25, 0.6);
+  flex-shrink: 0;
+}
+.gv-livestats__beat--pulse {
+  animation: gv-stats-pulse 1.2s ease-out;
+}
+@keyframes gv-stats-pulse {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 197, 25, 0.7); }
+  60%  { transform: scale(1.6); box-shadow: 0 0 0 10px rgba(240, 197, 25, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 197, 25, 0); }
+}
+
+.gv-livestats__age {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
 }
 
 .gv-livestats__subtitle {

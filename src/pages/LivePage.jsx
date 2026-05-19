@@ -432,6 +432,32 @@ function LiveStatsAside({ match }) {
   const stats = match?.liveStats;
   const goals = match?.goalScorers ?? [];
 
+  // Detect when stats change → pulse the "live update" dot for 1.2 s.
+  // We hash the visible numbers so we don't pulse on no-op re-renders.
+  const lastHash = useRef('');
+  const [pulse, setPulse]   = useState(false);
+  const [lastUpd, setLastUpd] = useState(() => Date.now());
+  const now = useNowTicker(1000);
+  useEffect(() => {
+    const hash = JSON.stringify({
+      ph: stats?.possession?.home,
+      pa: stats?.possession?.away,
+      sh: stats?.shots?.home, sa: stats?.shots?.away,
+      ch: stats?.corners?.home, ca: stats?.corners?.away,
+      yh: stats?.yellowCards?.home, ya: stats?.yellowCards?.away,
+      rh: stats?.redCards?.home, ra: stats?.redCards?.away,
+      gs: goals.length,
+    });
+    if (hash !== lastHash.current && lastHash.current !== '') {
+      setPulse(true);
+      setLastUpd(Date.now());
+      const t = setTimeout(() => setPulse(false), 1200);
+      return () => clearTimeout(t);
+    }
+    lastHash.current = hash;
+  }, [stats, goals.length]);
+  const ageSec = Math.floor((now - lastUpd) / 1000);
+
   const ph = stats?.possession?.home ?? null;
   const pa = stats?.possession?.away ?? null;
   const possessionKnown = ph != null && pa != null;
@@ -450,7 +476,11 @@ function LiveStatsAside({ match }) {
 
   return (
     <aside className="gv-livestats">
-      <h3 className="gv-livestats__title">LIVE STATS</h3>
+      <h3 className="gv-livestats__title">
+        LIVE STATS
+        <span className={`gv-livestats__beat${pulse ? ' gv-livestats__beat--pulse' : ''}`} title={`Last update ${ageSec}s ago`} />
+        <span className="gv-livestats__age">{ageSec === 0 ? 'now' : `${ageSec}s`}</span>
+      </h3>
 
       {/* Possession bar */}
       {possessionKnown && (
