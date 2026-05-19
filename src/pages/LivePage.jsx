@@ -2,21 +2,12 @@
 import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
+import TeamCrest from '../components/TeamCrest';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
 import {
-  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay,
+  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, getTeamInitials,
 } from '../utils/liveState';
-
-// Helper: derive 1–3 letter initials from a club name to use as a placeholder
-// inside the pitch tracker shield when the team has no Sportmonks logo yet.
-function getTeamInitials(name) {
-  if (!name) return '?';
-  const words = String(name).trim().split(/\s+/).filter(w => !/^(FC|CF|AC|SC|AFC|CFR|JK|KS|US|RB)$/i.test(w));
-  if (words.length === 0) return name.slice(0, 3).toUpperCase();
-  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
-  return (words[0][0] + words[1][0] + (words[2]?.[0] ?? '')).toUpperCase();
-}
 
 // ── League metadata for the small league chip on each live row ─────
 const LEAGUE_META = {
@@ -1239,17 +1230,13 @@ export default function LivePage() {
                   <div className="live-row__fixture">
                     <div className="live-row__teams">
                       <span className="live-row__team">
-                        <span className="live-row__crest">
-                          {match.homeTeamLogo ? <img src={match.homeTeamLogo} alt="" /> : <span>⚽</span>}
-                        </span>
+                        <TeamCrest className="live-row__crest" logoUrl={match.homeTeamLogo} name={match.homeTeamName} />
                         {match.homeTeamName}
                       </span>
                       <span className="live-row__score">{homeScore} : {awayScore}</span>
                       <span className="live-row__team live-row__team--away">
                         {match.awayTeamName}
-                        <span className="live-row__crest">
-                          {match.awayTeamLogo ? <img src={match.awayTeamLogo} alt="" /> : <span>⚽</span>}
-                        </span>
+                        <TeamCrest className="live-row__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
                       </span>
                     </div>
                     <div className="live-row__chips">

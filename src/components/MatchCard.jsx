@@ -1,3 +1,5 @@
+import TeamCrest from './TeamCrest';
+
 export default function MatchCard({ match, selected, onSelect }) {
   const hasOdds = match.homeOdds != null;
 
@@ -5,8 +7,6 @@ export default function MatchCard({ match, selected, onSelect }) {
   const timeStr = dateObj
     ? dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     : '—';
-  // Stitch "Matches with Live Stats" shows TODAY / TOMORROW as a sub-label.
-  // Compute it on the client so we don't need a backend field.
   const dayLabel = (() => {
     if (!dateObj) return '';
     const today    = new Date(); today.setHours(0, 0, 0, 0);
@@ -33,20 +33,12 @@ export default function MatchCard({ match, selected, onSelect }) {
       <div className="match-card__col match-card__col--fixture">
         <div className="match-card__fixture-row">
           <div className="match-card__side">
-            <div className="match-card__crest">
-              {match.homeTeamLogo
-                ? <img src={match.homeTeamLogo} alt="" />
-                : <span>⚽</span>}
-            </div>
+            <TeamCrest className="match-card__crest" logoUrl={match.homeTeamLogo} name={match.homeTeamName} />
             <span className="match-card__team-line">{match.homeTeamName}</span>
           </div>
           <span className="match-card__vs">vs</span>
           <div className="match-card__side match-card__side--away">
-            <div className="match-card__crest">
-              {match.awayTeamLogo
-                ? <img src={match.awayTeamLogo} alt="" />
-                : <span>⚽</span>}
-            </div>
+            <TeamCrest className="match-card__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
             <span className="match-card__team-line match-card__team-line--away">{match.awayTeamName}</span>
           </div>
         </div>

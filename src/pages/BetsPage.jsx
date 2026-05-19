@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import { isActive } from '../utils/liveState';
+import TeamCrest from '../components/TeamCrest';
 
 // ── Constants ────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
@@ -233,19 +234,10 @@ function MyBetCard({ bet, onCashedOut }) {
         <div className="mybet-card__top">
           <div className="mybet-card__title-wrap">
             <h3 className="mybet-card__fixture">
-              {/* Team crest circles inline — stitch "Gold Edition" pass */}
-              <span className="mybet-card__crest">
-                {bet.homeTeamLogo
-                  ? <img src={bet.homeTeamLogo} alt="" />
-                  : <span>⚽</span>}
-              </span>
+              <TeamCrest className="mybet-card__crest" logoUrl={bet.homeTeamLogo} name={bet.homeTeam} />
               {bet.homeTeam}
               <span className="mybet-card__vs">vs</span>
-              <span className="mybet-card__crest">
-                {bet.awayTeamLogo
-                  ? <img src={bet.awayTeamLogo} alt="" />
-                  : <span>⚽</span>}
-              </span>
+              <TeamCrest className="mybet-card__crest" logoUrl={bet.awayTeamLogo} name={bet.awayTeam} />
               {bet.awayTeam}
             </h3>
             <div className="mybet-card__subtitle">{subtitle}</div>

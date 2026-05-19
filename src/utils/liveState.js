@@ -25,6 +25,16 @@ export const FINAL_STATES = new Set([
   'FTP', 'ABD', 'CANC', 'AWRD',
 ]);
 
+// Derive 1-3 letter initials from a club name for use as a fallback crest
+// inside team-shield circles when there's no Sportmonks logo URL yet.
+export function getTeamInitials(name) {
+  if (!name) return '?';
+  const words = String(name).trim().split(/\s+/).filter(w => !/^(FC|CF|AC|SC|AFC|CFR|JK|KS|US|RB)$/i.test(w));
+  if (words.length === 0) return String(name).slice(0, 3).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return (words[0][0] + words[1][0] + (words[2]?.[0] ?? '')).toUpperCase();
+}
+
 // Specific phase helpers — each accepts either the long or short form.
 export const is1H = s => s === 'INPLAY_1ST_HALF' || s === '1H';
 export const is2H = s => s === 'INPLAY_2ND_HALF' || s === '2H';

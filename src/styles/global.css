@@ -8629,20 +8629,25 @@ select:focus {
   background: var(--surface-2, #1c1b1b);
   border: 1px solid var(--border-soft, #4d4633);
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
 }
-.match-card__crest img {
+.match-card__crest__img {
   width: 80%;
   height: 80%;
   object-fit: contain;
 }
-.match-card__crest span {
-  font-size: 0.85rem;
+.match-card__crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.62rem;
   color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .match-card__vs {
@@ -8794,14 +8799,19 @@ select:focus {
   overflow: hidden;
   flex-shrink: 0;
 }
-.live-row__crest img {
+.live-row__crest__img {
   width: 80%;
   height: 80%;
   object-fit: contain;
 }
-.live-row__crest > span {
-  font-size: 0.7rem;
+.live-row__crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.55rem;
   color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .live-row__score {
@@ -9746,14 +9756,19 @@ select:focus {
   overflow: hidden;
   flex-shrink: 0;
 }
-.mybet-card__crest img {
+.mybet-card__crest__img {
   width: 80%;
   height: 80%;
   object-fit: contain;
 }
-.mybet-card__crest > span {
-  font-size: 0.78rem;
+.mybet-card__crest__initials {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.55rem;
   color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .mybet-card__vs {
