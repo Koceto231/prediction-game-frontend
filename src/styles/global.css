@@ -9173,12 +9173,14 @@ select:focus {
 
 /* Slide-in panel from the RIGHT. No scrim — the rest of the page stays
    fully interactive so the user can keep clicking 1/X/2 odds on other
-   matches and watch them accumulate in the slip without dismissing it. */
+   matches and watch them accumulate in the slip without dismissing it.
+   `bottom: 42px` clears the OddsTicker that sits at the very bottom of
+   the viewport (height: 42px, position: fixed). */
 .gvb-slip-panel {
   position: fixed;
   top: 64px;
   right: 0;
-  bottom: 0;
+  bottom: 42px;
   width: 360px;
   background: var(--surface-container, #201f1f);
   border-left: 1px solid var(--border-soft, #4d4633);
@@ -9190,9 +9192,18 @@ select:focus {
   transition: transform 0.24s ease;
   z-index: 40;
   box-shadow: -16px 0 32px rgba(0, 0, 0, 0.5);
-  overflow-y: auto;
+  overflow: hidden; /* internal sections control their own scroll */
 }
 .gvb-slip-panel--open { transform: translateX(0); }
+
+/* Only the picks LIST scrolls. The head, mode pill and footer
+   (stake + summary + actions) stay pinned so the Place Bet button
+   is always reachable no matter how many legs are in the slip. */
+.gvb-slip-panel__list {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 60px;
+}
 
 .gvb-slip-panel__head {
   display: flex;
