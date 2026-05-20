@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import OddsTicker from './components/OddsTicker';
-import QuickBetSidebar from './components/QuickBetSidebar';
 import BetSlipPanel from './components/BetSlipPanel';
 import { useAuth } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
@@ -79,7 +78,6 @@ function AppLayout() {
         </main>
       </div>
       <OddsTicker />
-      <QuickBetSidebar />
       <BetSlipPanel />
     </div>
   );

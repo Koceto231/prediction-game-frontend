@@ -30,26 +30,10 @@ export default function MatchCard({ match, selected, onSelect, onOddPick }) {
   const handleOddClick = (e, pick, oddVal) => {
     e.stopPropagation();
     if (oddVal == null) return;
-    // Quick Bet Mode: dispatch event for QuickBetSidebar to place a bet immediately
-    const qb = window.bpflQuickBet;
-    if (qb?.enabled) {
-      window.dispatchEvent(new CustomEvent('bpfl:quickbet:place', {
-        detail: {
-          matchId: match.id,
-          pick,
-          betType: 'Winner',
-          meta: {
-            fixture: `${match.homeTeamName} vs ${match.awayTeamName}`,
-            pickLabel: pick === 'Home' ? match.homeTeamName : pick === 'Away' ? match.awayTeamName : 'Draw',
-            odds: oddVal,
-          },
-        },
-      }));
-      return;
-    }
-    // Default behaviour: add the pick to the global BetSlipPanel.
-    // The slip auto-opens, lets the user adjust stake, and supports building
-    // multi-match accumulators by adding picks from more matches.
+    // Add the pick to the global BetSlipPanel via custom event.
+    // The slip auto-opens on the right, lets the user adjust stake, and
+    // supports building multi-match accumulators by adding picks from
+    // more matches without dismissing.
     window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
       detail: {
         matchId: match.id,
@@ -59,8 +43,8 @@ export default function MatchCard({ match, selected, onSelect, onOddPick }) {
         leagueLabel: match.leagueName ?? null,
       },
     }));
-    // Legacy callback path — kept for backwards compatibility with any caller
-    // that still wants its own modal flow instead of the slip.
+    // Legacy callback path — kept for any caller that still wants its
+    // own modal flow instead of the slip.
     if (onOddPick) onOddPick(match, pick, oddVal);
   };
 

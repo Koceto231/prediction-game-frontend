@@ -9132,13 +9132,12 @@ select:focus {
    │  GRIDIRON VELOCITY — Bet Slip (multi-match accumulator)      │
    ╰──────────────────────────────────────────────────────────────╯ */
 
-/* Floating launcher — bottom-RIGHT, stacked above the Quick Bet ⚡ FAB.
-   The two are aligned on the right edge so the user can switch between
-   them with a glance. */
+/* Floating launcher — bottom-RIGHT (Quick Bet FAB has been retired,
+   so the Slip now lives in its slot). */
 .gvb-slip-fab {
   position: fixed;
   right: 18px;
-  bottom: 124px;   /* sits 60 px above the Quick Bet FAB (bottom: 64) */
+  bottom: 64px;
   z-index: 38;
   display: inline-flex;
   align-items: center;
@@ -9447,7 +9446,7 @@ select:focus {
 
 @media (max-width: 600px) {
   .gvb-slip-panel { width: 100%; top: 56px; }
-  .gvb-slip-fab   { bottom: 130px; right: 12px; }
+  .gvb-slip-fab   { bottom: 70px; right: 12px; }
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
