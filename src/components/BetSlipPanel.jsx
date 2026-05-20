@@ -262,7 +262,6 @@ export default function BetSlipPanel() {
         )}
       </div>
 
-      {open && <div className="gvb-slip-panel__scrim" onClick={() => setOpen(false)} />}
     </>
   );
 }

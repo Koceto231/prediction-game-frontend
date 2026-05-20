@@ -9132,11 +9132,13 @@ select:focus {
    │  GRIDIRON VELOCITY — Bet Slip (multi-match accumulator)      │
    ╰──────────────────────────────────────────────────────────────╯ */
 
-/* Floating launcher — bottom-LEFT (Quick Bet FAB is bottom-right) */
+/* Floating launcher — bottom-RIGHT, stacked above the Quick Bet ⚡ FAB.
+   The two are aligned on the right edge so the user can switch between
+   them with a glance. */
 .gvb-slip-fab {
   position: fixed;
-  left: 18px;
-  bottom: 64px;
+  right: 18px;
+  bottom: 124px;   /* sits 60 px above the Quick Bet FAB (bottom: 64) */
   z-index: 38;
   display: inline-flex;
   align-items: center;
@@ -9170,35 +9172,28 @@ select:focus {
   text-align: center;
 }
 
-/* Slide-in panel from the LEFT */
+/* Slide-in panel from the RIGHT. No scrim — the rest of the page stays
+   fully interactive so the user can keep clicking 1/X/2 odds on other
+   matches and watch them accumulate in the slip without dismissing it. */
 .gvb-slip-panel {
   position: fixed;
   top: 64px;
-  left: 0;
+  right: 0;
   bottom: 0;
   width: 360px;
   background: var(--surface-container, #201f1f);
-  border-right: 1px solid var(--border-soft, #4d4633);
+  border-left: 1px solid var(--border-soft, #4d4633);
   padding: 18px 18px 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transform: translateX(-100%);
+  transform: translateX(100%);
   transition: transform 0.24s ease;
   z-index: 40;
-  box-shadow: 16px 0 32px rgba(0, 0, 0, 0.5);
+  box-shadow: -16px 0 32px rgba(0, 0, 0, 0.5);
   overflow-y: auto;
 }
 .gvb-slip-panel--open { transform: translateX(0); }
-
-.gvb-slip-panel__scrim {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 39;
-  animation: gvb-slip-scrim-in 0.18s ease;
-}
-@keyframes gvb-slip-scrim-in { from { opacity: 0; } to { opacity: 1; } }
 
 .gvb-slip-panel__head {
   display: flex;
@@ -9452,7 +9447,7 @@ select:focus {
 
 @media (max-width: 600px) {
   .gvb-slip-panel { width: 100%; top: 56px; }
-  .gvb-slip-fab   { bottom: 70px; left: 12px; }
+  .gvb-slip-fab   { bottom: 130px; right: 12px; }
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
