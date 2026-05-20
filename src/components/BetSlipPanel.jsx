@@ -1,0 +1,268 @@
+import { useEffect, useState, useMemo } from 'react';
+import api, { newIdempotencyKey } from '../api/apiClient';
+import { useWallet } from '../context/WalletContext';
+
+/**
+ * Global floating Bet Slip — collects 1/X/2 picks from any match (Matches
+ * page, Live page, anywhere). Two modes:
+ *
+ *   • SINGLE  (1 pick)  — places a plain Winner bet via POST /Bet
+ *   • ACCUM   (2+ picks) — places a multi-match accumulator via
+ *     POST /Bet/accumulator with one leg per pick, each carrying its
+ *     own matchId so the backend settles them against the right fixtures.
+ *
+ * Picks come in via the `bpfl:slip:add` custom event so any UI element
+ * (MatchCard odd buttons, LivePage odds, etc.) can opt in without prop
+ * drilling:
+ *
+ *   window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+ *     detail: { matchId, pick, odds, fixture, leagueLabel },
+ *   }));
+ *
+ * Only ONE pick per match is allowed (re-adding from the same match
+ * replaces the previous pick).
+ */
+
+const LS_KEY = 'bpfl:slip:items';
+
+export default function BetSlipPanel() {
+  const { balance, refreshBalance } = useWallet();
+  const [items,   setItems]   = useState([]);     // [{ matchId, pick, odds, fixture, leagueLabel }]
+  const [open,    setOpen]    = useState(false);
+  const [stake,   setStake]   = useState('10');
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) setItems(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  // Persist on every change
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
+  }, [items]);
+
+  // Open the slip automatically when the first pick is added
+  useEffect(() => {
+    if (items.length === 1) setOpen(true);
+  }, [items.length]);
+
+  // Custom-event listener — picks flow in from MatchCard / LivePage etc.
+  useEffect(() => {
+    const onAdd = (e) => {
+      const { matchId, pick, odds, fixture, leagueLabel } = e.detail || {};
+      if (!matchId || !pick || odds == null) return;
+      setItems(prev => {
+        // Replace any existing pick on the same match
+        const filtered = prev.filter(p => p.matchId !== matchId);
+        return [...filtered, { matchId, pick, odds: Number(odds), fixture, leagueLabel }];
+      });
+      setError(''); setSuccess('');
+    };
+    const onClear = () => setItems([]);
+    window.addEventListener('bpfl:slip:add',   onAdd);
+    window.addEventListener('bpfl:slip:clear', onClear);
+    return () => {
+      window.removeEventListener('bpfl:slip:add',   onAdd);
+      window.removeEventListener('bpfl:slip:clear', onClear);
+    };
+  }, []);
+
+  const remove = (matchId) =>
+    setItems(prev => prev.filter(p => p.matchId !== matchId));
+
+  const stakeNum = Number(stake) || 0;
+  const combined = useMemo(
+    () => items.reduce((acc, p) => acc * (Number(p.odds) || 1), 1),
+    [items],
+  );
+  const potential   = stakeNum > 0 ? stakeNum * combined : 0;
+  const overBalance = balance != null && stakeNum > Number(balance);
+  const isAccum     = items.length >= 2;
+
+  const handlePlace = async () => {
+    if (items.length === 0 || stakeNum <= 0 || loading || overBalance) return;
+    setLoading(true); setError(''); setSuccess('');
+    try {
+      if (isAccum) {
+        // Multi-match accumulator
+        const dto = {
+          matchId: items[0].matchId, // anchor — backend allows per-leg matchId override
+          amount: stakeNum,
+          legs: items.map(p => ({
+            matchId: p.matchId,
+            betType: 'Winner',
+            pick:    p.pick,
+          })),
+        };
+        await api.post('/Bet/accumulator', dto, {
+          headers: { 'X-Idempotency-Key': newIdempotencyKey() },
+        });
+      } else {
+        const p = items[0];
+        await api.post(
+          '/Bet',
+          { matchId: p.matchId, betType: 'Winner', pick: p.pick, amount: stakeNum },
+          { headers: { 'X-Idempotency-Key': newIdempotencyKey() } },
+        );
+      }
+      await refreshBalance();
+      setSuccess(isAccum ? `${items.length}-leg accumulator placed!` : 'Bet placed!');
+      setItems([]);
+      setTimeout(() => { setSuccess(''); setOpen(false); }, 1400);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to place bet.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pickShort = (pick) => pick === 'Home' ? '1' : pick === 'Away' ? '2' : 'X';
+
+  return (
+    <>
+      {/* Floating launcher — bottom-left, mirrors QuickBetSidebar (which is bottom-right) */}
+      <button
+        type="button"
+        className="gvb-slip-fab"
+        onClick={() => setOpen(o => !o)}
+        title={items.length === 0 ? 'Bet Slip' : `Bet Slip (${items.length})`}
+      >
+        <span className="gvb-slip-fab__icon">🎟</span>
+        <span className="gvb-slip-fab__label">Slip</span>
+        {items.length > 0 && <span className="gvb-slip-fab__badge">{items.length}</span>}
+      </button>
+
+      {/* Slide-in panel from the LEFT */}
+      <div className={`gvb-slip-panel${open ? ' gvb-slip-panel--open' : ''}`}>
+        <div className="gvb-slip-panel__head">
+          <span className="gvb-slip-panel__title">
+            BET SLIP {items.length > 0 && <span className="gvb-slip-panel__count">{items.length}</span>}
+          </span>
+          <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>×</button>
+        </div>
+
+        {items.length > 0 && (
+          <div className="gvb-slip-panel__mode">
+            {isAccum
+              ? <>ACCUMULATOR ({items.length} legs) — combined odds <strong>{combined.toFixed(2)}</strong></>
+              : <>SINGLE BET</>}
+          </div>
+        )}
+
+        <div className="gvb-slip-panel__list">
+          {items.length === 0 && (
+            <div className="gvb-slip-panel__empty">
+              <div className="gvb-slip-panel__empty-icon">🎯</div>
+              <div className="gvb-slip-panel__empty-text">Your bet slip is empty</div>
+              <div className="gvb-slip-panel__empty-hint">
+                Tap any <strong>1 / X / 2</strong> odd on the Matches or Live page to add it here.
+                Add a second pick from a different match to build a multi-match accumulator.
+              </div>
+            </div>
+          )}
+
+          {items.map(p => (
+            <div key={p.matchId} className="gvb-slip-pick">
+              <button
+                type="button"
+                className="gvb-slip-pick__remove"
+                onClick={() => remove(p.matchId)}
+                aria-label="Remove pick"
+              >×</button>
+              <div className="gvb-slip-pick__body">
+                <div className="gvb-slip-pick__fixture">{p.fixture || `Match #${p.matchId}`}</div>
+                {p.leagueLabel && <div className="gvb-slip-pick__league">{p.leagueLabel}</div>}
+                <div className="gvb-slip-pick__row">
+                  <span className="gvb-slip-pick__sel">
+                    <span className="gvb-slip-pick__sel-code">{pickShort(p.pick)}</span>
+                    <span className="gvb-slip-pick__sel-label">
+                      {p.pick === 'Home' ? 'Home Win' : p.pick === 'Away' ? 'Away Win' : 'Draw'}
+                    </span>
+                  </span>
+                  <span className="gvb-slip-pick__odds">{Number(p.odds).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {items.length > 0 && (
+          <>
+            <div className="gvb-slip-panel__stake">
+              <label className="gvb-slip-panel__stake-label">STAKE</label>
+              <div className="gvb-slip-panel__stake-input">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={stake}
+                  onChange={(e) => { setStake(e.target.value.replace(/[^\d.]/g, '')); setError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handlePlace(); }}
+                />
+                <span>€</span>
+              </div>
+              <div className="gvb-slip-panel__chips">
+                {[5, 10, 20, 50, 100].map(v => (
+                  <button type="button" key={v} className="gvb-slip-panel__chip" onClick={() => setStake(String(v))}>
+                    +{v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="gvb-slip-panel__summary">
+              <div className="gvb-slip-panel__summary-row">
+                <span>Total Stake</span><strong>€{stakeNum.toFixed(2)}</strong>
+              </div>
+              <div className="gvb-slip-panel__summary-row">
+                <span>Combined Odds</span><strong>{combined.toFixed(2)}</strong>
+              </div>
+              <div className="gvb-slip-panel__summary-row gvb-slip-panel__summary-row--big">
+                <span>Potential Win</span>
+                <strong className="gvb-slip-panel__potential">€{potential.toFixed(2)}</strong>
+              </div>
+            </div>
+
+            {balance != null && (
+              <div className={`gvb-slip-panel__balance${overBalance ? ' gvb-slip-panel__balance--over' : ''}`}>
+                Wallet: €{Number(balance).toFixed(2)}
+                {overBalance && <span> — insufficient funds</span>}
+              </div>
+            )}
+
+            {error   && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--error">{error}</div>}
+            {success && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--ok">{success}</div>}
+
+            <div className="gvb-slip-panel__actions">
+              <button
+                type="button"
+                className="gvb-slip-panel__btn gvb-slip-panel__btn--ghost"
+                onClick={() => { setItems([]); setStake('10'); setError(''); }}
+                disabled={loading}
+              >Clear</button>
+              <button
+                type="button"
+                className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"
+                onClick={handlePlace}
+                disabled={loading || stakeNum <= 0 || overBalance}
+              >
+                {loading
+                  ? 'Placing…'
+                  : isAccum
+                    ? `Place ${items.length}-Leg Acca €${stakeNum.toFixed(2)}`
+                    : `Place Bet €${stakeNum.toFixed(2)}`}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {open && <div className="gvb-slip-panel__scrim" onClick={() => setOpen(false)} />}
+    </>
+  );
+}

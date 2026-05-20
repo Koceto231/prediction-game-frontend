@@ -47,9 +47,21 @@ export default function MatchCard({ match, selected, onSelect, onOddPick }) {
       }));
       return;
     }
-    // Otherwise — open the Quick Stake modal in the parent page
-    if (onOddPick) { onOddPick(match, pick, oddVal); return; }
-    onSelect?.(match);
+    // Default behaviour: add the pick to the global BetSlipPanel.
+    // The slip auto-opens, lets the user adjust stake, and supports building
+    // multi-match accumulators by adding picks from more matches.
+    window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+      detail: {
+        matchId: match.id,
+        pick,
+        odds: oddVal,
+        fixture: `${match.homeTeamName} vs ${match.awayTeamName}`,
+        leagueLabel: match.leagueName ?? null,
+      },
+    }));
+    // Legacy callback path — kept for backwards compatibility with any caller
+    // that still wants its own modal flow instead of the slip.
+    if (onOddPick) onOddPick(match, pick, oddVal);
   };
 
   return (

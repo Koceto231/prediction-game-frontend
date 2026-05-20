@@ -849,7 +849,8 @@ export default function MatchesPage() {
                 if (selectedMatch?.id === match.id) { setSelectedMatch(null); resetPanel(); }
                 else { setSelectedMatch(match); resetPanel(); }
               }}
-              onOddPick={(m, pick, odds) => setQuickStake({ match: m, pick, odds })}
+              /* odd clicks dispatch to the global Bet Slip panel via
+                 `bpfl:slip:add` — see BetSlipPanel.jsx mounted in App.jsx. */
             />
           ))}
         </div>
