@@ -28,7 +28,13 @@ export default function MatchCard({ match, selected, onSelect, onOddPick }) {
   })();
 
   const handleOddClick = (e, pick, oddVal) => {
+    // Belt-and-braces: stop both React-synthetic propagation AND the native
+    // event so the surrounding `.gvm-card` onClick doesn't ALSO fire on
+    // mobile (where touch + synthetic click can race).
     e.stopPropagation();
+    e.preventDefault?.();
+    if (e.nativeEvent?.stopImmediatePropagation) e.nativeEvent.stopImmediatePropagation();
+
     if (oddVal == null) return;
     // Add the pick to the global BetSlipPanel via custom event.
     // The slip auto-opens on the right, lets the user adjust stake, and

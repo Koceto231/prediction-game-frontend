@@ -1,5 +1,17 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+
+// Kill-switch — QuickBet mode is retired but its localStorage flag may
+// still be set in users' browsers from before. Clear it on every app
+// boot so a cached old client bundle can't pick it up and short-circuit
+// odd clicks into instant bet placement.
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('bpfl:quickbet:enabled');
+    localStorage.removeItem('bpfl:quickbet:stake');
+  } catch { /* ignore — Safari private mode */ }
+  window.bpflQuickBet = { enabled: false, stake: 0 };
+}
 import OddsTicker from './components/OddsTicker';
 import BetSlipPanel from './components/BetSlipPanel';
 import { useAuth } from './context/AuthContext';
