@@ -10066,6 +10066,83 @@ select:focus {
 }
 .gvb-bet__stat-val--accent { color: var(--accent); }
 
+/* Accumulator legs — expandable list inside the bet card */
+.gvb-bet__legs {
+  margin-top: 14px;
+  background: var(--surface-2, #1c1b1b);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gvb-bet__legs-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+}
+.gvb-bet__legs-toggle:hover { background: rgba(240, 197, 25, 0.06); }
+.gvb-bet__legs-sum {
+  color: var(--accent);
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.gvb-bet__legs-list {
+  border-top: 1px solid var(--border-soft, #4d4633);
+}
+.gvb-bet__leg {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 0.84rem;
+}
+.gvb-bet__leg + .gvb-bet__leg {
+  border-top: 1px solid rgba(77, 70, 51, 0.4);
+}
+.gvb-bet__leg-no {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft, rgba(240, 197, 25, 0.12));
+  color: var(--accent);
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.gvb-bet__leg-desc {
+  color: var(--text-main);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.gvb-bet__leg-odds {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Foot row */
 .gvb-bet__foot {
   display: flex;

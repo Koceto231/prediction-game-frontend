@@ -43,9 +43,17 @@ function formatPick(bet) {
     return `${n}-leg accumulator`;
   }
   if (bet.betType === 'Winner') {
-    if (bet.betDescription?.includes('Home')) return `${bet.homeTeam} Win`;
-    if (bet.betDescription?.includes('Away')) return `${bet.awayTeam} Win`;
-    return 'Draw';
+    const desc = String(bet.betDescription ?? '');
+    // Backend may serialise the pick as a literal "Home" / "Away" / "Draw",
+    // OR as the team name itself, OR as something like "Lokomotiv Plovdiv Win".
+    // Match against the actual team names on the bet so we don't fall back to
+    // "Draw" just because the description has no English keyword.
+    if (bet.homeTeam && desc.toLowerCase().includes(bet.homeTeam.toLowerCase())) return `${bet.homeTeam} Win`;
+    if (bet.awayTeam && desc.toLowerCase().includes(bet.awayTeam.toLowerCase())) return `${bet.awayTeam} Win`;
+    if (/\bhome\b/i.test(desc)) return `${bet.homeTeam} Win`;
+    if (/\baway\b/i.test(desc)) return `${bet.awayTeam} Win`;
+    if (/\bdraw\b/i.test(desc)) return 'Draw';
+    return desc || 'Winner';
   }
   return bet.betDescription;
 }
@@ -190,6 +198,9 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
 function ActiveBetCard({ bet, onCashedOut }) {
   const live = isMatchLive(bet);
   const placedAgo = relativeTime(bet.createdAt);
+  const isAccum   = bet.betType === 'Accumulator';
+  const legs      = bet.accumulatorLegs ?? [];
+  const [legsOpen, setLegsOpen] = useState(true); // open by default for accumulators
 
   return (
     <div className={`gvb-bet${live ? ' gvb-bet--live' : ''}`}>
@@ -200,7 +211,11 @@ function ActiveBetCard({ bet, onCashedOut }) {
               <TeamCrest className="gvb-bet__crest" logoUrl={bet.homeTeamLogo} name={bet.homeTeam} />
             </div>
             <div className="gvb-bet__title-wrap">
-              <p className="gvb-bet__fixture">{bet.homeTeam} vs {bet.awayTeam}</p>
+              <p className="gvb-bet__fixture">
+                {isAccum
+                  ? `${legs.length}-leg accumulator`
+                  : `${bet.homeTeam} vs ${bet.awayTeam}`}
+              </p>
               <p className="gvb-bet__meta">{formatLeagueAndTime(bet)}</p>
             </div>
           </div>
@@ -213,7 +228,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
             <span className="gvb-bet__stat-val">{formatPick(bet)}</span>
           </div>
           <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">ODDS</span>
+            <span className="gvb-bet__stat-label">{isAccum ? 'COMBINED ODDS' : 'ODDS'}</span>
             <span className="gvb-bet__stat-val gvb-bet__stat-val--accent">{Number(bet.oddsAtBetTime).toFixed(2)}</span>
           </div>
           <div className="gvb-bet__stat">
@@ -225,6 +240,31 @@ function ActiveBetCard({ bet, onCashedOut }) {
             <span className="gvb-bet__stat-val">€{Number(bet.potentialPayout).toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Accumulator legs — collapsible list showing each pick */}
+        {isAccum && legs.length > 0 && (
+          <div className="gvb-bet__legs">
+            <button
+              type="button"
+              className="gvb-bet__legs-toggle"
+              onClick={() => setLegsOpen(o => !o)}
+            >
+              <span>{legsOpen ? '▾' : '▸'} Picks ({legs.length})</span>
+              <span className="gvb-bet__legs-sum">Combined {Number(bet.oddsAtBetTime).toFixed(2)}</span>
+            </button>
+            {legsOpen && (
+              <div className="gvb-bet__legs-list">
+                {legs.map((leg, i) => (
+                  <div key={i} className="gvb-bet__leg">
+                    <span className="gvb-bet__leg-no">{i + 1}</span>
+                    <span className="gvb-bet__leg-desc">{leg.description}</span>
+                    <span className="gvb-bet__leg-odds">{Number(leg.odds).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="gvb-bet__foot">
