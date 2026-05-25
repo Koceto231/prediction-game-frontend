@@ -8927,13 +8927,14 @@ select:focus {
   .gv-betslip   { display: none; } /* hide right rail first */
 }
 @media (max-width: 1100px) {
-  /* On phone / narrow tablets the Live Stats sidebar bunches with the
-     pitch tracker and feels cramped, so we hide it entirely. The pitch
-     tracker's live event banner already surfaces goals / cards /
-     corners / fouls / dangerous attacks at a glance, which is what the
-     user needs on a small screen. */
-  .gv-live-grid { grid-template-columns: 1fr; }
-  .gv-livestats { display: none; }
+  /* Single-column stack on phone / narrow tablets.
+     Use `order` to put the pitch tracker (.gv-live-center) FIRST and
+     the Live Stats sidebar SECOND, so the user lands on the pitch +
+     event banner immediately and just scrolls down for full stats. */
+  .gv-live-grid  { grid-template-columns: 1fr; }
+  .gv-live-center { order: 1; }
+  .gv-livestats   { order: 2; position: static; }
+  .gv-betslip     { order: 3; }
 }
 
 .gv-live-center {
