@@ -56,14 +56,8 @@ export default function LiveMatchCard({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect?.(match); }}
     >
       <div className="gvm-card__row">
-        {/* TIME column — live minute + LIVE label */}
+        {/* TIME column — live minute + pulsing red dot only */}
         <div className="gvm-card__time gvm-card__time--live">
-          {leagueChip && (
-            <span className="gvm-card__live-league">
-              <span className="gvm-card__live-league-flag">{leagueChip.flag}</span>
-              <span className="gvm-card__live-league-name">{leagueChip.short}</span>
-            </span>
-          )}
           <div className="gvm-card__time-clock gvm-card__time-clock--live">
             <span className="gvm-card__live-dot" />
             {minuteText}
@@ -104,14 +98,6 @@ export default function LiveMatchCard({
         )}
       </div>
 
-      {/* Optional stats chips row */}
-      {(goalChip || ycChip || cornerChip) && (
-        <div className="gvm-card__live-chips">
-          {goalChip   && <span className="gvm-card__live-chip">{goalChip}</span>}
-          {ycChip     && <span className="gvm-card__live-chip gvm-card__live-chip--yellow">{ycChip}</span>}
-          {cornerChip && <span className="gvm-card__live-chip">{cornerChip}</span>}
-        </div>
-      )}
     </div>
   );
 }
