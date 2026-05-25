@@ -1291,20 +1291,49 @@ export default function LivePage() {
                 </div>
               </div>
 
-              {/* Status pill at bottom — pulsing dot + phase text (stitch detail view) */}
-              <div className="gv-pitch-tracker__status">
-                <span className="gv-pitch-tracker__status-dot" />
-                <span className="gv-pitch-tracker__status-text">
-                  {(() => {
-                    if (isHT(selectedMatch.liveState)) return 'HALF TIME';
-                    if (isFT(selectedMatch.liveState)) return 'FULL TIME';
-                    if (is1H(selectedMatch.liveState)) return 'FIRST HALF — IN PLAY';
-                    if (is2H(selectedMatch.liveState)) return 'SECOND HALF — IN PLAY';
-                    if (isET(selectedMatch.liveState)) return 'EXTRA TIME — IN PLAY';
-                    return 'IN PLAY';
-                  })()}
-                </span>
-              </div>
+              {/* Latest event banner — replaces the status pill while a goal /
+                  card is "fresh". Falls back to the phase text otherwise. */}
+              {(() => {
+                const goals = selectedMatch.goalScorers ?? [];
+                const cards = selectedMatch.liveStats?.cardEvents ?? [];
+                const allEvents = [
+                  ...goals.map(g => ({ minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal', name: g.playerName })),
+                  ...cards.map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
+                ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0));
+                const last = allEvents[0];
+                const phaseText = isHT(selectedMatch.liveState) ? 'HALF TIME'
+                  : isFT(selectedMatch.liveState) ? 'FULL TIME'
+                  : is1H(selectedMatch.liveState) ? 'FIRST HALF — IN PLAY'
+                  : is2H(selectedMatch.liveState) ? 'SECOND HALF — IN PLAY'
+                  : isET(selectedMatch.liveState) ? 'EXTRA TIME — IN PLAY'
+                  : 'IN PLAY';
+
+                if (last) {
+                  const icon = last.kind === 'goal' || last.kind === 'og' ? '⚽'
+                            : last.kind === 'red' ? '🟥' : '🟨';
+                  const teamName = last.team === 'home'
+                    ? selectedMatch.homeTeamName
+                    : selectedMatch.awayTeamName;
+                  const kindLabel = last.kind === 'goal' ? 'GOAL'
+                    : last.kind === 'og'  ? 'OWN GOAL'
+                    : last.kind === 'red' ? 'RED CARD' : 'YELLOW CARD';
+                  return (
+                    <div className="gv-pitch-tracker__status gv-pitch-tracker__status--event">
+                      <span className="gv-pitch-tracker__event-icon">{icon}</span>
+                      <span className="gv-pitch-tracker__event-min">{last.minute}'</span>
+                      <span className="gv-pitch-tracker__event-kind">{kindLabel}</span>
+                      <span className="gv-pitch-tracker__event-team">— {teamName}</span>
+                      {last.name && <span className="gv-pitch-tracker__event-name">({last.name})</span>}
+                    </div>
+                  );
+                }
+                return (
+                  <div className="gv-pitch-tracker__status">
+                    <span className="gv-pitch-tracker__status-dot" />
+                    <span className="gv-pitch-tracker__status-text">{phaseText}</span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -1314,32 +1343,11 @@ export default function LivePage() {
             </div>
           )}
 
-          {/* MatchTracker (mini pitch + stats) replaced by LiveStatsAside sidebar
-              on desktop; shown only on narrow viewports where the sidebar collapses. */}
-          <div className="gv-mobile-tracker">
-            <MatchTracker match={selectedMatch} />
-          </div>
-
-          {myActiveBets.length > 0 && (
-            <div className="my-live-bets">
-              <div className="my-live-bets__header">
-                <span className="my-live-bets__title">Your active bets on this match</span>
-                <span className="my-live-bets__count">{myActiveBets.length}</span>
-              </div>
-              {myActiveBets.map(bet => (
-                <div key={bet.id} className="my-live-bets__row">
-                  <div className="my-live-bets__info">
-                    <span className="my-live-bets__pick">{bet.betDescription}</span>
-                    <span className="my-live-bets__meta">
-                      €{Number(bet.amount).toFixed(2)} @ {Number(bet.oddsAtBetTime).toFixed(2)}
-                      → €{Number(bet.potentialPayout).toFixed(2)}
-                    </span>
-                  </div>
-                  <CashOutBadge bet={bet} onCashedOut={handleLiveBetCashedOut} compact />
-                </div>
-              ))}
-            </div>
-          )}
+          {/* The old MatchTracker (mini pitch + stats) and the "Your active bets"
+              panel were removed from the centre column. On desktop the LiveStatsAside
+              sidebar covers their data; on mobile the sidebar now also shows below
+              the pitch (see .gv-live-grid responsive). Active cash-outs live in the
+              BetSlipAside on the right (also stacked on mobile). */}
 
           {!mode && (
             <>
