@@ -3,6 +3,7 @@ import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 import CashOutBadge from '../components/CashOutBadge';
 import TeamCrest from '../components/TeamCrest';
+import LiveMatchCard from '../components/LiveMatchCard';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
 import {
@@ -1190,7 +1191,7 @@ export default function LivePage() {
         )}
 
         {liveMatches.length > 0 && (
-          <div className="live-list">
+          <div className="gvm-list">
             {liveMatches.map(match => {
               const isSel    = selectedMatch?.id === match.id;
               const league   = LEAGUE_META[match.leagueCode];
@@ -1200,65 +1201,22 @@ export default function LivePage() {
               const ycA      = match.liveStats?.yellowCards?.away ?? 0;
               const corH     = match.liveStats?.corners?.home ?? 0;
               const corA     = match.liveStats?.corners?.away ?? 0;
-              const homeScore = match.homeScore ?? 0;
-              const awayScore = match.awayScore ?? 0;
 
               return (
-                <div
+                <LiveMatchCard
                   key={match.id}
-                  className={`live-row${isSel ? ' live-row--selected' : ''}`}
-                  onClick={() => {
+                  match={match}
+                  selected={isSel}
+                  onSelect={(m) => {
                     if (isSel) { setSelectedMatch(null); resetPanel(); }
-                    else       { setSelectedMatch(match); resetPanel(); }
+                    else       { setSelectedMatch(m); resetPanel(); }
                   }}
-                >
-                  {/* Left: league + minute */}
-                  <div className="live-row__meta">
-                    {league && (
-                      <span className="live-row__league">
-                        <span className="live-row__league-flag">{league.flag}</span>
-                        <span className="live-row__league-name">{league.short}</span>
-                      </span>
-                    )}
-                    <span className="live-row__minute">
-                      <span className="live-dot" />
-                      {displayMinute(match)}
-                    </span>
-                  </div>
-
-                  {/* Middle: teams + big score + chips (with team crests) */}
-                  <div className="live-row__fixture">
-                    <div className="live-row__teams">
-                      <span className="live-row__team">
-                        <TeamCrest className="live-row__crest" logoUrl={match.homeTeamLogo} name={match.homeTeamName} />
-                        {match.homeTeamName}
-                      </span>
-                      <span className="live-row__score">{homeScore} : {awayScore}</span>
-                      <span className="live-row__team live-row__team--away">
-                        {match.awayTeamName}
-                        <TeamCrest className="live-row__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
-                      </span>
-                    </div>
-                    <div className="live-row__chips">
-                      <span className="live-chip"><span className="live-chip__icon">⚽</span>{goalsH}–{goalsA}</span>
-                      {(ycH + ycA) > 0 && (
-                        <span className="live-chip live-chip--yellow"><span className="live-chip__icon">🟨</span>{ycH}–{ycA}</span>
-                      )}
-                      {(corH + corA) > 0 && (
-                        <span className="live-chip"><span className="live-chip__icon">⛳</span>{corH}–{corA}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: 1 / X / 2 odds + LIVE pill */}
-                  <div className="live-row__odds">
-                    <span className="live-odd"><span className="live-odd__label">1</span><span className="live-odd__value">{match.homeOdds ? Number(match.homeOdds).toFixed(2) : '—'}</span></span>
-                    <span className="live-odd"><span className="live-odd__label">X</span><span className="live-odd__value">{match.drawOdds ? Number(match.drawOdds).toFixed(2) : '—'}</span></span>
-                    <span className="live-odd"><span className="live-odd__label">2</span><span className="live-odd__value">{match.awayOdds ? Number(match.awayOdds).toFixed(2) : '—'}</span></span>
-                  </div>
-
-                  <span className="live-pill">LIVE</span>
-                </div>
+                  minuteText={displayMinute(match)}
+                  leagueChip={league || null}
+                  goalChip={`⚽ ${goalsH}-${goalsA}`}
+                  ycChip={(ycH + ycA) > 0 ? `🟨 ${ycH}-${ycA}` : null}
+                  cornerChip={(corH + corA) > 0 ? `⛳ ${corH}-${corA}` : null}
+                />
               );
             })}
           </div>
