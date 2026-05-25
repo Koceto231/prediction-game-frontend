@@ -6,6 +6,7 @@ import TeamCrest from '../components/TeamCrest';
 import LiveMatchCard from '../components/LiveMatchCard';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
+import useLiveEventQueue from '../hooks/useLiveEventQueue';
 import {
   is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, getTeamInitials,
 } from '../utils/liveState';
@@ -660,6 +661,10 @@ export default function LivePage() {
     });
   })();
   const [selectedMatch, setSelectedMatch] = useState(null);
+  // Detect goal / card / corner / shot-on-target / dangerous-attack / foul
+  // events on the selected match by diffing successive live-stats snapshots
+  // and surface ONE event at a time as a banner inside the pitch tracker.
+  const liveEvent = useLiveEventQueue(selectedMatch);
   const [mode, setMode]                   = useState('');
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
@@ -1291,16 +1296,12 @@ export default function LivePage() {
                 </div>
               </div>
 
-              {/* Latest event banner — replaces the status pill while a goal /
-                  card is "fresh". Falls back to the phase text otherwise. */}
+              {/* Live event banner — surfaces what's currently happening on
+                  the pitch (goal, card, corner, shot on target, dangerous
+                  attack, foul). Driven by useLiveEventQueue's stats diff;
+                  each event flashes in for 5 s then we fall back to the
+                  phase pill. */}
               {(() => {
-                const goals = selectedMatch.goalScorers ?? [];
-                const cards = selectedMatch.liveStats?.cardEvents ?? [];
-                const allEvents = [
-                  ...goals.map(g => ({ minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal', name: g.playerName })),
-                  ...cards.map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
-                ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0));
-                const last = allEvents[0];
                 const phaseText = isHT(selectedMatch.liveState) ? 'HALF TIME'
                   : isFT(selectedMatch.liveState) ? 'FULL TIME'
                   : is1H(selectedMatch.liveState) ? 'FIRST HALF — IN PLAY'
@@ -1308,22 +1309,19 @@ export default function LivePage() {
                   : isET(selectedMatch.liveState) ? 'EXTRA TIME — IN PLAY'
                   : 'IN PLAY';
 
-                if (last) {
-                  const icon = last.kind === 'goal' || last.kind === 'og' ? '⚽'
-                            : last.kind === 'red' ? '🟥' : '🟨';
-                  const teamName = last.team === 'home'
-                    ? selectedMatch.homeTeamName
-                    : selectedMatch.awayTeamName;
-                  const kindLabel = last.kind === 'goal' ? 'GOAL'
-                    : last.kind === 'og'  ? 'OWN GOAL'
-                    : last.kind === 'red' ? 'RED CARD' : 'YELLOW CARD';
+                if (liveEvent) {
+                  const icon = liveEvent.kind === 'goal' || liveEvent.kind === 'og' ? '⚽'
+                    : liveEvent.kind === 'red'    ? '🟥'
+                    : liveEvent.kind === 'yellow' ? '🟨'
+                    : liveEvent.kind === 'corner' ? '⛳'
+                    : liveEvent.kind === 'shot'   ? '🎯'
+                    : liveEvent.kind === 'danger' ? '🔥'
+                    : liveEvent.kind === 'foul'   ? '⚠️' : '•';
                   return (
-                    <div className="gv-pitch-tracker__status gv-pitch-tracker__status--event">
+                    <div className={`gv-pitch-tracker__status gv-pitch-tracker__status--event gv-pitch-tracker__status--${liveEvent.kind}`}>
                       <span className="gv-pitch-tracker__event-icon">{icon}</span>
-                      <span className="gv-pitch-tracker__event-min">{last.minute}'</span>
-                      <span className="gv-pitch-tracker__event-kind">{kindLabel}</span>
-                      <span className="gv-pitch-tracker__event-team">— {teamName}</span>
-                      {last.name && <span className="gv-pitch-tracker__event-name">({last.name})</span>}
+                      <span className="gv-pitch-tracker__event-kind">{liveEvent.title}</span>
+                      <span className="gv-pitch-tracker__event-team">— {liveEvent.sub}</span>
                     </div>
                   );
                 }

@@ -11246,6 +11246,34 @@ select:focus {
   font-style: italic;
 }
 
+/* Event-kind color variants — border tint cues the type at a glance */
+.gv-pitch-tracker__status--goal,
+.gv-pitch-tracker__status--og {
+  border-color: rgba(74, 222, 128, 0.55);
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.30);
+}
+.gv-pitch-tracker__status--yellow {
+  border-color: rgba(240, 197, 25, 0.55);
+  box-shadow: 0 0 14px rgba(240, 197, 25, 0.20);
+}
+.gv-pitch-tracker__status--red {
+  border-color: rgba(248, 113, 113, 0.60);
+  box-shadow: 0 0 14px rgba(248, 113, 113, 0.25);
+}
+.gv-pitch-tracker__status--corner {
+  border-color: rgba(240, 197, 25, 0.45);
+}
+.gv-pitch-tracker__status--shot {
+  border-color: rgba(110, 231, 183, 0.5);
+}
+.gv-pitch-tracker__status--danger {
+  border-color: rgba(251, 146, 60, 0.55);
+  box-shadow: 0 0 14px rgba(251, 146, 60, 0.25);
+}
+.gv-pitch-tracker__status--foul {
+  border-color: rgba(209, 198, 172, 0.35);
+}
+
 /* Responsive — squeeze on small screens */
 @media (max-width: 640px) {
   .gv-pitch-tracker__bg { height: auto; padding: 16px 14px; min-height: 280px; }
