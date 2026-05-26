@@ -1107,16 +1107,13 @@ export default function MatchesPage() {
                                 const next = dcPick === key ? '' : key;
                                 setDCPick(next);
                                 if (next && dcOdds != null) {
-                                  // Map DC key -> a pseudo-pick the slip can show.
-                                  // Backend will still settle Double Chance via the
-                                  // single-bet form below; the slip entry is for
-                                  // visibility only when combining with other matches.
                                   window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
                                     detail: {
-                                      matchId: selectedMatch.id,
-                                      pick:    key === 'HomeOrDraw' ? 'Home' : key === 'DrawOrAway' ? 'Away' : 'Home',
-                                      odds:    Number(dcOdds),
-                                      fixture: `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                      matchId:     selectedMatch.id,
+                                      betType:     'DoubleChance',
+                                      pick:        key,
+                                      odds:        Number(dcOdds),
+                                      fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
                                       leagueLabel: selectedMatch.leagueName ?? null,
                                     },
                                   }));
@@ -1150,16 +1147,36 @@ export default function MatchesPage() {
                         {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => (
                           <div key={line} className="ou-table__row">
                             <span className="ou-table__line">{label}</span>
-                            {['Over', 'Under'].map(pick => (
-                              <button key={pick} type="button"
-                                className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
-                                onClick={() => {
-                                  if (ouLine === line && ouPick === pick) { setField('ouLine',''); setField('ouPick',''); }
-                                  else { setField('ouLine', line); setField('ouPick', pick); }
-                                }}>
-                                {preOdds.ou?.[line]?.[pick] != null ? Number(preOdds.ou[line][pick]).toFixed(2) : preOddsLoading ? '…' : '—'}
-                              </button>
-                            ))}
+                            {['Over', 'Under'].map(pick => {
+                              const ouOdds = preOdds.ou?.[line]?.[pick];
+                              return (
+                                <button key={pick} type="button"
+                                  className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
+                                  onClick={() => {
+                                    const isToggleOff = ouLine === line && ouPick === pick;
+                                    if (isToggleOff) {
+                                      setField('ouLine',''); setField('ouPick','');
+                                    } else {
+                                      setField('ouLine', line); setField('ouPick', pick);
+                                      if (ouOdds != null) {
+                                        window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                                          detail: {
+                                            matchId:     selectedMatch.id,
+                                            betType:     'OverUnder',
+                                            pick,
+                                            line,
+                                            odds:        Number(ouOdds),
+                                            fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                            leagueLabel: selectedMatch.leagueName ?? null,
+                                          },
+                                        }));
+                                      }
+                                    }
+                                  }}>
+                                  {ouOdds != null ? Number(ouOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
+                                </button>
+                              );
+                            })}
                           </div>
                         ))}
                       </div>
@@ -1175,16 +1192,34 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.btts && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
-                          <button key={val} type="button"
-                            className={`market-option ${btts === val ? 'market-option--active' : ''}`}
-                            onClick={() => setField('btts', btts === val ? '' : val)}>
-                            <div className="market-option__label">{lbl}</div>
-                            <div className="market-option__odds">
-                              {preOdds.btts?.[val] != null ? Number(preOdds.btts[val]).toFixed(2) : preOddsLoading ? '…' : '—'}
-                            </div>
-                          </button>
-                        ))}
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => {
+                          const bttsOdds = preOdds.btts?.[val];
+                          return (
+                            <button key={val} type="button"
+                              className={`market-option ${btts === val ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                const next = btts === val ? '' : val;
+                                setField('btts', next);
+                                if (next && bttsOdds != null) {
+                                  window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                                    detail: {
+                                      matchId:     selectedMatch.id,
+                                      betType:     'BTTS',
+                                      pick:        val === 'true' ? 'Yes' : 'No',
+                                      odds:        Number(bttsOdds),
+                                      fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                      leagueLabel: selectedMatch.leagueName ?? null,
+                                    },
+                                  }));
+                                }
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">
+                                {bttsOdds != null ? Number(bttsOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

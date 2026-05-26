@@ -34,11 +34,22 @@ export default function BetSlipPanel() {
   const [error,   setError]   = useState('');
   const [success, setSuccess] = useState('');
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount. Backfill `key` and `betType` for
+  // any picks saved before the same-game-accumulator refactor so old slips
+  // keep working after upgrade.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setItems(parsed.map((p) => ({
+            ...p,
+            betType: p.betType || 'Winner',
+            key:     p.key     || `${p.matchId}:${p.betType || 'Winner'}:${p.pick}`,
+          })));
+        }
+      }
     } catch { /* ignore */ }
   }, []);
 
@@ -52,15 +63,42 @@ export default function BetSlipPanel() {
     if (items.length === 1) setOpen(true);
   }, [items.length]);
 
-  // Custom-event listener — picks flow in from MatchCard / LivePage etc.
+  // Custom-event listener — picks flow in from MatchCard / LivePage / MatchDetail.
+  //
+  // Same-game accumulator: multiple picks from the SAME match are allowed,
+  // as long as they target different markets. We dedupe by a composite key
+  //   `${matchId}:${betType}:${pick}`
+  // so re-clicking the exact same selection removes it (toggle), but adding
+  // a different market on the same match adds a new leg.
   useEffect(() => {
     const onAdd = (e) => {
-      const { matchId, pick, odds, fixture, leagueLabel } = e.detail || {};
+      const { matchId, pick, odds, fixture, leagueLabel, betType, marketLabel } = e.detail || {};
       if (!matchId || !pick || odds == null) return;
+      const bt  = betType || 'Winner';
+      const key = `${matchId}:${bt}:${pick}`;
       setItems(prev => {
-        // Replace any existing pick on the same match
-        const filtered = prev.filter(p => p.matchId !== matchId);
-        return [...filtered, { matchId, pick, odds: Number(odds), fixture, leagueLabel }];
+        // Toggle: if the exact same selection is already in the slip → remove it
+        if (prev.some(p => p.key === key)) {
+          return prev.filter(p => p.key !== key);
+        }
+        // For Match Result + Double Chance we still allow only ONE of THESE
+        // per match (you can't take both Home Win AND Home-or-Draw on the
+        // same game). Other markets stack freely.
+        const conflictsWithMainPick =
+          (bt === 'Winner' || bt === 'DoubleChance');
+        const filtered = conflictsWithMainPick
+          ? prev.filter(p => !(p.matchId === matchId && (p.betType === 'Winner' || p.betType === 'DoubleChance')))
+          : prev;
+        return [...filtered, {
+          key,
+          matchId,
+          betType: bt,
+          pick,
+          odds: Number(odds),
+          fixture,
+          leagueLabel,
+          marketLabel: marketLabel || null,
+        }];
       });
       setError(''); setSuccess('');
     };
@@ -73,8 +111,8 @@ export default function BetSlipPanel() {
     };
   }, []);
 
-  const remove = (matchId) =>
-    setItems(prev => prev.filter(p => p.matchId !== matchId));
+  const remove = (key) =>
+    setItems(prev => prev.filter(p => p.key !== key));
 
   const stakeNum = Number(stake) || 0;
   const combined = useMemo(
@@ -85,20 +123,35 @@ export default function BetSlipPanel() {
   const overBalance = balance != null && stakeNum > Number(balance);
   const isAccum     = items.length >= 2;
 
+  /**
+   * Build a leg DTO shape the backend understands for a given slip pick.
+   * Mirrors the field layout in PlaceBetDTO / AccumulatorLegDTO.
+   */
+  const toLegPayload = (p) => {
+    const base = { betType: p.betType || 'Winner' };
+    switch (base.betType) {
+      case 'Winner':
+        return { ...base, pick: p.pick };
+      case 'DoubleChance':
+        return { ...base, dCPick: p.pick };
+      case 'BTTS':
+        return { ...base, bTTSPick: p.pick === 'Yes' };
+      case 'OverUnder':
+        return { ...base, oULine: p.line, oUPick: p.pick };
+      default:
+        return { ...base, pick: p.pick };
+    }
+  };
+
   const handlePlace = async () => {
     if (items.length === 0 || stakeNum <= 0 || loading || overBalance) return;
     setLoading(true); setError(''); setSuccess('');
     try {
       if (isAccum) {
-        // Multi-match accumulator
         const dto = {
-          matchId: items[0].matchId, // anchor — backend allows per-leg matchId override
-          amount: stakeNum,
-          legs: items.map(p => ({
-            matchId: p.matchId,
-            betType: 'Winner',
-            pick:    p.pick,
-          })),
+          matchId: items[0].matchId,        // anchor; per-leg matchId overrides it
+          amount:  stakeNum,
+          legs:    items.map(p => ({ matchId: p.matchId, ...toLegPayload(p) })),
         };
         await api.post('/Bet/accumulator', dto, {
           headers: { 'X-Idempotency-Key': newIdempotencyKey() },
@@ -107,22 +160,53 @@ export default function BetSlipPanel() {
         const p = items[0];
         await api.post(
           '/Bet',
-          { matchId: p.matchId, betType: 'Winner', pick: p.pick, amount: stakeNum },
+          { matchId: p.matchId, ...toLegPayload(p), amount: stakeNum },
           { headers: { 'X-Idempotency-Key': newIdempotencyKey() } },
         );
       }
       await refreshBalance();
-      setSuccess(isAccum ? `${items.length}-leg accumulator placed!` : 'Bet placed!');
+      setSuccess(isAccum ? `Заложен ${modeLabel(items.length).toLowerCase()}!` : 'Залогът е приет!');
       setItems([]);
       setTimeout(() => { setSuccess(''); setOpen(false); }, 1400);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to place bet.');
+      setError(err?.response?.data?.message || 'Грешка при залагане.');
     } finally {
       setLoading(false);
     }
   };
 
   const pickShort = (pick) => pick === 'Home' ? '1' : pick === 'Away' ? '2' : 'X';
+
+  /** Human label for the pick code shown in slip rows. */
+  const pickLabel = (p) => {
+    switch (p.betType) {
+      case 'Winner':
+        return p.pick === 'Home' ? 'Краен резултат — 1'
+             : p.pick === 'Away' ? 'Краен резултат — 2'
+             :                     'Краен резултат — X';
+      case 'DoubleChance':
+        return p.pick === 'HomeOrDraw' ? 'Двоен шанс — 1X'
+             : p.pick === 'HomeOrAway' ? 'Двоен шанс — 12'
+             :                           'Двоен шанс — X2';
+      case 'BTTS':
+        return `И двата отбора отбелязват — ${p.pick === 'Yes' ? 'Да' : 'Не'}`;
+      case 'OverUnder':
+        return `Голове ${p.pick === 'Over' ? 'над' : 'под'} ${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
+      default:
+        return p.marketLabel || p.pick;
+    }
+  };
+
+  /** Short chip code (used in collapsed bar). */
+  const pickChip = (p) => {
+    switch (p.betType) {
+      case 'Winner':       return pickShort(p.pick);
+      case 'DoubleChance': return p.pick === 'HomeOrDraw' ? '1X' : p.pick === 'HomeOrAway' ? '12' : 'X2';
+      case 'BTTS':         return p.pick === 'Yes' ? 'ДА' : 'НЕ';
+      case 'OverUnder':    return `${p.pick === 'Over' ? 'O' : 'U'}${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
+      default:             return pickShort(p.pick);
+    }
+  };
 
   // Bulgarian label for accumulator type based on legs count
   const modeLabel = (n) =>
@@ -159,8 +243,8 @@ export default function BetSlipPanel() {
           <span className="gvb-slip-bar__mode">{modeLabel(items.length)}</span>
           <div className="gvb-slip-bar__chips">
             {items.map(p => (
-              <span key={p.matchId} className="gvb-slip-bar__chip" title={p.fixture}>
-                {pickShort(p.pick)}
+              <span key={p.key} className="gvb-slip-bar__chip" title={p.fixture}>
+                {pickChip(p)}
               </span>
             ))}
           </div>
@@ -230,11 +314,11 @@ export default function BetSlipPanel() {
           )}
 
           {items.map(p => (
-            <div key={p.matchId} className="gvb-slip-pick">
+            <div key={p.key} className="gvb-slip-pick">
               <button
                 type="button"
                 className="gvb-slip-pick__remove"
-                onClick={() => remove(p.matchId)}
+                onClick={() => remove(p.key)}
                 aria-label="Премахни"
               >×</button>
               <div className="gvb-slip-pick__body">
@@ -242,10 +326,8 @@ export default function BetSlipPanel() {
                 {p.leagueLabel && <div className="gvb-slip-pick__league">{p.leagueLabel}</div>}
                 <div className="gvb-slip-pick__row">
                   <span className="gvb-slip-pick__sel">
-                    <span className="gvb-slip-pick__sel-code">{pickShort(p.pick)}</span>
-                    <span className="gvb-slip-pick__sel-label">
-                      {p.pick === 'Home' ? 'Краен резултат — 1' : p.pick === 'Away' ? 'Краен резултат — 2' : 'Краен резултат — X'}
-                    </span>
+                    <span className="gvb-slip-pick__sel-code">{pickChip(p)}</span>
+                    <span className="gvb-slip-pick__sel-label">{pickLabel(p)}</span>
                   </span>
                   <span className="gvb-slip-pick__odds">{Number(p.odds).toFixed(2)}</span>
                 </div>
