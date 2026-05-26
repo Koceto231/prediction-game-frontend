@@ -53,6 +53,85 @@ function TeamMatchSearch() {
   );
 }
 
+// ─── Venue lookup: search Sportmonks for stadium photo + meta ─────
+function VenueLookup() {
+  const [query, setQuery]     = useState('Vivacom');
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const search = async () => {
+    const q = query.trim();
+    if (!q) return;
+    setLoading(true); setError(''); setResults(null);
+    try {
+      const r = await api.get(`/admin/sync/debug/venue/${encodeURIComponent(q)}`);
+      setResults(r.data?.results ?? []);
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || 'Failed to fetch.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="admin-input"
+          placeholder="Stadium name (e.g. Vivacom, Anfield, Camp Nou)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && search()}
+          style={{ flex: 1 }}
+        />
+        <button className="admin-btn" type="button" onClick={search} disabled={loading}>
+          {loading ? '…' : '🔍'}
+        </button>
+      </div>
+
+      {error && <p className="admin-hint" style={{ color: '#f87171' }}>{error}</p>}
+      {results && results.length === 0 && <p className="admin-hint">No venues match that name.</p>}
+
+      {results && results.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 12 }}>
+          {results.map(v => (
+            <div key={v.id} style={{ background: 'var(--surface-2, #1c1b1b)', border: '1px solid var(--border-soft, #4d4633)', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {v.imagePath ? (
+                <img
+                  src={v.imagePath}
+                  alt={v.name ?? ''}
+                  loading="lazy"
+                  style={{ width: '100%', height: 140, objectFit: 'cover', background: '#0a0a0a' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: 140, background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  No image
+                </div>
+              )}
+              <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.86rem' }}>{v.name ?? '—'}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {[v.city, v.capacity != null ? `${v.capacity.toLocaleString()} seats` : null].filter(Boolean).join(' · ') || '—'}
+                </div>
+                <div style={{ fontSize: '0.62rem', color: 'var(--accent)', wordBreak: 'break-all', marginTop: 4 }}>#{v.id}</div>
+                {v.imagePath && (
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    style={{ marginTop: 6, fontSize: '0.72rem', padding: '4px 8px' }}
+                    onClick={() => { navigator.clipboard?.writeText(v.imagePath); }}
+                    title="Copy CDN URL to clipboard"
+                  >📋 Copy URL</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Format a Date as yyyy-MM-dd for <input type="date">
 function toDateInput(d) {
   return d.toISOString().slice(0, 10);
@@ -654,6 +733,14 @@ export default function AdminPage() {
               Намери мач по отбор → виж ID → изтрий го директно
             </div>
             <TeamMatchSearch />
+          </AdminSection>
+
+          {/* ── Venue / Stadium Images ── */}
+          <AdminSection title="Venue / Stadium Images">
+            <p className="admin-hint" style={{ marginTop: 0 }}>
+              Търси стадион по име в Sportmonks и виж снимката, която ще се покаже в match detail-а.
+            </p>
+            <VenueLookup />
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
