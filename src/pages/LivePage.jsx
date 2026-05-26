@@ -1268,6 +1268,14 @@ export default function LivePage() {
                 </span>
               </div>
 
+              {/* Venue line — small chip under the top bar */}
+              {selectedMatch.venueName && (
+                <div className="gv-pitch-tracker__venue">
+                  📍 {selectedMatch.venueName}
+                  {selectedMatch.venueCity && <span> · {selectedMatch.venueCity}</span>}
+                </div>
+              )}
+
               {/* Score + shields */}
               <div className="gv-pitch-tracker__main">
                 <div className="gv-pitch-tracker__team gv-pitch-tracker__team--home">

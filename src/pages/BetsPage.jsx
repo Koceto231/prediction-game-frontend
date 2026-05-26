@@ -75,7 +75,11 @@ function formatLeagueAndTime(bet) {
   else if (target.getTime() === tomorrow.getTime()) when = 'TOMORROW';
   else when = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  return `${league} • ${when} ${time}`;
+  const head = `${league} • ${when} ${time}`;
+  if (bet.venueName) {
+    return `${head} • 📍 ${bet.venueName}${bet.venueCity ? `, ${bet.venueCity}` : ''}`;
+  }
+  return head;
 }
 
 function relativeTime(iso) {
