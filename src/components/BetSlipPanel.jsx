@@ -88,15 +88,41 @@ export default function BetSlipPanel() {
           return prev.filter(p => p.key !== key);
         }
 
-        // Determine which existing picks (if any) conflict with this new one
+        // Two-step conflict detection on the same match:
+        //
+        //   1. SAME-MARKET dedupe — picking another value in the same market
+        //      replaces the previous one (Yes ↔ No, Over ↔ Under on the same
+        //      line, one Winner / DC per match, …).
+        //
+        //   2. SEMANTIC conflicts — combinations that are mathematically
+        //      impossible to win together. The slip silently drops the older
+        //      pick so the user's latest selection always sticks. E.g. you
+        //      can't bet "Ludogorets win" AND "0-0 (Under 0.5)" — Ludogorets
+        //      winning requires at least one goal, so the Under 0.5 leg
+        //      would always lose. Adding the second one removes the first.
+        const newPick = { matchId, betType: bt, pick, line: line || null };
+        const isWinnerNonDraw = (p) => p.betType === 'Winner'
+          && (p.pick === 'Home' || p.pick === 'Away');
+        const isDCExcludesDraw = (p) => p.betType === 'DoubleChance'
+          && p.pick === 'HomeOrAway';
+        const isUnder05 = (p) => p.betType === 'OverUnder'
+          && p.pick === 'Under' && p.line === 'Line05';
+        // Winner home/away (or 12 double chance) implies a winner exists,
+        // which implies ≥1 goal. So Under 0.5 on the same match contradicts.
+        const needsAtLeastOneGoal = (p) => isWinnerNonDraw(p) || isDCExcludesDraw(p);
+
         const isConflict = (p) => {
           if (p.matchId !== matchId) return false;
-          if (bt === 'Winner' || bt === 'DoubleChance')
-            return p.betType === 'Winner' || p.betType === 'DoubleChance';
-          if (bt === 'BTTS')
-            return p.betType === 'BTTS';
-          if (bt === 'OverUnder')
-            return p.betType === 'OverUnder' && (p.line || '') === (line || '');
+          // 1. same-market dedupe
+          if (bt === 'Winner' || bt === 'DoubleChance') {
+            if (p.betType === 'Winner' || p.betType === 'DoubleChance') return true;
+          }
+          if (bt === 'BTTS' && p.betType === 'BTTS') return true;
+          if (bt === 'OverUnder' && p.betType === 'OverUnder'
+              && (p.line || '') === (line || '')) return true;
+          // 2. semantic conflicts
+          if (needsAtLeastOneGoal(newPick) && isUnder05(p)) return true;
+          if (needsAtLeastOneGoal(p)        && isUnder05(newPick)) return true;
           return false;
         };
 
