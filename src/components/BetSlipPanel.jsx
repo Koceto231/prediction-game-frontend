@@ -184,31 +184,47 @@ export default function BetSlipPanel() {
         </button>
       )}
 
-      {/* Slide-in panel from the LEFT */}
+      {/* Slide-in panel from the RIGHT */}
       <div className={`gvb-slip-panel${open ? ' gvb-slip-panel--open' : ''}`}>
         <div className="gvb-slip-panel__head">
+          <button
+            type="button"
+            className="gvb-slip-panel__head-icon"
+            onClick={clearAll}
+            title="Изчисти всички"
+            disabled={items.length === 0}
+          >🗑</button>
           <span className="gvb-slip-panel__title">
-            BET SLIP {items.length > 0 && <span className="gvb-slip-panel__count">{items.length}</span>}
+            ФИШ {items.length > 0 && <span className="gvb-slip-panel__count">{items.length}</span>}
           </span>
-          <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>×</button>
+          <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>⌄</button>
         </div>
 
-        {items.length > 0 && (
-          <div className="gvb-slip-panel__mode">
-            {isAccum
-              ? <>ACCUMULATOR ({items.length} legs) — combined odds <strong>{combined.toFixed(2)}</strong></>
-              : <>SINGLE BET</>}
-          </div>
-        )}
+        {/* Tabs row — only Single + Multi are real modes for now */}
+        <div className="gvb-slip-panel__tabs" role="tablist">
+          <button type="button" role="tab"
+            className={`gvb-slip-panel__tab${!isAccum ? ' gvb-slip-panel__tab--active' : ''}`}
+            disabled
+          >Единични</button>
+          <button type="button" role="tab"
+            className={`gvb-slip-panel__tab${isAccum ? ' gvb-slip-panel__tab--active' : ''}`}
+            disabled
+          >Множествени</button>
+          <button type="button" role="tab"
+            className="gvb-slip-panel__tab"
+            disabled
+            title="Скоро"
+          >Системи</button>
+        </div>
 
         <div className="gvb-slip-panel__list">
           {items.length === 0 && (
             <div className="gvb-slip-panel__empty">
               <div className="gvb-slip-panel__empty-icon">🎯</div>
-              <div className="gvb-slip-panel__empty-text">Your bet slip is empty</div>
+              <div className="gvb-slip-panel__empty-text">Фишът е празен</div>
               <div className="gvb-slip-panel__empty-hint">
-                Tap any <strong>1 / X / 2</strong> odd on the Matches or Live page to add it here.
-                Add a second pick from a different match to build a multi-match accumulator.
+                Натисни <strong>1 / X / 2</strong> на който и да е мач, за да го добавиш тук.
+                Добави втори pick от друг мач, за да направиш колонка.
               </div>
             </div>
           )}
@@ -219,7 +235,7 @@ export default function BetSlipPanel() {
                 type="button"
                 className="gvb-slip-pick__remove"
                 onClick={() => remove(p.matchId)}
-                aria-label="Remove pick"
+                aria-label="Премахни"
               >×</button>
               <div className="gvb-slip-pick__body">
                 <div className="gvb-slip-pick__fixture">{p.fixture || `Match #${p.matchId}`}</div>
@@ -228,7 +244,7 @@ export default function BetSlipPanel() {
                   <span className="gvb-slip-pick__sel">
                     <span className="gvb-slip-pick__sel-code">{pickShort(p.pick)}</span>
                     <span className="gvb-slip-pick__sel-label">
-                      {p.pick === 'Home' ? 'Home Win' : p.pick === 'Away' ? 'Away Win' : 'Draw'}
+                      {p.pick === 'Home' ? 'Краен резултат — 1' : p.pick === 'Away' ? 'Краен резултат — 2' : 'Краен резултат — X'}
                     </span>
                   </span>
                   <span className="gvb-slip-pick__odds">{Number(p.odds).toFixed(2)}</span>
@@ -240,8 +256,14 @@ export default function BetSlipPanel() {
 
         {items.length > 0 && (
           <>
+            {/* Mode + combined odds banner — mimics "Двоен  9.21" row */}
+            <div className="gvb-slip-panel__totalrow">
+              <span className="gvb-slip-panel__totalrow-mode">{modeLabel(items.length)}</span>
+              <span className="gvb-slip-panel__totalrow-odds">{combined.toFixed(2)}</span>
+            </div>
+
             <div className="gvb-slip-panel__stake">
-              <label className="gvb-slip-panel__stake-label">STAKE</label>
+              <label className="gvb-slip-panel__stake-label">ЗАЛОГ</label>
               <div className="gvb-slip-panel__stake-input">
                 <input
                   type="text"
@@ -263,21 +285,21 @@ export default function BetSlipPanel() {
 
             <div className="gvb-slip-panel__summary">
               <div className="gvb-slip-panel__summary-row">
-                <span>Total Stake</span><strong>€{stakeNum.toFixed(2)}</strong>
+                <span>Общ залог</span><strong>€{stakeNum.toFixed(2)}</strong>
               </div>
               <div className="gvb-slip-panel__summary-row">
-                <span>Combined Odds</span><strong>{combined.toFixed(2)}</strong>
+                <span>Общ коефициент</span><strong>{combined.toFixed(2)}</strong>
               </div>
               <div className="gvb-slip-panel__summary-row gvb-slip-panel__summary-row--big">
-                <span>Potential Win</span>
+                <span>Възможна печалба</span>
                 <strong className="gvb-slip-panel__potential">€{potential.toFixed(2)}</strong>
               </div>
             </div>
 
             {balance != null && (
               <div className={`gvb-slip-panel__balance${overBalance ? ' gvb-slip-panel__balance--over' : ''}`}>
-                Wallet: €{Number(balance).toFixed(2)}
-                {overBalance && <span> — insufficient funds</span>}
+                Баланс: €{Number(balance).toFixed(2)}
+                {overBalance && <span> — недостатъчни средства</span>}
               </div>
             )}
 
@@ -290,7 +312,7 @@ export default function BetSlipPanel() {
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--ghost"
                 onClick={() => { setItems([]); setStake('10'); setError(''); }}
                 disabled={loading}
-              >Clear</button>
+              >Изчисти</button>
               <button
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"
@@ -298,10 +320,10 @@ export default function BetSlipPanel() {
                 disabled={loading || stakeNum <= 0 || overBalance}
               >
                 {loading
-                  ? 'Placing…'
+                  ? 'Залагане…'
                   : isAccum
-                    ? `Place ${items.length}-Leg Acca €${stakeNum.toFixed(2)}`
-                    : `Place Bet €${stakeNum.toFixed(2)}`}
+                    ? `Заложи ${modeLabel(items.length).toLowerCase()} €${stakeNum.toFixed(2)}`
+                    : `Заложи €${stakeNum.toFixed(2)}`}
               </button>
             </div>
           </>

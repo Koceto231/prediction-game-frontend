@@ -1060,7 +1060,23 @@ export default function MatchesPage() {
                         ].map(({ key, label, odds }) => (
                           <button key={key} type="button"
                             className={`market-option ${winner === key ? 'market-option--active' : ''}`}
-                            onClick={() => setField('winner', winner === key ? '' : key)}>
+                            onClick={() => {
+                              const next = winner === key ? '' : key;
+                              setField('winner', next);
+                              // Also push to the global Bet Slip so the user can build a column
+                              // by adding picks from multiple matches.
+                              if (next && odds != null) {
+                                window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                                  detail: {
+                                    matchId: selectedMatch.id,
+                                    pick:    key,
+                                    odds:    Number(odds),
+                                    fixture: `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                    leagueLabel: selectedMatch.leagueName ?? null,
+                                  },
+                                }));
+                              }
+                            }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
                           </button>
@@ -1082,18 +1098,37 @@ export default function MatchesPage() {
                           const [a, b] = key === 'HomeOrDraw' ? [selectedMatch.homeTeamName, 'Draw']
                                        : key === 'DrawOrAway' ? ['Draw', selectedMatch.awayTeamName]
                                        : [selectedMatch.homeTeamName, selectedMatch.awayTeamName];
+                          const dcOdds = preOdds.dc?.[key];
                           return (
                             <button key={key} type="button"
                               className={`market-option market-option--htft ${dcPick === key ? 'market-option--active' : ''}`}
                               title={`${a} or ${b}`}
-                              onClick={() => setDCPick(dcPick === key ? '' : key)}>
+                              onClick={() => {
+                                const next = dcPick === key ? '' : key;
+                                setDCPick(next);
+                                if (next && dcOdds != null) {
+                                  // Map DC key -> a pseudo-pick the slip can show.
+                                  // Backend will still settle Double Chance via the
+                                  // single-bet form below; the slip entry is for
+                                  // visibility only when combining with other matches.
+                                  window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                                    detail: {
+                                      matchId: selectedMatch.id,
+                                      pick:    key === 'HomeOrDraw' ? 'Home' : key === 'DrawOrAway' ? 'Away' : 'Home',
+                                      odds:    Number(dcOdds),
+                                      fixture: `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                      leagueLabel: selectedMatch.leagueName ?? null,
+                                    },
+                                  }));
+                                }
+                              }}>
                               <div className="market-option__label htft-stack">
                                 <span className="htft-stack__line">{a}</span>
                                 <span className="htft-stack__sep">or</span>
                                 <span className="htft-stack__line">{b}</span>
                               </div>
                               <div className="market-option__odds">
-                                {preOdds.dc?.[key] != null ? Number(preOdds.dc[key]).toFixed(2) : preOddsLoading ? '…' : '—'}
+                                {dcOdds != null ? Number(dcOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
                               </div>
                             </button>
                           );
