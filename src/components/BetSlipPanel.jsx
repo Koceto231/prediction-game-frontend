@@ -67,37 +67,49 @@ export default function BetSlipPanel() {
   //
   // Same-game accumulator: multiple picks from the SAME match are allowed,
   // as long as they target different markets. We dedupe by a composite key
-  //   `${matchId}:${betType}:${pick}`
-  // so re-clicking the exact same selection removes it (toggle), but adding
-  // a different market on the same match adds a new leg.
+  //   `${matchId}:${betType}:${pick}:${line || ''}`
+  // so re-clicking the exact same selection removes it (toggle).
+  //
+  // Beyond exact-key toggling, the following CONFLICTS still apply within
+  // the same match (adding a new pick removes the conflicting one):
+  //   • Winner ↔ Double Chance   — pick one or the other, not both
+  //   • BTTS Yes ↔ BTTS No       — only one BTTS pick per match
+  //   • OverUnder Over@line ↔ Under@line — only one O/U pick per line
   useEffect(() => {
     const onAdd = (e) => {
-      const { matchId, pick, odds, fixture, leagueLabel, betType, marketLabel } = e.detail || {};
+      const { matchId, pick, odds, fixture, leagueLabel, betType, line } = e.detail || {};
       if (!matchId || !pick || odds == null) return;
       const bt  = betType || 'Winner';
-      const key = `${matchId}:${bt}:${pick}`;
+      const key = `${matchId}:${bt}:${pick}:${line || ''}`;
+
       setItems(prev => {
-        // Toggle: if the exact same selection is already in the slip → remove it
+        // Exact-same selection already there → toggle off
         if (prev.some(p => p.key === key)) {
           return prev.filter(p => p.key !== key);
         }
-        // For Match Result + Double Chance we still allow only ONE of THESE
-        // per match (you can't take both Home Win AND Home-or-Draw on the
-        // same game). Other markets stack freely.
-        const conflictsWithMainPick =
-          (bt === 'Winner' || bt === 'DoubleChance');
-        const filtered = conflictsWithMainPick
-          ? prev.filter(p => !(p.matchId === matchId && (p.betType === 'Winner' || p.betType === 'DoubleChance')))
-          : prev;
+
+        // Determine which existing picks (if any) conflict with this new one
+        const isConflict = (p) => {
+          if (p.matchId !== matchId) return false;
+          if (bt === 'Winner' || bt === 'DoubleChance')
+            return p.betType === 'Winner' || p.betType === 'DoubleChance';
+          if (bt === 'BTTS')
+            return p.betType === 'BTTS';
+          if (bt === 'OverUnder')
+            return p.betType === 'OverUnder' && (p.line || '') === (line || '');
+          return false;
+        };
+
+        const filtered = prev.filter(p => !isConflict(p));
         return [...filtered, {
           key,
           matchId,
           betType: bt,
           pick,
-          odds: Number(odds),
+          line:    line || null,
+          odds:    Number(odds),
           fixture,
           leagueLabel,
-          marketLabel: marketLabel || null,
         }];
       });
       setError(''); setSuccess('');
@@ -119,6 +131,23 @@ export default function BetSlipPanel() {
     () => items.reduce((acc, p) => acc * (Number(p.odds) || 1), 1),
     [items],
   );
+
+  // Group picks by match — render one card per fixture with sub-rows inside.
+  // Insertion order is preserved by stamping the first-seen order.
+  const grouped = useMemo(() => {
+    const byMatch = new Map();
+    items.forEach((p) => {
+      const list = byMatch.get(p.matchId);
+      if (list) list.push(p);
+      else byMatch.set(p.matchId, [p]);
+    });
+    return Array.from(byMatch.entries()).map(([matchId, picks]) => ({
+      matchId,
+      fixture:     picks[0].fixture,
+      leagueLabel: picks[0].leagueLabel,
+      picks,
+    }));
+  }, [items]);
   const potential   = stakeNum > 0 ? stakeNum * combined : 0;
   const overBalance = balance != null && stakeNum > Number(balance);
   const isAccum     = items.length >= 2;
@@ -313,24 +342,34 @@ export default function BetSlipPanel() {
             </div>
           )}
 
-          {items.map(p => (
-            <div key={p.key} className="gvb-slip-pick">
+          {grouped.map(g => (
+            <div key={g.matchId} className="gvb-slip-pick">
               <button
                 type="button"
                 className="gvb-slip-pick__remove"
-                onClick={() => remove(p.key)}
-                aria-label="Премахни"
+                onClick={() => setItems(prev => prev.filter(p => p.matchId !== g.matchId))}
+                aria-label="Премахни мача"
+                title="Премахни всички picks от мача"
               >×</button>
               <div className="gvb-slip-pick__body">
-                <div className="gvb-slip-pick__fixture">{p.fixture || `Match #${p.matchId}`}</div>
-                {p.leagueLabel && <div className="gvb-slip-pick__league">{p.leagueLabel}</div>}
-                <div className="gvb-slip-pick__row">
-                  <span className="gvb-slip-pick__sel">
-                    <span className="gvb-slip-pick__sel-code">{pickChip(p)}</span>
-                    <span className="gvb-slip-pick__sel-label">{pickLabel(p)}</span>
-                  </span>
-                  <span className="gvb-slip-pick__odds">{Number(p.odds).toFixed(2)}</span>
-                </div>
+                <div className="gvb-slip-pick__fixture">{g.fixture || `Match #${g.matchId}`}</div>
+                {g.leagueLabel && <div className="gvb-slip-pick__league">{g.leagueLabel}</div>}
+                {g.picks.map(p => (
+                  <div key={p.key} className="gvb-slip-pick__row gvb-slip-pick__row--sub">
+                    <span className="gvb-slip-pick__sel">
+                      <span className="gvb-slip-pick__sel-code">{pickChip(p)}</span>
+                      <span className="gvb-slip-pick__sel-label">{pickLabel(p)}</span>
+                    </span>
+                    <span className="gvb-slip-pick__odds">{Number(p.odds).toFixed(2)}</span>
+                    <button
+                      type="button"
+                      className="gvb-slip-pick__row-remove"
+                      onClick={() => remove(p.key)}
+                      aria-label="Премахни pick"
+                      title="Премахни този pick"
+                    >×</button>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
