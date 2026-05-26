@@ -888,7 +888,8 @@ export default function MatchesPage() {
                 <div className="gvmd-hero__teamname">{selectedMatch.homeTeamName}</div>
               </div>
 
-              {/* CENTER — time, date, venue */}
+              {/* CENTER — time + date only. Venue moves to its own row
+                  below so it doesn't squeeze the team columns on mobile. */}
               <div className="gvmd-hero__center">
                 <div className="gvmd-hero__time">
                   {new Date(selectedMatch.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
@@ -896,11 +897,6 @@ export default function MatchesPage() {
                 <div className="gvmd-hero__date">
                   {new Date(selectedMatch.matchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
                 </div>
-                {selectedMatch.venueName && (
-                  <div className="gvmd-hero__venue">
-                    📍 {selectedMatch.venueName.toUpperCase()}{selectedMatch.venueCity ? ` · ${selectedMatch.venueCity}` : ''}
-                  </div>
-                )}
               </div>
 
               {/* AWAY shield + name */}
@@ -915,6 +911,14 @@ export default function MatchesPage() {
                 <div className="gvmd-hero__teamname">{selectedMatch.awayTeamName}</div>
               </div>
             </div>
+
+            {/* Venue line — sits BELOW the team row so it can span the full
+                width on mobile without squeezing the team names. */}
+            {selectedMatch.venueName && (
+              <div className="gvmd-hero__venue">
+                📍 {selectedMatch.venueName.toUpperCase()}{selectedMatch.venueCity ? ` · ${selectedMatch.venueCity}` : ''}
+              </div>
+            )}
           </div>
 
           {/* ── AI Prediction card — italic body, robot emoji header ── */}
