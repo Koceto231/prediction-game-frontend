@@ -10487,6 +10487,46 @@ select:focus {
   color: var(--text-muted);
 }
 
+/* Top-level market tabs — full-width row right under the AI card */
+.gvmd-tabs {
+  display: flex;
+  background: var(--surface-container-low, #1c1b1b);
+  border: 1px solid var(--outline-variant, #4d4633);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.gvmd-tab {
+  flex: 1;
+  padding: 14px 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.gvmd-tab:hover {
+  background: var(--surface-container-highest, #353534);
+  color: var(--text-main);
+}
+.gvmd-tab--active {
+  background: var(--accent);
+  color: #06120a;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .gvmd-tabs { overflow-x: auto; }
+  .gvmd-tab  { padding: 12px 14px; font-size: 0.7rem; }
+}
+
 @media (max-width: 720px) {
   .gvmd-hero { padding: 18px 14px; }
   .gvmd-hero__row { grid-template-columns: 1fr auto 1fr; gap: 14px; }

@@ -162,7 +162,10 @@ export default function MatchesPage() {
   const [selectedMatch, setSelectedMatch] = useState(null);
   // Quick Stake modal — opens when the user taps a 1/X/2 odd in a match card
   const [quickStake, setQuickStake] = useState(null);  // { match, pick, odds } | null
-  const [mode, setMode]                   = useState('');
+  // Default to 'market' so opening a match lands directly on the Main
+  // markets tab — the Gridiron Velocity tabs do the switching now and
+  // there's no in-between mode picker.
+  const [mode, setMode]                   = useState('market');
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
   const [loading, setLoading]             = useState(false);
@@ -309,7 +312,8 @@ export default function MatchesPage() {
 
 
   const resetPanel = useCallback(() => {
-    setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
+    setMode('market'); setMarketCategory('main');
+    setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
@@ -932,38 +936,42 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* Mode selector */}
-          {!mode && (
-            <div className="premium-mode-grid">
-              <button type="button" className="premium-mode-card premium-mode-card--exact" onClick={() => setMode('exact')}>
-                <div className="premium-mode-card__top">
-                  <span className="premium-mode-card__icon">🎯</span>
-                  <span className="premium-mode-card__points">5 pts</span>
-                </div>
-                <div className="premium-mode-card__title">Exact Score</div>
-                <div className="premium-mode-card__text">Predict the final score and earn maximum points.</div>
-              </button>
-              <button type="button" className="premium-mode-card premium-mode-card--market" onClick={() => setMode('market')}>
-                <div className="premium-mode-card__top">
-                  <span className="premium-mode-card__icon">📈</span>
-                  <span className="premium-mode-card__points">up to 3 pts</span>
-                </div>
-                <div className="premium-mode-card__title">Market Pick</div>
-                <div className="premium-mode-card__text">Combine any markets — winner, BTTS, corners, goalscorer and more.</div>
-              </button>
-            </div>
-          )}
+          {/* ── Top-level market tabs (Gridiron Velocity match detail) ──
+              Replaces the old Exact / Market mode picker. Clicking a tab
+              sets the active section directly:
+                • "Exact Score" → mode='exact'  → score-tile grid
+                • all others   → mode='market' + marketCategory=<id>
+              Stays in sync with the existing isExact/isMarket state so the
+              old market-section JSX keeps working untouched. */}
+          <div className="gvmd-tabs">
+            <button
+              type="button"
+              className={`gvmd-tab${marketCategory === 'main' && !isExact ? ' gvmd-tab--active' : ''}`}
+              onClick={() => { setMode('market'); setMarketCategory('main'); setFields(EMPTY); }}
+            >Main</button>
+            <button
+              type="button"
+              className={`gvmd-tab${isExact ? ' gvmd-tab--active' : ''}`}
+              onClick={() => { setMode('exact'); }}
+            >Exact Score</button>
+            {['goals', 'halves', 'corners', 'special'].map(cat => (
+              <button
+                key={cat}
+                type="button"
+                className={`gvmd-tab${marketCategory === cat && !isExact ? ' gvmd-tab--active' : ''}`}
+                onClick={() => { setMode('market'); setMarketCategory(cat); setFields(EMPTY); }}
+              >{cat.charAt(0).toUpperCase() + cat.slice(1)}</button>
+            ))}
+          </div>
 
           <div className="prediction-form">
 
             {/* ── Exact Score ── */}
             {isExact && (
               <>
-                <div className="mode-card mode-card--exact">
-                  <div className="mode-card__top"><span className="mode-badge">EXACT SCORE — 5 PTS</span></div>
-                  <div className="mode-card__title">Predict the exact final score</div>
-                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); }}>Change type</button>
-                </div>
+                {/* The legacy "EXACT SCORE — 5 PTS" header + "Change type"
+                    button are hidden because the top-level Gridiron Velocity
+                    tabs above already let the user switch sections. */}
 
                 {/* Quick-pick tile grid — matches stitch mockup upgraded_my_bets_overview_5 */}
                 <div className="exact-score-grid">
@@ -1026,24 +1034,9 @@ export default function MatchesPage() {
             {/* ── Market Pick ── */}
             {isMarket && (
               <>
-                <div className="mode-card mode-card--market">
-                  <div className="mode-card__top"><span className="mode-badge">MARKET PICK — UP TO 3 PTS</span></div>
-                  <div className="mode-card__title">Pick any combination of markets</div>
-                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU(''); setScorerPlayer(null); setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick(''); setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU(''); setHtPick(''); setCsPick(''); setCsYN(''); setFgPick(''); setBtts1hPick(''); setBtts2hPick(''); setHtGoalsLine(''); setHtGoalsOU(''); setShGoalsLine(''); setShGoalsOU(''); setHomeOEPick(''); setAwayOEPick(''); setOe1hPick(''); setHomeTsPick(''); setAwayTsPick(''); setWbhHomePick(''); setWbhAwayPick(''); setLastScorePick(''); setHtftPick(''); setRbtPick(''); }}>Change type</button>
-                </div>
-
-                <div className="market-tabs">
-                  {MARKET_TABS.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={`market-tab${marketCategory === t.id ? ' market-tab--active' : ''}`}
-                      onClick={() => setMarketCategory(t.id)}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Legacy mode-card + nested market-tabs are hidden — the
+                    top-level .gvmd-tabs above already drives both mode and
+                    marketCategory. */}
 
                 <div className="market-table" data-cat={marketCategory}>
 
