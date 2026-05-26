@@ -9558,7 +9558,7 @@ select:focus {
   max-width: min(520px, calc(100vw - 36px));
   background: var(--surface-container-high, #2a2a2a);
   border: 1px solid var(--accent);
-  border-radius: 999px;
+  border-radius: 0;
   color: var(--text-main, #f3f1ec);
   font-size: 0.82rem;
   font-weight: 600;
