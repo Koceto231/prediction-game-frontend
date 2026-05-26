@@ -9277,13 +9277,15 @@ select:focus {
 .gvb-slip-panel__head-icon:disabled { opacity: 0.35; cursor: default; }
 
 /* Column tabs (К1 / К2 / К3 ... + Нова колонка)
-   Each ticket appears as a small chip. Active one is gold-filled. */
+   Each ticket appears as a small chip. Active one is gold-filled.
+   Whole row is centered. */
 .gvb-slip-cols {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
-  padding: 4px;
+  justify-content: center;
+  padding: 6px;
   background: rgba(255,255,255,0.04);
   border-radius: 6px;
 }
@@ -9291,16 +9293,20 @@ select:focus {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px 5px 10px;
+  gap: 6px;
+  padding: 5px 10px;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-soft, #cfcab8);
+  font-family: inherit;
   font-weight: 700;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
+  font-style: normal;
+  letter-spacing: 0.02em;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
+  line-height: 1.1;
 }
 .gvb-slip-col-tab:hover:not(.gvb-slip-col-tab--active) {
   background: rgba(255,255,255,0.04);
@@ -9311,15 +9317,18 @@ select:focus {
   color: #06120a;
 }
 .gvb-slip-col-tab__name {
-  font-weight: 900;
+  font-family: inherit;
+  font-weight: 800;
+  font-style: normal;
   letter-spacing: 0.02em;
 }
 .gvb-slip-col-tab__odds {
-  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
-  font-style: italic;
+  font-family: inherit;
+  font-style: normal;
   font-weight: 800;
-  font-size: 0.72rem;
-  opacity: 0.85;
+  font-size: 0.76rem;
+  opacity: 0.9;
+  font-variant-numeric: tabular-nums;
 }
 .gvb-slip-col-tab__remove {
   margin-left: 2px;
