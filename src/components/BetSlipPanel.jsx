@@ -270,13 +270,6 @@ export default function BetSlipPanel() {
             aria-label="Clear slip"
           >🗑</button>
           <span className="gvb-slip-bar__mode">{modeLabel(items.length)}</span>
-          <div className="gvb-slip-bar__chips">
-            {items.map(p => (
-              <span key={p.key} className="gvb-slip-bar__chip" title={p.fixture}>
-                {pickChip(p)}
-              </span>
-            ))}
-          </div>
           <span className="gvb-slip-bar__total">
             Общ коеф: <strong>{combined.toFixed(2)}</strong>
           </span>
