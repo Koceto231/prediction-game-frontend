@@ -9276,7 +9276,99 @@ select:focus {
 .gvb-slip-panel__head-icon:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: #ff6b6b; }
 .gvb-slip-panel__head-icon:disabled { opacity: 0.35; cursor: default; }
 
-/* Tabs row — Singles / Multi / Systems */
+/* Column tabs (К1 / К2 / К3 ... + Нова колонка)
+   Each ticket appears as a small chip. Active one is gold-filled. */
+.gvb-slip-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+}
+.gvb-slip-col-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px 5px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-soft, #cfcab8);
+  font-weight: 700;
+  font-size: 0.74rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.gvb-slip-col-tab:hover:not(.gvb-slip-col-tab--active) {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-main);
+}
+.gvb-slip-col-tab--active {
+  background: var(--accent);
+  color: #06120a;
+}
+.gvb-slip-col-tab__name {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+.gvb-slip-col-tab__odds {
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+.gvb-slip-col-tab__remove {
+  margin-left: 2px;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.gvb-slip-col-tab__remove:hover { background: rgba(0,0,0,0.18); opacity: 1; }
+.gvb-slip-col-add {
+  background: transparent;
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  font-weight: 900;
+  font-size: 0.95rem;
+  width: 28px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1;
+}
+.gvb-slip-col-add:hover { background: rgba(240,197,25,0.10); }
+
+/* Multi-column totals row above balance/CTA */
+.gvb-slip-panel__totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(240, 197, 25, 0.06);
+  border: 1px solid var(--border-soft, #4d4633);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--text-soft, #cfcab8);
+}
+.gvb-slip-panel__totals strong {
+  color: var(--accent);
+  font-weight: 900;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-size: 0.86rem;
+}
+
+/* Tabs row — Singles / Multi / Systems (legacy — kept for backwards compat) */
 .gvb-slip-panel__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

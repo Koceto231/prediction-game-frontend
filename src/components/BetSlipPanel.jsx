@@ -3,51 +3,68 @@ import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
 
 /**
- * Global floating Bet Slip — collects 1/X/2 picks from any match (Matches
- * page, Live page, anywhere). Two modes:
+ * Global floating Bet Slip — collects picks from any match and places one
+ * or more bets at the same time.
  *
- *   • SINGLE  (1 pick)  — places a plain Winner bet via POST /Bet
- *   • ACCUM   (2+ picks) — places a multi-match accumulator via
- *     POST /Bet/accumulator with one leg per pick, each carrying its
- *     own matchId so the backend settles them against the right fixtures.
+ *   • Each "column" (Bulgarian: "колонка") is an independent ticket
+ *     with its own picks and stake. A column with 1 pick places a SINGLE
+ *     bet via POST /Bet; a column with 2+ picks places an ACCUMULATOR
+ *     via POST /Bet/accumulator.
  *
- * Picks come in via the `bpfl:slip:add` custom event so any UI element
- * (MatchCard odd buttons, LivePage odds, etc.) can opt in without prop
- * drilling:
+ *   • Multiple columns can exist side-by-side. Clicking the global
+ *     "Заложи всички" button submits every non-empty column with a
+ *     valid stake in parallel.
  *
- *   window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
- *     detail: { matchId, pick, odds, fixture, leagueLabel },
- *   }));
+ *   • Picks flow in via a `bpfl:slip:add` CustomEvent and are appended to
+ *     the ACTIVE column. The active column is highlighted in the tab row;
+ *     the user can switch by clicking a different tab. "+ Нова колонка"
+ *     creates a fresh empty ticket and makes it active.
  *
- * Only ONE pick per match is allowed (re-adding from the same match
- * replaces the previous pick).
+ *   • Same-game accumulators are allowed inside a single column: a match
+ *     can contribute multiple picks (different markets) as long as they
+ *     don't conflict. See `isConflict` for the rules.
  */
 
-const LS_KEY = 'bpfl:slip:items';
+const LS_KEY = 'bpfl:slip:columns';
+const LS_KEY_LEGACY = 'bpfl:slip:items';                  // pre-multi-column layout
+
+const newColumn = (id = Date.now()) => ({ id, picks: [], stake: '10' });
 
 export default function BetSlipPanel() {
   const { balance, refreshBalance } = useWallet();
-  const [items,   setItems]   = useState([]);     // [{ matchId, pick, odds, fixture, leagueLabel }]
-  const [open,    setOpen]    = useState(false);
-  const [stake,   setStake]   = useState('10');
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
-  const [success, setSuccess] = useState('');
+  const [columns,        setColumns]        = useState([newColumn(1)]);
+  const [activeColumnId, setActiveColumnId] = useState(1);
+  const [open,           setOpen]           = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState('');
+  const [success,        setSuccess]        = useState('');
 
-  // Hydrate from localStorage on mount. Backfill `key` and `betType` for
-  // any picks saved before the same-game-accumulator refactor so old slips
-  // keep working after upgrade.
+  // ── Hydrate ────────────────────────────────────────────────────────
+  // Read the new multi-column shape if present; otherwise migrate the
+  // legacy flat-picks shape into a single column so existing slips
+  // survive the refactor.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          setItems(parsed.map((p) => ({
-            ...p,
-            betType: p.betType || 'Winner',
-            key:     p.key     || `${p.matchId}:${p.betType || 'Winner'}:${p.pick}`,
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setColumns(parsed.map((c, i) => ({
+            id:    c.id    ?? Date.now() + i,
+            stake: c.stake ?? '10',
+            picks: (c.picks || []).map(backfillPick),
           })));
+          setActiveColumnId(parsed[0]?.id ?? 1);
+          return;
+        }
+      }
+      const legacyRaw = localStorage.getItem(LS_KEY_LEGACY);
+      if (legacyRaw) {
+        const legacy = JSON.parse(legacyRaw);
+        if (Array.isArray(legacy) && legacy.length > 0) {
+          const col = { id: 1, stake: '10', picks: legacy.map(backfillPick) };
+          setColumns([col]);
+          setActiveColumnId(1);
         }
       }
     } catch { /* ignore */ }
@@ -55,174 +72,161 @@ export default function BetSlipPanel() {
 
   // Persist on every change
   useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch { /* ignore */ }
-  }, [items]);
+    try { localStorage.setItem(LS_KEY, JSON.stringify(columns)); } catch { /* ignore */ }
+  }, [columns]);
 
-  // Open the slip automatically when the first pick is added
+  // ── Helpers to mutate the active column ────────────────────────────
+  const updateActive = (updater) => {
+    setColumns(prev => prev.map(c =>
+      c.id === activeColumnId ? { ...c, ...updater(c) } : c,
+    ));
+  };
+
+  const activeColumn = columns.find(c => c.id === activeColumnId) || columns[0];
+
+  // Open the slip automatically when the very first pick is added.
+  const totalPicks = useMemo(
+    () => columns.reduce((acc, c) => acc + c.picks.length, 0),
+    [columns],
+  );
   useEffect(() => {
-    if (items.length === 1) setOpen(true);
-  }, [items.length]);
+    if (totalPicks === 1) setOpen(true);
+  }, [totalPicks]);
 
-  // Custom-event listener — picks flow in from MatchCard / LivePage / MatchDetail.
-  //
-  // Same-game accumulator: multiple picks from the SAME match are allowed,
-  // as long as they target different markets. We dedupe by a composite key
-  //   `${matchId}:${betType}:${pick}:${line || ''}`
-  // so re-clicking the exact same selection removes it (toggle).
-  //
-  // Beyond exact-key toggling, the following CONFLICTS still apply within
-  // the same match (adding a new pick removes the conflicting one):
-  //   • Winner ↔ Double Chance   — pick one or the other, not both
-  //   • BTTS Yes ↔ BTTS No       — only one BTTS pick per match
-  //   • OverUnder Over@line ↔ Under@line — only one O/U pick per line
+  // ── Pick add / clear event listeners ───────────────────────────────
+  // Picks ALWAYS land in the currently active column. Conflict rules
+  // apply only WITHIN that column — independent columns can hold the
+  // same selection.
   useEffect(() => {
     const onAdd = (e) => {
       const { matchId, pick, odds, fixture, leagueLabel, betType, line } = e.detail || {};
       if (!matchId || !pick || odds == null) return;
       const bt  = betType || 'Winner';
       const key = `${matchId}:${bt}:${pick}:${line || ''}`;
+      const newPick = {
+        key, matchId, betType: bt, pick,
+        line: line || null,
+        odds: Number(odds),
+        fixture, leagueLabel,
+      };
 
-      setItems(prev => {
-        // Exact-same selection already there → toggle off
-        if (prev.some(p => p.key === key)) {
-          return prev.filter(p => p.key !== key);
+      setColumns(prev => prev.map(c => {
+        if (c.id !== activeColumnId) return c;
+        // Toggle off if exact same selection already in this column
+        if (c.picks.some(p => p.key === key)) {
+          return { ...c, picks: c.picks.filter(p => p.key !== key) };
         }
-
-        // Two-step conflict detection on the same match:
-        //
-        //   1. SAME-MARKET dedupe — picking another value in the same market
-        //      replaces the previous one (Yes ↔ No, Over ↔ Under on the same
-        //      line, one Winner / DC per match, …).
-        //
-        //   2. SEMANTIC conflicts — combinations that are mathematically
-        //      impossible to win together. The slip silently drops the older
-        //      pick so the user's latest selection always sticks. E.g. you
-        //      can't bet "Ludogorets win" AND "0-0 (Under 0.5)" — Ludogorets
-        //      winning requires at least one goal, so the Under 0.5 leg
-        //      would always lose. Adding the second one removes the first.
-        const newPick = { matchId, betType: bt, pick, line: line || null };
-        const isWinnerNonDraw = (p) => p.betType === 'Winner'
-          && (p.pick === 'Home' || p.pick === 'Away');
-        const isDCExcludesDraw = (p) => p.betType === 'DoubleChance'
-          && p.pick === 'HomeOrAway';
-        const isUnder05 = (p) => p.betType === 'OverUnder'
-          && p.pick === 'Under' && p.line === 'Line05';
-        // Winner home/away (or 12 double chance) implies a winner exists,
-        // which implies ≥1 goal. So Under 0.5 on the same match contradicts.
-        const needsAtLeastOneGoal = (p) => isWinnerNonDraw(p) || isDCExcludesDraw(p);
-
-        const isConflict = (p) => {
-          if (p.matchId !== matchId) return false;
-          // 1. same-market dedupe
-          if (bt === 'Winner' || bt === 'DoubleChance') {
-            if (p.betType === 'Winner' || p.betType === 'DoubleChance') return true;
-          }
-          if (bt === 'BTTS' && p.betType === 'BTTS') return true;
-          if (bt === 'OverUnder' && p.betType === 'OverUnder'
-              && (p.line || '') === (line || '')) return true;
-          // 2. semantic conflicts
-          if (needsAtLeastOneGoal(newPick) && isUnder05(p)) return true;
-          if (needsAtLeastOneGoal(p)        && isUnder05(newPick)) return true;
-          return false;
-        };
-
-        const filtered = prev.filter(p => !isConflict(p));
-        return [...filtered, {
-          key,
-          matchId,
-          betType: bt,
-          pick,
-          line:    line || null,
-          odds:    Number(odds),
-          fixture,
-          leagueLabel,
-        }];
-      });
+        const filtered = c.picks.filter(p => !isConflict(p, newPick));
+        return { ...c, picks: [...filtered, newPick] };
+      }));
       setError(''); setSuccess('');
     };
-    const onClear = () => setItems([]);
+    const onClear = () => setColumns([newColumn()]);
     window.addEventListener('bpfl:slip:add',   onAdd);
     window.addEventListener('bpfl:slip:clear', onClear);
     return () => {
       window.removeEventListener('bpfl:slip:add',   onAdd);
       window.removeEventListener('bpfl:slip:clear', onClear);
     };
-  }, []);
+  }, [activeColumnId]);
 
-  const remove = (key) =>
-    setItems(prev => prev.filter(p => p.key !== key));
+  // ── Column-level actions ───────────────────────────────────────────
+  const addColumn = () => {
+    const id = Date.now();
+    setColumns(prev => [...prev, newColumn(id)]);
+    setActiveColumnId(id);
+  };
 
-  const stakeNum = Number(stake) || 0;
-  const combined = useMemo(
-    () => items.reduce((acc, p) => acc * (Number(p.odds) || 1), 1),
-    [items],
-  );
-
-  // Group picks by match — render one card per fixture with sub-rows inside.
-  // Insertion order is preserved by stamping the first-seen order.
-  const grouped = useMemo(() => {
-    const byMatch = new Map();
-    items.forEach((p) => {
-      const list = byMatch.get(p.matchId);
-      if (list) list.push(p);
-      else byMatch.set(p.matchId, [p]);
+  const removeColumn = (colId) => {
+    setColumns(prev => {
+      const remaining = prev.filter(c => c.id !== colId);
+      if (remaining.length === 0) return [newColumn()];
+      return remaining;
     });
-    return Array.from(byMatch.entries()).map(([matchId, picks]) => ({
-      matchId,
-      fixture:     picks[0].fixture,
-      leagueLabel: picks[0].leagueLabel,
-      picks,
-    }));
-  }, [items]);
-  const potential   = stakeNum > 0 ? stakeNum * combined : 0;
-  const overBalance = balance != null && stakeNum > Number(balance);
-  const isAccum     = items.length >= 2;
-
-  /**
-   * Build a leg DTO shape the backend understands for a given slip pick.
-   * Mirrors the field layout in PlaceBetDTO / AccumulatorLegDTO.
-   */
-  const toLegPayload = (p) => {
-    const base = { betType: p.betType || 'Winner' };
-    switch (base.betType) {
-      case 'Winner':
-        return { ...base, pick: p.pick };
-      case 'DoubleChance':
-        return { ...base, dCPick: p.pick };
-      case 'BTTS':
-        return { ...base, bTTSPick: p.pick === 'Yes' };
-      case 'OverUnder':
-        return { ...base, oULine: p.line, oUPick: p.pick };
-      default:
-        return { ...base, pick: p.pick };
+    if (colId === activeColumnId) {
+      const next = columns.find(c => c.id !== colId);
+      if (next) setActiveColumnId(next.id);
     }
   };
 
-  const handlePlace = async () => {
-    if (items.length === 0 || stakeNum <= 0 || loading || overBalance) return;
+  const removePick = (colId, key) => {
+    setColumns(prev => prev.map(c =>
+      c.id === colId ? { ...c, picks: c.picks.filter(p => p.key !== key) } : c,
+    ));
+  };
+
+  const setColumnStake = (colId, stake) => {
+    setColumns(prev => prev.map(c =>
+      c.id === colId ? { ...c, stake } : c,
+    ));
+  };
+
+  const clearAll = (e) => {
+    e?.stopPropagation?.();
+    setColumns([newColumn()]);
+    setError(''); setSuccess('');
+  };
+
+  // ── Derived per-column data ────────────────────────────────────────
+  const columnSummaries = useMemo(() => columns.map(c => {
+    const combined  = c.picks.reduce((acc, p) => acc * (Number(p.odds) || 1), 1);
+    const stakeNum  = Number(c.stake) || 0;
+    const potential = stakeNum > 0 ? stakeNum * combined : 0;
+    return {
+      id: c.id,
+      picks: c.picks,
+      stake: c.stake,
+      stakeNum,
+      combined,
+      potential,
+      isAccum: c.picks.length >= 2,
+      isEmpty: c.picks.length === 0,
+    };
+  }), [columns]);
+
+  const totalStake = columnSummaries
+    .filter(s => !s.isEmpty)
+    .reduce((acc, s) => acc + s.stakeNum, 0);
+  const totalPotential = columnSummaries
+    .filter(s => !s.isEmpty)
+    .reduce((acc, s) => acc + s.potential, 0);
+  const overBalance = balance != null && totalStake > Number(balance);
+  const placeableCount = columnSummaries.filter(s => !s.isEmpty && s.stakeNum > 0).length;
+
+  // ── Submit ─────────────────────────────────────────────────────────
+  const handlePlaceAll = async () => {
+    if (loading || placeableCount === 0 || overBalance) return;
     setLoading(true); setError(''); setSuccess('');
     try {
-      if (isAccum) {
-        const dto = {
-          matchId: items[0].matchId,        // anchor; per-leg matchId overrides it
-          amount:  stakeNum,
-          legs:    items.map(p => ({ matchId: p.matchId, ...toLegPayload(p) })),
-        };
-        await api.post('/Bet/accumulator', dto, {
-          headers: { 'X-Idempotency-Key': newIdempotencyKey() },
+      const placements = columnSummaries
+        .filter(s => !s.isEmpty && s.stakeNum > 0)
+        .map(async (s) => {
+          if (s.isAccum) {
+            const dto = {
+              matchId: s.picks[0].matchId,
+              amount:  s.stakeNum,
+              legs:    s.picks.map(p => ({ matchId: p.matchId, ...toLegPayload(p) })),
+            };
+            return api.post('/Bet/accumulator', dto, {
+              headers: { 'X-Idempotency-Key': newIdempotencyKey() },
+            });
+          }
+          const p = s.picks[0];
+          return api.post(
+            '/Bet',
+            { matchId: p.matchId, ...toLegPayload(p), amount: s.stakeNum },
+            { headers: { 'X-Idempotency-Key': newIdempotencyKey() } },
+          );
         });
-      } else {
-        const p = items[0];
-        await api.post(
-          '/Bet',
-          { matchId: p.matchId, ...toLegPayload(p), amount: stakeNum },
-          { headers: { 'X-Idempotency-Key': newIdempotencyKey() } },
-        );
-      }
+      await Promise.all(placements);
       await refreshBalance();
-      setSuccess(isAccum ? `Заложен ${modeLabel(items.length).toLowerCase()}!` : 'Залогът е приет!');
-      setItems([]);
-      setTimeout(() => { setSuccess(''); setOpen(false); }, 1400);
+      setSuccess(
+        placeableCount === 1
+          ? 'Залогът е приет!'
+          : `${placeableCount} колонки приети!`,
+      );
+      setColumns([newColumn()]);
+      setTimeout(() => { setSuccess(''); setOpen(false); }, 1600);
     } catch (err) {
       setError(err?.response?.data?.message || 'Грешка при залагане.');
     } finally {
@@ -230,9 +234,8 @@ export default function BetSlipPanel() {
     }
   };
 
+  // ── Rendering helpers ──────────────────────────────────────────────
   const pickShort = (pick) => pick === 'Home' ? '1' : pick === 'Away' ? '2' : 'X';
-
-  /** Human label for the pick code shown in slip rows. */
   const pickLabel = (p) => {
     switch (p.betType) {
       case 'Winner':
@@ -248,11 +251,9 @@ export default function BetSlipPanel() {
       case 'OverUnder':
         return `Голове ${p.pick === 'Over' ? 'над' : 'под'} ${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
       default:
-        return p.marketLabel || p.pick;
+        return p.pick;
     }
   };
-
-  /** Short chip code (used in collapsed bar). */
   const pickChip = (p) => {
     switch (p.betType) {
       case 'Winner':       return pickShort(p.pick);
@@ -263,24 +264,37 @@ export default function BetSlipPanel() {
     }
   };
 
-  // Bulgarian label for accumulator type based on legs count
-  const modeLabel = (n) =>
-    n === 1 ? 'Единичен'
-    : n === 2 ? 'Двоен'
-    : n === 3 ? 'Троен'
-    : n === 4 ? 'Четворен'
-    : `Системен (${n})`;
-
-  const clearAll = (e) => {
-    e?.stopPropagation?.();
-    setItems([]);
-    setError(''); setSuccess('');
+  // Group picks within a column by match → one card per fixture
+  const groupColumn = (picks) => {
+    const byMatch = new Map();
+    picks.forEach(p => {
+      const list = byMatch.get(p.matchId);
+      if (list) list.push(p); else byMatch.set(p.matchId, [p]);
+    });
+    return Array.from(byMatch.entries()).map(([matchId, list]) => ({
+      matchId,
+      fixture: list[0].fixture,
+      leagueLabel: list[0].leagueLabel,
+      picks: list,
+    }));
   };
+
+  // ── Render ─────────────────────────────────────────────────────────
+  const headerLabel = () => {
+    const nonEmpty = columns.filter(c => c.picks.length > 0);
+    if (nonEmpty.length === 0) return null;
+    if (nonEmpty.length === 1) return modeLabel(nonEmpty[0].picks.length);
+    return `${nonEmpty.length} колонки`;
+  };
+
+  const summaryCombined = columnSummaries
+    .filter(s => !s.isEmpty)
+    .reduce((acc, s) => acc + s.combined, 0);
 
   return (
     <>
-      {/* Compact bottom bar — visible whenever there are picks. Click to expand. */}
-      {items.length > 0 && !open && (
+      {/* Compact bottom-right pill — visible whenever ANY column has picks */}
+      {totalPicks > 0 && !open && (
         <div
           className="gvb-slip-bar"
           role="button"
@@ -295,16 +309,16 @@ export default function BetSlipPanel() {
             title="Изчисти всички"
             aria-label="Clear slip"
           >🗑</button>
-          <span className="gvb-slip-bar__mode">{modeLabel(items.length)}</span>
+          <span className="gvb-slip-bar__mode">{headerLabel()}</span>
           <span className="gvb-slip-bar__total">
-            Общ коеф: <strong>{combined.toFixed(2)}</strong>
+            Общ коеф: <strong>{summaryCombined.toFixed(2)}</strong>
           </span>
           <span className="gvb-slip-bar__chevron" aria-hidden="true">▲</span>
         </div>
       )}
 
-      {/* Tiny FAB shown only when slip is empty, so user can still open it */}
-      {items.length === 0 && !open && (
+      {/* Tiny FAB when totally empty */}
+      {totalPicks === 0 && !open && (
         <button
           type="button"
           className="gvb-slip-fab gvb-slip-fab--empty"
@@ -316,7 +330,7 @@ export default function BetSlipPanel() {
         </button>
       )}
 
-      {/* Slide-in panel from the RIGHT */}
+      {/* Popup panel */}
       <div className={`gvb-slip-panel${open ? ' gvb-slip-panel--open' : ''}`}>
         <div className="gvb-slip-panel__head">
           <button
@@ -324,49 +338,75 @@ export default function BetSlipPanel() {
             className="gvb-slip-panel__head-icon"
             onClick={clearAll}
             title="Изчисти всички"
-            disabled={items.length === 0}
+            disabled={totalPicks === 0}
           >🗑</button>
           <span className="gvb-slip-panel__title">
-            ФИШ {items.length > 0 && <span className="gvb-slip-panel__count">{items.length}</span>}
+            ФИШ {totalPicks > 0 && <span className="gvb-slip-panel__count">{totalPicks}</span>}
           </span>
           <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>⌄</button>
         </div>
 
-        {/* Tabs row — only Single + Multi are real modes for now */}
-        <div className="gvb-slip-panel__tabs" role="tablist">
-          <button type="button" role="tab"
-            className={`gvb-slip-panel__tab${!isAccum ? ' gvb-slip-panel__tab--active' : ''}`}
-            disabled
-          >Единични</button>
-          <button type="button" role="tab"
-            className={`gvb-slip-panel__tab${isAccum ? ' gvb-slip-panel__tab--active' : ''}`}
-            disabled
-          >Множествени</button>
-          <button type="button" role="tab"
-            className="gvb-slip-panel__tab"
-            disabled
-            title="Скоро"
-          >Системи</button>
+        {/* Column tabs — one per column + "+ Нова колонка" */}
+        <div className="gvb-slip-cols" role="tablist">
+          {columns.map((c, idx) => {
+            const summary = columnSummaries.find(s => s.id === c.id);
+            const isActive = c.id === activeColumnId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="tab"
+                className={`gvb-slip-col-tab${isActive ? ' gvb-slip-col-tab--active' : ''}`}
+                onClick={() => setActiveColumnId(c.id)}
+                title={summary?.isEmpty ? 'Празна колонка' : `${summary.picks.length} pick(s) · коеф ${summary.combined.toFixed(2)}`}
+              >
+                <span className="gvb-slip-col-tab__name">К{idx + 1}</span>
+                {!summary.isEmpty && (
+                  <span className="gvb-slip-col-tab__odds">{summary.combined.toFixed(2)}</span>
+                )}
+                {columns.length > 1 && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="gvb-slip-col-tab__remove"
+                    onClick={(e) => { e.stopPropagation(); removeColumn(c.id); }}
+                    aria-label="Премахни колонката"
+                  >×</span>
+                )}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="gvb-slip-col-add"
+            onClick={addColumn}
+            title="Нова колонка"
+          >+</button>
         </div>
 
+        {/* Active column — picks list + per-column stake */}
         <div className="gvb-slip-panel__list">
-          {items.length === 0 && (
+          {activeColumn.picks.length === 0 && (
             <div className="gvb-slip-panel__empty">
               <div className="gvb-slip-panel__empty-icon">🎯</div>
-              <div className="gvb-slip-panel__empty-text">Фишът е празен</div>
+              <div className="gvb-slip-panel__empty-text">
+                Колонка {columns.findIndex(c => c.id === activeColumnId) + 1} е празна
+              </div>
               <div className="gvb-slip-panel__empty-hint">
-                Натисни <strong>1 / X / 2</strong> на който и да е мач, за да го добавиш тук.
-                Добави втори pick от друг мач, за да направиш колонка.
+                Натисни който и да е коефициент на мач, за да го добавиш в активната колонка.
+                Натисни <strong>+</strong> горе, за да започнеш нова колонка.
               </div>
             </div>
           )}
 
-          {grouped.map(g => (
+          {groupColumn(activeColumn.picks).map(g => (
             <div key={g.matchId} className="gvb-slip-pick">
               <button
                 type="button"
                 className="gvb-slip-pick__remove"
-                onClick={() => setItems(prev => prev.filter(p => p.matchId !== g.matchId))}
+                onClick={() => updateActive((c) => ({
+                  picks: c.picks.filter(p => p.matchId !== g.matchId),
+                }))}
                 aria-label="Премахни мача"
                 title="Премахни всички picks от мача"
               >×</button>
@@ -383,7 +423,7 @@ export default function BetSlipPanel() {
                     <button
                       type="button"
                       className="gvb-slip-pick__row-remove"
-                      onClick={() => remove(p.key)}
+                      onClick={() => removePick(activeColumnId, p.key)}
                       aria-label="Премахни pick"
                       title="Премахни този pick"
                     >×</button>
@@ -394,47 +434,65 @@ export default function BetSlipPanel() {
           ))}
         </div>
 
-        {items.length > 0 && (
+        {activeColumn.picks.length > 0 && (() => {
+          const s = columnSummaries.find(x => x.id === activeColumnId);
+          return (
+            <>
+              <div className="gvb-slip-panel__totalrow">
+                <span className="gvb-slip-panel__totalrow-mode">{modeLabel(s.picks.length)}</span>
+                <span className="gvb-slip-panel__totalrow-odds">{s.combined.toFixed(2)}</span>
+              </div>
+
+              <div className="gvb-slip-panel__stake">
+                <label className="gvb-slip-panel__stake-label">ЗАЛОГ НА КОЛОНКАТА</label>
+                <div className="gvb-slip-panel__stake-input">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={s.stake}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^\d.]/g, '');
+                      setColumnStake(activeColumnId, v);
+                      setError('');
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handlePlaceAll(); }}
+                  />
+                  <span>€</span>
+                </div>
+                <div className="gvb-slip-panel__chips">
+                  {[5, 10, 20, 50, 100].map(v => (
+                    <button type="button" key={v} className="gvb-slip-panel__chip"
+                      onClick={() => setColumnStake(activeColumnId, String(v))}>
+                      +{v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="gvb-slip-panel__summary">
+                <div className="gvb-slip-panel__summary-row">
+                  <span>Залог за тази колонка</span><strong>€{s.stakeNum.toFixed(2)}</strong>
+                </div>
+                <div className="gvb-slip-panel__summary-row">
+                  <span>Коефициент</span><strong>{s.combined.toFixed(2)}</strong>
+                </div>
+                <div className="gvb-slip-panel__summary-row gvb-slip-panel__summary-row--big">
+                  <span>Възможна печалба</span>
+                  <strong className="gvb-slip-panel__potential">€{s.potential.toFixed(2)}</strong>
+                </div>
+              </div>
+            </>
+          );
+        })()}
+
+        {totalPicks > 0 && (
           <>
-            {/* Mode + combined odds banner — mimics "Двоен  9.21" row */}
-            <div className="gvb-slip-panel__totalrow">
-              <span className="gvb-slip-panel__totalrow-mode">{modeLabel(items.length)}</span>
-              <span className="gvb-slip-panel__totalrow-odds">{combined.toFixed(2)}</span>
-            </div>
-
-            <div className="gvb-slip-panel__stake">
-              <label className="gvb-slip-panel__stake-label">ЗАЛОГ</label>
-              <div className="gvb-slip-panel__stake-input">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={stake}
-                  onChange={(e) => { setStake(e.target.value.replace(/[^\d.]/g, '')); setError(''); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handlePlace(); }}
-                />
-                <span>€</span>
+            {columns.filter(c => c.picks.length > 0).length > 1 && (
+              <div className="gvb-slip-panel__totals">
+                <span>Общо ({placeableCount} колонки):</span>
+                <strong>€{totalStake.toFixed(2)} → €{totalPotential.toFixed(2)}</strong>
               </div>
-              <div className="gvb-slip-panel__chips">
-                {[5, 10, 20, 50, 100].map(v => (
-                  <button type="button" key={v} className="gvb-slip-panel__chip" onClick={() => setStake(String(v))}>
-                    +{v}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="gvb-slip-panel__summary">
-              <div className="gvb-slip-panel__summary-row">
-                <span>Общ залог</span><strong>€{stakeNum.toFixed(2)}</strong>
-              </div>
-              <div className="gvb-slip-panel__summary-row">
-                <span>Общ коефициент</span><strong>{combined.toFixed(2)}</strong>
-              </div>
-              <div className="gvb-slip-panel__summary-row gvb-slip-panel__summary-row--big">
-                <span>Възможна печалба</span>
-                <strong className="gvb-slip-panel__potential">€{potential.toFixed(2)}</strong>
-              </div>
-            </div>
+            )}
 
             {balance != null && (
               <div className={`gvb-slip-panel__balance${overBalance ? ' gvb-slip-panel__balance--over' : ''}`}>
@@ -450,26 +508,92 @@ export default function BetSlipPanel() {
               <button
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--ghost"
-                onClick={() => { setItems([]); setStake('10'); setError(''); }}
+                onClick={clearAll}
                 disabled={loading}
               >Изчисти</button>
               <button
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"
-                onClick={handlePlace}
-                disabled={loading || stakeNum <= 0 || overBalance}
+                onClick={handlePlaceAll}
+                disabled={loading || placeableCount === 0 || overBalance}
               >
                 {loading
                   ? 'Залагане…'
-                  : isAccum
-                    ? `Заложи ${modeLabel(items.length).toLowerCase()} €${stakeNum.toFixed(2)}`
-                    : `Заложи €${stakeNum.toFixed(2)}`}
+                  : placeableCount > 1
+                    ? `Заложи всички (€${totalStake.toFixed(2)})`
+                    : `Заложи €${totalStake.toFixed(2)}`}
               </button>
             </div>
           </>
         )}
       </div>
-
     </>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────
+
+/** Back-fill `key` / `betType` on a saved pick from before the refactor. */
+function backfillPick(p) {
+  return {
+    ...p,
+    betType: p.betType || 'Winner',
+    line:    p.line    || null,
+    key:     p.key     || `${p.matchId}:${p.betType || 'Winner'}:${p.pick}:${p.line || ''}`,
+  };
+}
+
+/** Bulgarian word for an N-leg accumulator. */
+function modeLabel(n) {
+  return n === 1 ? 'Единичен'
+       : n === 2 ? 'Двоен'
+       : n === 3 ? 'Троен'
+       : n === 4 ? 'Четворен'
+       :           `Системен (${n})`;
+}
+
+/**
+ * Build the leg DTO shape the backend understands for a given pick.
+ * Mirrors PlaceBetDTO / AccumulatorLegDTO.
+ */
+function toLegPayload(p) {
+  const base = { betType: p.betType || 'Winner' };
+  switch (base.betType) {
+    case 'Winner':       return { ...base, pick: p.pick };
+    case 'DoubleChance': return { ...base, dCPick: p.pick };
+    case 'BTTS':         return { ...base, bTTSPick: p.pick === 'Yes' };
+    case 'OverUnder':    return { ...base, oULine: p.line, oUPick: p.pick };
+    default:             return { ...base, pick: p.pick };
+  }
+}
+
+/**
+ * Conflict detection between two picks on the SAME match within ONE column.
+ * Returns true if `existing` should be dropped when `incoming` is added.
+ */
+function isConflict(existing, incoming) {
+  if (existing.matchId !== incoming.matchId) return false;
+
+  const bt = incoming.betType;
+
+  // 1. Same-market dedupe
+  if ((bt === 'Winner' || bt === 'DoubleChance')
+      && (existing.betType === 'Winner' || existing.betType === 'DoubleChance')) return true;
+  if (bt === 'BTTS' && existing.betType === 'BTTS') return true;
+  if (bt === 'OverUnder' && existing.betType === 'OverUnder'
+      && (existing.line || '') === (incoming.line || '')) return true;
+
+  // 2. Semantic conflicts — combinations that can never both win
+  const isUnder05 = (p) => p.betType === 'OverUnder'
+    && p.pick === 'Under' && p.line === 'Line05';
+  const needsAtLeastOneGoal = (p) =>
+       (p.betType === 'Winner'       && (p.pick === 'Home' || p.pick === 'Away'))
+    || (p.betType === 'DoubleChance' && p.pick === 'HomeOrAway');
+
+  if (needsAtLeastOneGoal(incoming) && isUnder05(existing)) return true;
+  if (needsAtLeastOneGoal(existing) && isUnder05(incoming)) return true;
+
+  return false;
 }
