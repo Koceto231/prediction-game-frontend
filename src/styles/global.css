@@ -9183,35 +9183,77 @@ select:focus {
    matches and watch them accumulate in the slip without dismissing it.
    `bottom: 42px` clears the OddsTicker that sits at the very bottom of
    the viewport (height: 42px, position: fixed). */
-/* Popup anchored to the bottom-right slip pill — opens UPWARD instead
-   of sliding in from the side. Caps its height so it never covers the
-   whole viewport. */
-.gvb-slip-panel {
+/* The "slip" is now ONE connected element: a pill at the bottom that
+   always shows the summary, and a body above it that grows out of the
+   pill when the slip is open (8888-style expand/collapse animation).
+
+   Wrapper — anchors bottom-right, sized to its content, with the pill
+   stuck to the bottom and the expandable body above it. */
+.gvb-slip {
   position: fixed;
   right: 18px;
-  bottom: 56px;                                 /* same anchor as the collapsed pill */
+  bottom: 52px;
+  z-index: 40;
   width: min(380px, calc(100vw - 36px));
-  max-height: min(70vh, calc(100vh - 120px));
-  background: var(--surface-container, #201f1f);
+  background: var(--surface-container-high, #2a2a2a);
   border: 1px solid var(--accent);
-  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+/* Expandable body — collapsed to 0 height when closed, animates open. */
+.gvb-slip__body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity   0.18s ease 0.06s,
+    padding   0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transform: translateY(8px) scale(0.98);
-  transform-origin: bottom right;
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.18s ease, opacity 0.18s ease;
-  z-index: 40;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
-  overflow: hidden; /* internal sections control their own scroll */
 }
-.gvb-slip-panel--open {
-  transform: translateY(0) scale(1);
+.gvb-slip--open .gvb-slip__body {
+  max-height: min(70vh, calc(100vh - 140px));
   opacity: 1;
-  pointer-events: auto;
+  padding: 14px 16px 16px;
 }
+
+/* Always-visible bottom pill. Looks like the old standalone .gvb-slip-bar
+   but it's now part of the slip wrapper (no border-radius on its own). */
+.gvb-slip__pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  min-height: 42px;
+  background: var(--surface-container-high, #2a2a2a);
+  border-top: 1px solid var(--border-soft, #4d4633);
+  color: var(--text-main, #f3f1ec);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+.gvb-slip__pill:hover { background: var(--surface-container-highest, #353534); }
+/* Top of the pill loses its top border when nothing is above it */
+.gvb-slip:not(.gvb-slip--open) .gvb-slip__pill { border-top: none; }
+
+.gvb-slip-bar__chevron--open { transform: rotate(180deg); transition: transform 0.2s; }
+.gvb-slip-bar__chevron { transition: transform 0.2s; display: inline-flex; align-items: center; }
+
+/* Legacy popup-panel rule kept as no-op so other components that reuse
+   gvb-slip-panel__* (head, tabs, picks, stake) still pick up their styles.
+   The wrapper class no longer drives positioning. */
+.gvb-slip-panel {
+  display: contents;
+}
+.gvb-slip-panel--open { display: contents; }
 
 /* Only the picks LIST scrolls. The head, mode pill and footer
    (stake + summary + actions) stay pinned so the Place Bet button
@@ -9743,33 +9785,24 @@ select:focus {
 .gvb-slip-fab--empty:hover { opacity: 1; }
 
 @media (max-width: 600px) {
-  /* Panel: full-width bottom sheet feel — pinned to both edges with a
-     bit of margin and just above the OddsTicker. Generous max-height
-     so picks have room. */
-  .gvb-slip-panel {
+  /* Whole slip becomes a full-width bottom sheet pinned to both edges. */
+  .gvb-slip {
     right: 8px;
     left: 8px;
     width: auto;
-    bottom: 52px;
+    bottom: 48px;
+  }
+  .gvb-slip--open .gvb-slip__body {
     max-height: 78vh;
     padding: 12px 12px 14px;
-    gap: 10px;
   }
-  .gvb-slip-panel__title { font-size: 0.86rem; }
-  .gvb-slip-panel__head  { padding: 2px 0 6px; }
-
-  /* Compact pill: also full width minus a small margin so it doesn't
-     get squeezed by the "Общ коеф" label. */
-  .gvb-slip-bar {
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-width: none;
-    bottom: 52px;
+  .gvb-slip__pill {
     padding: 6px 12px;
     gap: 10px;
     justify-content: space-between;
   }
+  .gvb-slip-panel__title { font-size: 0.86rem; }
+  .gvb-slip-panel__head  { padding: 2px 0 6px; }
   .gvb-slip-bar__mode  { font-size: 0.72rem; }
   .gvb-slip-bar__total { font-size: 0.72rem; }
   .gvb-slip-bar__total strong { font-size: 0.82rem; }

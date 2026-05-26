@@ -310,31 +310,7 @@ export default function BetSlipPanel() {
 
   return (
     <>
-      {/* Compact bottom-right pill — visible whenever ANY column has picks */}
-      {totalPicks > 0 && !open && (
-        <div
-          className="gvb-slip-bar"
-          role="button"
-          tabIndex={0}
-          onClick={() => setOpen(true)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(true); }}
-        >
-          <button
-            type="button"
-            className="gvb-slip-bar__trash"
-            onClick={clearAll}
-            title="Изчисти всички"
-            aria-label="Clear slip"
-          >🗑</button>
-          <span className="gvb-slip-bar__mode">{headerLabel()}</span>
-          <span className="gvb-slip-bar__total">
-            Общ коеф: <strong>{summaryCombined.toFixed(2)}</strong>
-          </span>
-          <span className="gvb-slip-bar__chevron" aria-hidden="true">▲</span>
-        </div>
-      )}
-
-      {/* Tiny FAB when totally empty */}
+      {/* Tiny FAB shown only when slip is totally empty */}
       {totalPicks === 0 && !open && (
         <button
           type="button"
@@ -347,8 +323,11 @@ export default function BetSlipPanel() {
         </button>
       )}
 
-      {/* Popup panel */}
-      <div className={`gvb-slip-panel${open ? ' gvb-slip-panel--open' : ''}`}>
+      {/* Connected slip — pill at the bottom is always visible, full
+          panel body grows out of it upward when open. */}
+      {(totalPicks > 0 || open) && (
+      <div className={`gvb-slip${open ? ' gvb-slip--open' : ''}`}>
+      <div className="gvb-slip__body">
         <div className="gvb-slip-panel__head">
           <button
             type="button"
@@ -544,6 +523,35 @@ export default function BetSlipPanel() {
           </>
         )}
       </div>
+
+      {/* Always-visible bottom pill — toggles the panel above */}
+      <div
+        className="gvb-slip__pill"
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(o => !o); }}
+      >
+        <button
+          type="button"
+          className="gvb-slip-bar__trash"
+          onClick={clearAll}
+          title="Изчисти всички"
+          aria-label="Clear slip"
+          disabled={totalPicks === 0}
+        >🗑</button>
+        <span className="gvb-slip-bar__mode">
+          {headerLabel() || 'ФИШ'}
+        </span>
+        {totalPicks > 0 && (
+          <span className="gvb-slip-bar__total">
+            Общ коеф: <strong>{summaryCombined.toFixed(2)}</strong>
+          </span>
+        )}
+        <span className={`gvb-slip-bar__chevron${open ? ' gvb-slip-bar__chevron--open' : ''}`} aria-hidden="true">▲</span>
+      </div>
+      </div>
+      )}
     </>
   );
 }
