@@ -9277,57 +9277,61 @@ select:focus {
 .gvb-slip-panel__head-icon:disabled { opacity: 0.35; cursor: default; }
 
 /* Column tabs (К1 / К2 / К3 ... + Нова колонка)
-   Each ticket appears as a small chip. Active one is gold-filled.
-   Whole row is centered. */
+   Same visual language as the ФИШ header above — transparent
+   container, centered horizontally, gold accents. */
 .gvb-slip-cols {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 6px;
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--border-soft, #4d4633);
 }
 .gvb-slip-col-tab {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
+  padding: 4px 10px;
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   color: var(--text-soft, #cfcab8);
   font-family: inherit;
-  font-weight: 700;
-  font-size: 0.78rem;
-  font-style: normal;
-  letter-spacing: 0.02em;
-  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  font-style: italic;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: color 0.12s;
   line-height: 1.1;
 }
 .gvb-slip-col-tab:hover:not(.gvb-slip-col-tab--active) {
-  background: rgba(255,255,255,0.04);
   color: var(--text-main);
 }
 .gvb-slip-col-tab--active {
-  background: var(--accent);
-  color: #06120a;
+  color: var(--accent);
 }
 .gvb-slip-col-tab__name {
   font-family: inherit;
   font-weight: 800;
-  font-style: normal;
-  letter-spacing: 0.02em;
+  font-style: italic;
+  letter-spacing: 0.06em;
 }
 .gvb-slip-col-tab__odds {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 2px 7px;
+  background: var(--accent);
+  color: #06120a;
   font-family: inherit;
   font-style: normal;
-  font-weight: 800;
-  font-size: 0.76rem;
-  opacity: 0.9;
+  font-weight: 900;
+  font-size: 0.66rem;
+  border-radius: 999px;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 .gvb-slip-col-tab__remove {
@@ -9337,17 +9341,19 @@ select:focus {
   padding: 0 4px;
   border-radius: 3px;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.45;
+  font-style: normal;
+  letter-spacing: 0;
 }
-.gvb-slip-col-tab__remove:hover { background: rgba(0,0,0,0.18); opacity: 1; }
+.gvb-slip-col-tab__remove:hover { color: #ff6b6b; opacity: 1; }
 .gvb-slip-col-add {
   background: transparent;
   border: 1px dashed var(--accent);
   color: var(--accent);
   font-weight: 900;
-  font-size: 0.95rem;
-  width: 28px;
-  height: 26px;
+  font-size: 0.9rem;
+  width: 26px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -9737,24 +9743,58 @@ select:focus {
 .gvb-slip-fab--empty:hover { opacity: 1; }
 
 @media (max-width: 600px) {
+  /* Panel: full-width bottom sheet feel — pinned to both edges with a
+     bit of margin and just above the OddsTicker. Generous max-height
+     so picks have room. */
   .gvb-slip-panel {
-    right: 10px;
-    left: 10px;
+    right: 8px;
+    left: 8px;
     width: auto;
-    bottom: 56px;
-    max-height: 70vh;
+    bottom: 52px;
+    max-height: 78vh;
+    padding: 12px 12px 14px;
+    gap: 10px;
   }
-  .gvb-slip-fab   { bottom: 70px; right: 12px; }
-  .gvb-slip-bar   {
-    right: 10px;
-    bottom: 56px;
-    padding: 5px 10px;
-    gap: 8px;
-    max-width: calc(100vw - 20px);
+  .gvb-slip-panel__title { font-size: 0.86rem; }
+  .gvb-slip-panel__head  { padding: 2px 0 6px; }
+
+  /* Compact pill: also full width minus a small margin so it doesn't
+     get squeezed by the "Общ коеф" label. */
+  .gvb-slip-bar {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    bottom: 52px;
+    padding: 6px 12px;
+    gap: 10px;
+    justify-content: space-between;
   }
-  .gvb-slip-bar__mode { font-size: 0.68rem; }
-  .gvb-slip-bar__total { font-size: 0.7rem; }
-  .gvb-slip-bar__total strong { font-size: 0.78rem; }
+  .gvb-slip-bar__mode  { font-size: 0.72rem; }
+  .gvb-slip-bar__total { font-size: 0.72rem; }
+  .gvb-slip-bar__total strong { font-size: 0.82rem; }
+
+  /* FAB stays small bottom-right when slip is empty */
+  .gvb-slip-fab { bottom: 60px; right: 10px; }
+
+  /* Column tabs — smaller chips so 3+ columns fit one row on phone */
+  .gvb-slip-cols { gap: 6px; padding: 2px 0 6px; }
+  .gvb-slip-col-tab { padding: 3px 8px; font-size: 0.76rem; }
+  .gvb-slip-col-tab__odds { font-size: 0.62rem; min-width: 20px; padding: 2px 6px; }
+  .gvb-slip-col-add { width: 24px; height: 22px; font-size: 0.85rem; }
+
+  /* Pick rows: tighter padding + slightly smaller fixture name */
+  .gvb-slip-pick { padding: 8px 12px 8px 10px; }
+  .gvb-slip-pick__fixture { font-size: 0.78rem; padding-right: 22px; }
+  .gvb-slip-pick__sel-label { font-size: 0.72rem; }
+  .gvb-slip-pick__odds { font-size: 0.92rem; }
+
+  /* Stake + summary */
+  .gvb-slip-panel__stake-label { font-size: 0.66rem; }
+  .gvb-slip-panel__stake-input input { font-size: 1rem; }
+  .gvb-slip-panel__chip { padding: 4px 8px; font-size: 0.72rem; }
+  .gvb-slip-panel__summary-row { font-size: 0.74rem; }
+  .gvb-slip-panel__btn { padding: 9px 12px; font-size: 0.78rem; }
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
