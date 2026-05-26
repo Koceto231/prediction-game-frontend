@@ -990,7 +990,33 @@ export default function MatchesPage() {
                         key={`${h}-${a}`}
                         type="button"
                         className={`exact-score-tile${selected ? ' exact-score-tile--selected' : ''}`}
-                        onClick={() => { setField('homeScore', h); setField('awayScore', a); }}
+                        onClick={async () => {
+                          setField('homeScore', h);
+                          setField('awayScore', a);
+                          // Fetch the exact-score odds and push the pick into
+                          // the global Bet Slip. Exact Score claims the whole
+                          // match in a column (see slip conflict rules), so
+                          // adding it replaces any other picks for this match.
+                          try {
+                            const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, {
+                              scoreHome: Number(h), scoreAway: Number(a),
+                            });
+                            if (r?.odds != null) {
+                              window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                                detail: {
+                                  matchId:     selectedMatch.id,
+                                  betType:     'ExactScore',
+                                  pick:        `${h}-${a}`,
+                                  scoreHome:   Number(h),
+                                  scoreAway:   Number(a),
+                                  odds:        Number(r.odds),
+                                  fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                                  leagueLabel: selectedMatch.leagueName ?? null,
+                                },
+                              }));
+                            }
+                          } catch { /* offline / 404 → no-op */ }
+                        }}
                       >
                         <span className="exact-score-tile__score">{h}-{a}</span>
                         {selected && exactOdds && (
@@ -1018,20 +1044,9 @@ export default function MatchesPage() {
                     </div>
                   </div>
                 </details>
-                {hasBetOdds && hasScore && (
-                  <div className="inline-bet-wrapper">
-                    {exactOddsLoading && <div className="muted-text" style={{ textAlign: 'center' }}>Calculating odds...</div>}
-                    {exactOdds && !exactOddsLoading && (
-                      <>
-                        <div className="mp-odds-row">
-                          <span>Odds for {homeScore}–{awayScore}</span>
-                          <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>{Number(exactOdds.odds).toFixed(2)}</strong>
-                        </div>
-                        <BetSlipStake amount={amount} setAmount={setAmount} potential={exactPotential} onPlace={placeBet} loading={loading} disabled={!hasScore} />
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Inline "Place bet €" UI for Exact Score removed — clicking
+                    a tile now dispatches the pick into the global Bet Slip,
+                    same as Match Result / BTTS / O-U. */}
               </>
             )}
 

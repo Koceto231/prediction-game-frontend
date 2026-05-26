@@ -99,13 +99,15 @@ export default function BetSlipPanel() {
   // same selection.
   useEffect(() => {
     const onAdd = (e) => {
-      const { matchId, pick, odds, fixture, leagueLabel, betType, line } = e.detail || {};
+      const { matchId, pick, odds, fixture, leagueLabel, betType, line, scoreHome, scoreAway } = e.detail || {};
       if (!matchId || !pick || odds == null) return;
       const bt  = betType || 'Winner';
       const key = `${matchId}:${bt}:${pick}:${line || ''}`;
       const newPick = {
         key, matchId, betType: bt, pick,
-        line: line || null,
+        line:      line      || null,
+        scoreHome: scoreHome ?? null,
+        scoreAway: scoreAway ?? null,
         odds: Number(odds),
         fixture, leagueLabel,
       };
@@ -196,6 +198,18 @@ export default function BetSlipPanel() {
   // ── Submit ─────────────────────────────────────────────────────────
   const handlePlaceAll = async () => {
     if (loading || placeableCount === 0 || overBalance) return;
+
+    // Exact Score legs can only be placed as single bets — backend's
+    // AccumulatorLegDTO has no scoreHome/scoreAway fields. Block submit
+    // if any column tries to combine ExactScore with other picks.
+    const badEsColumn = columns.find(c =>
+      c.picks.length >= 2 && c.picks.some(p => p.betType === 'ExactScore'),
+    );
+    if (badEsColumn) {
+      setError('Точен резултат не може да се комбинира с други маркети в една колонка. Премести го в собствена колонка.');
+      return;
+    }
+
     setLoading(true); setError(''); setSuccess('');
     try {
       const placements = columnSummaries
@@ -250,6 +264,8 @@ export default function BetSlipPanel() {
         return `И двата отбора отбелязват — ${p.pick === 'Yes' ? 'Да' : 'Не'}`;
       case 'OverUnder':
         return `Голове ${p.pick === 'Over' ? 'над' : 'под'} ${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
+      case 'ExactScore':
+        return `Точен резултат — ${p.pick}`;
       default:
         return p.pick;
     }
@@ -260,6 +276,7 @@ export default function BetSlipPanel() {
       case 'DoubleChance': return p.pick === 'HomeOrDraw' ? '1X' : p.pick === 'HomeOrAway' ? '12' : 'X2';
       case 'BTTS':         return p.pick === 'Yes' ? 'ДА' : 'НЕ';
       case 'OverUnder':    return `${p.pick === 'Over' ? 'O' : 'U'}${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
+      case 'ExactScore':   return p.pick;     // e.g. "1-0"
       default:             return pickShort(p.pick);
     }
   };
@@ -565,6 +582,7 @@ function toLegPayload(p) {
     case 'DoubleChance': return { ...base, dCPick: p.pick };
     case 'BTTS':         return { ...base, bTTSPick: p.pick === 'Yes' };
     case 'OverUnder':    return { ...base, oULine: p.line, oUPick: p.pick };
+    case 'ExactScore':   return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
     default:             return { ...base, pick: p.pick };
   }
 }
@@ -577,6 +595,14 @@ function isConflict(existing, incoming) {
   if (existing.matchId !== incoming.matchId) return false;
 
   const bt = incoming.betType;
+
+  // 0. ExactScore is exclusive — it determines the winner, BTTS and all
+  //    O/U lines, so combining it with anything else on the same match
+  //    is either redundant or impossible. The backend also can't carry
+  //    an Exact Score leg inside an accumulator. So ExactScore CLAIMS
+  //    the match in a column: adding it drops every other pick, and any
+  //    other market added later drops the ExactScore.
+  if (bt === 'ExactScore' || existing.betType === 'ExactScore') return true;
 
   // 1. Same-market dedupe
   if ((bt === 'Winner' || bt === 'DoubleChance')
