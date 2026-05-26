@@ -10509,6 +10509,18 @@ select:focus {
 
 .gvm-page__main { min-width: 0; }
 
+/* Full-page match-detail mode — when a match is opened, the matches list,
+   the filter pills, the heading and the right-rail "Live Now" sidebar all
+   hide so the detail panel feels like a separate route. */
+.gvm-page--detail-open {
+  grid-template-columns: 1fr;
+}
+.gvm-page--detail-open .gvm-page__head,
+.gvm-page--detail-open .gvm-list,
+.gvm-page--detail-open .gvm-livenow {
+  display: none;
+}
+
 .gvm-page__head {
   display: flex;
   flex-wrap: wrap;

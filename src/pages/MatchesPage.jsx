@@ -252,10 +252,12 @@ export default function MatchesPage() {
   // Scroll to bet/AI panel whenever a match is selected
   useEffect(() => {
     if (!selectedMatch) return;
-    // Small delay so React has time to render the panel before we scroll to it
+    // The list/sidebar hide entirely while a match is open, so scroll the
+    // window itself to the top instead of into the panel — this feels like
+    // a "new page" instead of a long scroll on the same page.
     const t = setTimeout(() => {
-      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 40);
     return () => clearTimeout(t);
   }, [selectedMatch?.id]);
 
@@ -806,9 +808,11 @@ export default function MatchesPage() {
     : matches;
 
   return (
-    <div className="gvm-page">
+    <div className={`gvm-page${selectedMatch ? ' gvm-page--detail-open' : ''}`}>
 
-      {/* Main column (8/12): heading + filter pills + matches list */}
+      {/* Main column (8/12): heading + filter pills + matches list.
+          When a match is selected, this whole column hides so the detail
+          panel below renders as a full-width "page". */}
       <div className="gvm-page__main">
         <div className="gvm-page__head">
           <h2 className="gvm-page__title">Upcoming Matches</h2>
@@ -915,8 +919,8 @@ export default function MatchesPage() {
               <div className="gvmd-ai__head">
                 <span className="gvmd-ai__emoji">🤖</span>
                 <h3 className="gvmd-ai__title">AI Prediction</h3>
-                {aiPrediction?.confidence && (
-                  <span className="gvmd-ai__confidence">AI CONFIDENCE: {aiPrediction.confidence.toUpperCase()}</span>
+                {aiPrediction?.confidence != null && (
+                  <span className="gvmd-ai__confidence">AI CONFIDENCE: {String(aiPrediction.confidence).toUpperCase()}</span>
                 )}
               </div>
               <p className="gvmd-ai__body">
