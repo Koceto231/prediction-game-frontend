@@ -124,19 +124,65 @@ export default function BetSlipPanel() {
 
   const pickShort = (pick) => pick === 'Home' ? '1' : pick === 'Away' ? '2' : 'X';
 
+  // Bulgarian label for accumulator type based on legs count
+  const modeLabel = (n) =>
+    n === 1 ? 'Единичен'
+    : n === 2 ? 'Двоен'
+    : n === 3 ? 'Троен'
+    : n === 4 ? 'Четворен'
+    : `Системен (${n})`;
+
+  const clearAll = (e) => {
+    e?.stopPropagation?.();
+    setItems([]);
+    setError(''); setSuccess('');
+  };
+
   return (
     <>
-      {/* Floating launcher — bottom-left, mirrors QuickBetSidebar (which is bottom-right) */}
-      <button
-        type="button"
-        className="gvb-slip-fab"
-        onClick={() => setOpen(o => !o)}
-        title={items.length === 0 ? 'Bet Slip' : `Bet Slip (${items.length})`}
-      >
-        <span className="gvb-slip-fab__icon">🎟</span>
-        <span className="gvb-slip-fab__label">Slip</span>
-        {items.length > 0 && <span className="gvb-slip-fab__badge">{items.length}</span>}
-      </button>
+      {/* Compact bottom bar — visible whenever there are picks. Click to expand. */}
+      {items.length > 0 && !open && (
+        <div
+          className="gvb-slip-bar"
+          role="button"
+          tabIndex={0}
+          onClick={() => setOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(true); }}
+        >
+          <button
+            type="button"
+            className="gvb-slip-bar__trash"
+            onClick={clearAll}
+            title="Изчисти всички"
+            aria-label="Clear slip"
+          >🗑</button>
+          <span className="gvb-slip-bar__mode">{modeLabel(items.length)}</span>
+          <div className="gvb-slip-bar__chips">
+            {items.map(p => (
+              <span key={p.matchId} className="gvb-slip-bar__chip" title={p.fixture}>
+                {pickShort(p.pick)}
+              </span>
+            ))}
+          </div>
+          <span className="gvb-slip-bar__total">
+            Общ коеф: <strong>{combined.toFixed(2)}</strong>
+          </span>
+          <span className="gvb-slip-bar__chevron" aria-hidden="true">▲</span>
+        </div>
+      )}
+
+      {/* Tiny FAB shown only when slip is empty, so user can still open it */}
+      {items.length === 0 && !open && (
+        <button
+          type="button"
+          className="gvb-slip-fab gvb-slip-fab--empty"
+          onClick={() => setOpen(true)}
+          title="Bet Slip"
+        >
+          <span className="gvb-slip-fab__icon">🎟</span>
+          <span className="gvb-slip-fab__label">Slip</span>
+        </button>
+      )}
 
       {/* Slide-in panel from the LEFT */}
       <div className={`gvb-slip-panel${open ? ' gvb-slip-panel--open' : ''}`}>

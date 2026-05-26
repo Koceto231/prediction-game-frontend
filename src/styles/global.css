@@ -9462,9 +9462,113 @@ select:focus {
 }
 .gvb-slip-panel__btn--gold:hover:not(:disabled) { filter: brightness(1.08); }
 
+/* Compact horizontal bottom bar — shown when slip has picks (collapsed view).
+   Sits just above the OddsTicker (42px). Clicking anywhere expands the panel. */
+.gvb-slip-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 42px;
+  z-index: 38;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  min-height: 46px;
+  background: #0c1a3a;                      /* deep navy like the ref */
+  border-top: 2px solid var(--accent);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
+}
+.gvb-slip-bar:hover { background: #102046; }
+
+.gvb-slip-bar__trash {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 1.05rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.gvb-slip-bar__trash:hover { background: rgba(255,255,255,0.08); }
+
+.gvb-slip-bar__mode {
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.gvb-slip-bar__chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gvb-slip-bar__chips::-webkit-scrollbar { display: none; }
+
+.gvb-slip-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--accent);
+  color: #06120a;
+  font-weight: 900;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.gvb-slip-bar__total {
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+.gvb-slip-bar__total strong {
+  color: var(--accent);
+  margin-left: 4px;
+  font-weight: 900;
+}
+
+.gvb-slip-bar__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: #fff;
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+/* Tiny empty-state launcher (small, unobtrusive) */
+.gvb-slip-fab--empty {
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+.gvb-slip-fab--empty:hover { opacity: 1; }
+
 @media (max-width: 600px) {
   .gvb-slip-panel { width: 100%; top: 56px; }
   .gvb-slip-fab   { bottom: 70px; right: 12px; }
+  .gvb-slip-bar   { padding: 6px 10px; gap: 8px; font-size: 0.78rem; }
+  .gvb-slip-bar__mode { font-size: 0.78rem; }
+  .gvb-slip-bar__chip { min-width: 24px; height: 22px; font-size: 0.72rem; }
+  .gvb-slip-bar__total { font-size: 0.74rem; }
 }
 
 /* ╭──────────────────────────────────────────────────────────────╮
