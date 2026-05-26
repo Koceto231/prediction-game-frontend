@@ -859,35 +859,72 @@ export default function MatchesPage() {
       {selectedMatch && (
         <section className="shell-card panel" ref={panelRef} style={{ scrollMarginTop: 64 }}>
 
-          {/* Match hero */}
-          <div className="match-hero">
-            <div className="match-hero__badge">Selected Match</div>
-            <h2 className="match-hero__title">
-              <span>{selectedMatch.homeTeamName}</span>
-              <span className="match-hero__vs">vs</span>
-              <span>{selectedMatch.awayTeamName}</span>
-            </h2>
-            <div className="match-hero__meta">
-              <span className="match-hero__date">{new Date(selectedMatch.matchDate).toLocaleString()}</span>
+          {/* ── Match Detail HERO — Gridiron Velocity style ───────────── */}
+          <div className="gvmd-hero">
+            <button
+              type="button"
+              className="gvmd-hero__back"
+              onClick={() => { setSelectedMatch(null); resetPanel(); }}
+            >← All matches</button>
+
+            <div className="gvmd-hero__row">
+              {/* HOME shield + name */}
+              <div className="gvmd-hero__team">
+                <div className="gvmd-hero__shield gvmd-hero__shield--home">
+                  {selectedMatch.homeTeamLogo
+                    ? <img src={selectedMatch.homeTeamLogo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    : <span className="gvmd-hero__shield-fallback">
+                        {selectedMatch.homeTeamName?.split(/\s+/).filter(w => !/^(FC|CF|AC|SC|AFC)$/i.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}
+                      </span>}
+                </div>
+                <div className="gvmd-hero__teamname">{selectedMatch.homeTeamName}</div>
+              </div>
+
+              {/* CENTER — time, date, venue */}
+              <div className="gvmd-hero__center">
+                <div className="gvmd-hero__time">
+                  {new Date(selectedMatch.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="gvmd-hero__date">
+                  {new Date(selectedMatch.matchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
+                </div>
+                {selectedMatch.venueName && (
+                  <div className="gvmd-hero__venue">
+                    📍 {selectedMatch.venueName.toUpperCase()}{selectedMatch.venueCity ? ` · ${selectedMatch.venueCity}` : ''}
+                  </div>
+                )}
+              </div>
+
+              {/* AWAY shield + name */}
+              <div className="gvmd-hero__team">
+                <div className="gvmd-hero__shield">
+                  {selectedMatch.awayTeamLogo
+                    ? <img src={selectedMatch.awayTeamLogo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    : <span className="gvmd-hero__shield-fallback">
+                        {selectedMatch.awayTeamName?.split(/\s+/).filter(w => !/^(FC|CF|AC|SC|AFC)$/i.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}
+                      </span>}
+                </div>
+                <div className="gvmd-hero__teamname">{selectedMatch.awayTeamName}</div>
+              </div>
             </div>
           </div>
 
-          {/* AI card — loading / ready / error */}
+          {/* ── AI Prediction card — italic body, robot emoji header ── */}
           <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            <div className="ai-card" style={{ marginTop: 16, marginBottom: 24 }}>
-              <h3>🤖 AI Prediction</h3>
-              {aiLoading && (
-                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing match...</p>
-              )}
-              {!aiLoading && aiPrediction?.aiAnalysis && (
-                <p className="ai-analysis">{aiPrediction.aiAnalysis}</p>
-              )}
-              {!aiLoading && !aiPrediction?.aiAnalysis && !aiError && (
-                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No analysis available for this match.</p>
-              )}
-              {!aiLoading && aiError && (
-                <p className="ai-analysis" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Could not load analysis.</p>
-              )}
+            <div className="gvmd-ai">
+              <div className="gvmd-ai__head">
+                <span className="gvmd-ai__emoji">🤖</span>
+                <h3 className="gvmd-ai__title">AI Prediction</h3>
+                {aiPrediction?.confidence && (
+                  <span className="gvmd-ai__confidence">AI CONFIDENCE: {aiPrediction.confidence.toUpperCase()}</span>
+                )}
+              </div>
+              <p className="gvmd-ai__body">
+                {aiLoading && <em>Analysing match…</em>}
+                {!aiLoading && aiPrediction?.aiAnalysis && aiPrediction.aiAnalysis}
+                {!aiLoading && !aiPrediction?.aiAnalysis && !aiError && <em>No analysis available for this match.</em>}
+                {!aiLoading && aiError && <em>Could not load analysis.</em>}
+              </p>
             </div>
           </div>
 
