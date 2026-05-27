@@ -123,7 +123,11 @@ export default function BetSlipPanel() {
       }));
       setError(''); setSuccess('');
     };
-    const onClear = () => setColumns([newColumn()]);
+    const onClear = () => {
+      const fresh = newColumn();
+      setColumns([fresh]);
+      setActiveColumnId(fresh.id);
+    };
     window.addEventListener('bpfl:slip:add',   onAdd);
     window.addEventListener('bpfl:slip:clear', onClear);
     return () => {
@@ -165,7 +169,14 @@ export default function BetSlipPanel() {
 
   const clearAll = (e) => {
     e?.stopPropagation?.();
-    setColumns([newColumn()]);
+    // Re-point activeColumnId at the brand-new column. Without this the
+    // dispatch handler keeps looking for the now-deleted id (`c.id ===
+    // activeColumnId` fails for every column) and silently drops every
+    // subsequent pick — bug surfaced after the user clicked Изчисти
+    // and then couldn't add new picks.
+    const fresh = newColumn();
+    setColumns([fresh]);
+    setActiveColumnId(fresh.id);
     setError(''); setSuccess('');
   };
 
@@ -239,7 +250,9 @@ export default function BetSlipPanel() {
           ? 'Залогът е приет!'
           : `${placeableCount} колонки приети!`,
       );
-      setColumns([newColumn()]);
+      const fresh = newColumn();
+      setColumns([fresh]);
+      setActiveColumnId(fresh.id);
       setTimeout(() => { setSuccess(''); setOpen(false); }, 1600);
     } catch (err) {
       setError(err?.response?.data?.message || 'Грешка при залагане.');
@@ -459,13 +472,7 @@ export default function BetSlipPanel() {
             {error   && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--error">{error}</div>}
             {success && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--ok">{success}</div>}
 
-            <div className="gvb-slip-panel__actions">
-              <button
-                type="button"
-                className="gvb-slip-panel__btn gvb-slip-panel__btn--ghost"
-                onClick={clearAll}
-                disabled={loading}
-              >Изчисти</button>
+            <div className="gvb-slip-panel__actions gvb-slip-panel__actions--single">
               <button
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"

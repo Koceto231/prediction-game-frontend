@@ -9679,6 +9679,10 @@ select:focus {
 .gvb-slip-panel__actions {
   display: grid; grid-template-columns: 1fr 2fr; gap: 8px;
 }
+/* Single-button mode (Изчисти removed) — CTA spans the full width */
+.gvb-slip-panel__actions--single {
+  grid-template-columns: 1fr;
+}
 .gvb-slip-panel__btn {
   padding: 10px 14px; border-radius: 9px;
   font-family: inherit; font-weight: 800;
