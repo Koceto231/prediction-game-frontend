@@ -9283,13 +9283,13 @@ select:focus {
   border-bottom: 1px solid var(--border-soft, #4d4633);
 }
 .gvb-slip-panel__title {
-  /* Basic styling — defaults to inherited font; just bold + gold */
+  /* Basic styling — defaults to inherited font; warm cream label */
   font-family: inherit;
   font-style: normal;
   font-weight: 700;
   font-size: 0.95rem;
   letter-spacing: 0.04em;
-  color: var(--accent);
+  color: #e0d8c0;
   text-align: center;
 }
 .gvb-slip-panel__count {
