@@ -12,8 +12,23 @@ import { getTeamInitials } from '../utils/liveState';
  * shield style there (size, border, background). The inner <img> /
  * <span> use the same class with a `__img` / `__initials` suffix so you
  * can theme them via CSS.
+ *
+ * PERF NOTES
+ * - `loading="lazy"` defers off-screen crests (most of them on long lists).
+ * - `decoding="async"` lets the browser decompress on a worker thread so
+ *   the main thread isn't blocked during scrolls.
+ * - `fetchpriority="low"` for lists, "high" for the match-detail hero
+ *   (caller controls via the `priority` prop).
+ * - Explicit width/height attributes prevent layout shift when the image
+ *   finally arrives — bigger CLS = lower mobile Lighthouse score.
  */
-export default function TeamCrest({ logoUrl, name, className = 'team-crest', size }) {
+export default function TeamCrest({
+  logoUrl,
+  name,
+  className = 'team-crest',
+  size,
+  priority = false,
+}) {
   const [broken, setBroken] = useState(false);
   // Reset broken-state when the underlying URL changes (e.g. when a new
   // match is selected or Sportmonks finally populates the logo).
@@ -29,8 +44,12 @@ export default function TeamCrest({ logoUrl, name, className = 'team-crest', siz
             className={`${className}__img`}
             src={logoUrl}
             alt=""
+            width={size || 64}
+            height={size || 64}
             onError={() => setBroken(true)}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchpriority={priority ? 'high' : 'low'}
           />
         : <span className={`${className}__initials`} aria-label={name}>{initials}</span>}
     </span>
