@@ -323,18 +323,6 @@ export default function BetSlipPanel() {
 
   return (
     <>
-      {/* Tiny FAB shown only when slip is totally empty */}
-      {totalPicks === 0 && !open && (
-        <button
-          type="button"
-          className="gvb-slip-fab gvb-slip-fab--empty"
-          onClick={() => setOpen(true)}
-          title="Bet Slip"
-        >
-          <span className="gvb-slip-fab__icon">🎟</span>
-          <span className="gvb-slip-fab__label">Slip</span>
-        </button>
-      )}
 
       {/* Connected slip — pill at the bottom is always visible, full
           panel body grows out of it upward when open. */}
@@ -472,7 +460,13 @@ export default function BetSlipPanel() {
             {error   && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--error">{error}</div>}
             {success && <div className="gvb-slip-panel__feedback gvb-slip-panel__feedback--ok">{success}</div>}
 
-            <div className="gvb-slip-panel__actions gvb-slip-panel__actions--single">
+            <div className="gvb-slip-panel__actions">
+              <button
+                type="button"
+                className="gvb-slip-panel__btn gvb-slip-panel__btn--ghost"
+                onClick={clearAll}
+                disabled={loading}
+              >Изчисти</button>
               <button
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"
