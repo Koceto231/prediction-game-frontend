@@ -9243,6 +9243,9 @@ select:focus {
 .gvb-slip__pill:hover { background: var(--surface-container-highest, #353534); }
 /* Top of the pill loses its top border when nothing is above it */
 .gvb-slip:not(.gvb-slip--open) .gvb-slip__pill { border-top: none; }
+/* When the slip is open the bottom pill is redundant — collapse arrow
+   in the header (gvb-slip-panel__head-collapse) is the close affordance. */
+.gvb-slip--open .gvb-slip__pill { display: none; }
 
 .gvb-slip-bar__chevron--open { transform: rotate(180deg); transition: transform 0.2s; }
 .gvb-slip-bar__chevron { transition: transform 0.2s; display: inline-flex; align-items: center; }
@@ -9317,6 +9320,23 @@ select:focus {
 }
 .gvb-slip-panel__head-icon:hover { color: #ff6b6b; filter: none; }
 .gvb-slip-panel__head-icon:disabled { opacity: 0.45; cursor: default; }
+
+/* Collapse chevron in the header, right-aligned via margin-left:auto. */
+.gvb-slip-panel__head-collapse {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: transform 0.15s, color 0.15s;
+}
+.gvb-slip-panel__head-collapse:hover {
+  color: var(--text-main);
+  transform: translateY(1px);
+}
 
 /* Column tabs (К1 / К2 / К3 ... + Нова колонка)
    Same visual language as the ФИШ header above — transparent

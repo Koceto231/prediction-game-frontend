@@ -343,6 +343,16 @@ export default function BetSlipPanel() {
             aria-label="Clear slip"
           >🗑</button>
           <span className="gvb-slip-panel__title">ФИШ</span>
+          {/* Collapse arrow — right-aligned, only the visible affordance
+              to close the slip now that the bottom pill is hidden while
+              the panel is open. */}
+          <button
+            type="button"
+            className="gvb-slip-panel__head-collapse"
+            onClick={() => setOpen(false)}
+            title="Затвори фиша"
+            aria-label="Close slip"
+          >▼</button>
         </div>
 
         {/* Active column — picks list + per-column stake */}
