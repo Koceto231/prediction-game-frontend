@@ -9267,7 +9267,7 @@ select:focus {
 .gvb-slip-panel__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;                         /* 🗑 next to ФИШ */
   padding: 4px 0 8px;
   border-bottom: 1px solid var(--border-soft, #4d4633);
 }
@@ -9308,15 +9308,15 @@ select:focus {
 .gvb-slip-panel__head-icon {
   background: transparent;
   border: none;
-  color: var(--text-soft, #cfcab8);
-  font-size: 1.05rem;
+  color: var(--accent);              /* gold — clearly visible on dark surface */
+  font-size: 1.15rem;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 999px;
+  padding: 4px 6px;
   line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(240, 197, 25, 0.25));
 }
-.gvb-slip-panel__head-icon:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: #ff6b6b; }
-.gvb-slip-panel__head-icon:disabled { opacity: 0.35; cursor: default; }
+.gvb-slip-panel__head-icon:hover { color: #ff6b6b; filter: none; }
+.gvb-slip-panel__head-icon:disabled { opacity: 0.45; cursor: default; }
 
 /* Column tabs (К1 / К2 / К3 ... + Нова колонка)
    Same visual language as the ФИШ header above — transparent

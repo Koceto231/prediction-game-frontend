@@ -334,42 +334,9 @@ export default function BetSlipPanel() {
             className="gvb-slip-panel__head-icon"
             onClick={clearAll}
             title="Изчисти всички"
-            disabled={totalPicks === 0}
+            aria-label="Clear slip"
           >🗑</button>
           <span className="gvb-slip-panel__title">ФИШ</span>
-          <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>⌄</button>
-        </div>
-
-        {/* Column tabs — one per column + "+ Нова колонка" */}
-        <div className="gvb-slip-cols" role="tablist">
-          {columns.map((c, idx) => {
-            const summary = columnSummaries.find(s => s.id === c.id);
-            const isActive = c.id === activeColumnId;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                role="tab"
-                className={`gvb-slip-col-tab${isActive ? ' gvb-slip-col-tab--active' : ''}`}
-                onClick={() => setActiveColumnId(c.id)}
-                title={summary?.isEmpty ? 'Празна колонка' : `${summary.picks.length} pick(s) · коеф ${summary.combined.toFixed(2)}`}
-              >
-                <span className="gvb-slip-col-tab__name">К{idx + 1}</span>
-                {!summary.isEmpty && (
-                  <span className="gvb-slip-col-tab__odds">{summary.combined.toFixed(2)}</span>
-                )}
-                {columns.length > 1 && (
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className="gvb-slip-col-tab__remove"
-                    onClick={(e) => { e.stopPropagation(); removeColumn(c.id); }}
-                    aria-label="Премахни колонката"
-                  >×</span>
-                )}
-              </button>
-            );
-          })}
         </div>
 
         {/* Active column — picks list + per-column stake */}
