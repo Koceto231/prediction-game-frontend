@@ -336,9 +336,7 @@ export default function BetSlipPanel() {
             title="Изчисти всички"
             disabled={totalPicks === 0}
           >🗑</button>
-          <span className="gvb-slip-panel__title">
-            ФИШ {totalPicks > 0 && <span className="gvb-slip-panel__count">{totalPicks}</span>}
-          </span>
+          <span className="gvb-slip-panel__title">ФИШ</span>
           <button type="button" className="gvb-slip-panel__close" onClick={() => setOpen(false)}>⌄</button>
         </div>
 
@@ -372,12 +370,6 @@ export default function BetSlipPanel() {
               </button>
             );
           })}
-          <button
-            type="button"
-            className="gvb-slip-col-add"
-            onClick={addColumn}
-            title="Нова колонка"
-          >+</button>
         </div>
 
         {/* Active column — picks list + per-column stake */}
