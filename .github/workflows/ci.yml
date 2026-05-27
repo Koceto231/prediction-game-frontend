@@ -31,7 +31,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Lint
+        # ESLint fails the build on real bugs (unknown JSX attributes,
+        # undefined references, hook misuse) but tolerates warnings so
+        # the existing soft-issue backlog doesn't block PRs.
+        run: npm run lint -- --max-warnings 100
+
       - name: Build (production)
-        # Vite build is the closest thing we have to a type-check + lint —
+        # Vite build is the closest thing we have to a type-check —
         # it'll fail on syntax errors, missing imports, or broken JSX.
         run: npm run build

@@ -49,7 +49,7 @@ export default function TeamCrest({
             onError={() => setBroken(true)}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
-            fetchpriority={priority ? 'high' : 'low'}
+            fetchPriority={priority ? 'high' : 'low'}
           />
         : <span className={`${className}__initials`} aria-label={name}>{initials}</span>}
     </span>
