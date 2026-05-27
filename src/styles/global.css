@@ -9248,7 +9248,13 @@ select:focus {
 .gvb-slip--open .gvb-slip__pill { display: none; }
 
 .gvb-slip-bar__chevron--open { transform: rotate(180deg); transition: transform 0.2s; }
-.gvb-slip-bar__chevron { transition: transform 0.2s; display: inline-flex; align-items: center; }
+.gvb-slip-bar__chevron {
+  transition: transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;          /* push to the right edge of the pill */
+  color: var(--accent);
+}
 
 /* Legacy popup-panel rule kept as no-op so other components that reuse
    gvb-slip-panel__* (head, tabs, picks, stake) still pick up their styles.
