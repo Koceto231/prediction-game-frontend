@@ -17,16 +17,48 @@ export default function CashOutBadge({ bet, onCashedOut, compact = false }) {
   const [error, setError]     = useState('');
   const { refreshBalance }    = useWallet();
 
+  // Cash-out value only changes while the underlying match is live (odds
+  // move). Even then a 5s tick was 10–20× more than humans care about.
+  //
+  // Backend-friendly schedule:
+  //   • Fetch once on mount.
+  //   • Refresh every 15s while the tab is VISIBLE.
+  //   • Pause completely when the tab is hidden (saves ~70 % of req/min in
+  //     practice — users tab-switch all the time).
+  //   • Stop polling once the badge becomes ineligible (game over / paused
+  //     by backend) — there's nothing left to update.
   useEffect(() => {
     let cancelled = false;
-    const fetch = () => {
+    let intervalId = null;
+
+    const fetchOnce = () => {
+      if (document.hidden) return;
       api.get(`/Bet/${bet.id}/cash-out-value`)
-        .then(r => { if (!cancelled) setQuote(r.data); })
+        .then(r => {
+          if (cancelled) return;
+          setQuote(r.data);
+          // Backend says it's no longer eligible → kill the timer entirely
+          if (r.data && r.data.eligible === false && intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        })
         .catch(() => {});
     };
-    fetch();
-    const id = setInterval(fetch, 5_000);
-    return () => { cancelled = true; clearInterval(id); };
+
+    fetchOnce();
+    intervalId = setInterval(fetchOnce, 15_000);
+
+    // Refresh immediately when the tab is re-shown so a returning user
+    // doesn't see a stale price.
+    const onVisibility = () => { if (!document.hidden) fetchOnce(); };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [bet.id]);
 
   if (!quote || !quote.eligible) return null;

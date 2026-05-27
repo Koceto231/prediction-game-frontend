@@ -45,11 +45,21 @@ export default function Navbar() {
   const [liveCount, setLiveCount] = useState(0);
   const menuRef = useRef(null);
 
+  // Slow background poll for the live-match counter badge. Pauses when the
+  // tab is hidden so we don't keep waking the backend for users who tab away.
   useEffect(() => {
-    const fetch = () => api.get('/Match/live').then(r => setLiveCount((r.data ?? []).length)).catch(() => {});
-    fetch();
-    const id = setInterval(fetch, 15_000);
-    return () => clearInterval(id);
+    const fetchOnce = () => {
+      if (document.hidden) return;
+      api.get('/Match/live').then(r => setLiveCount((r.data ?? []).length)).catch(() => {});
+    };
+    fetchOnce();
+    const id = setInterval(fetchOnce, 30_000);            // doubled from 15s
+    const onVisibility = () => { if (!document.hidden) fetchOnce(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   const username = user?.username ?? '';

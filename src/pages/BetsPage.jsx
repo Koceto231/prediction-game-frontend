@@ -115,15 +115,32 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
   const [error, setError]     = useState('');
   const { refreshBalance }    = useWallet();
 
+  // 15 s cadence + tab-visibility gate — see CashOutBadge for the rationale.
+  // Cash-out value barely moves once a match isn't live; 5 s was wasted load.
   useEffect(() => {
     let cancelled = false;
-    const fetch = () =>
+    let intervalId = null;
+    const fetchOnce = () => {
+      if (document.hidden) return;
       api.get(`/Bet/${bet.id}/cash-out-value`)
-        .then(r => { if (!cancelled) setQuote(r.data); })
+        .then(r => {
+          if (cancelled) return;
+          setQuote(r.data);
+          if (r.data && r.data.eligible === false && intervalId) {
+            clearInterval(intervalId); intervalId = null;
+          }
+        })
         .catch(() => {});
-    fetch();
-    const id = setInterval(fetch, 5_000);
-    return () => { cancelled = true; clearInterval(id); };
+    };
+    fetchOnce();
+    intervalId = setInterval(fetchOnce, 15_000);
+    const onVisibility = () => { if (!document.hidden) fetchOnce(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [bet.id]);
 
   const handleConfirm = async () => {
