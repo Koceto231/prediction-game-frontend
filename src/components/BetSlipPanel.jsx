@@ -315,10 +315,17 @@ export default function BetSlipPanel() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────
+  // Mode label is keyed off the number of distinct MATCHES in a column,
+  // not the raw pick count. Two picks on the same fixture (same-game
+  // accumulator like Winner + BTTS) is still a "Единичен" because there
+  // is only one fixture in play; two picks on two different matches is
+  // a "Двоен", and so on.
+  const matchCount = (picks) => new Set(picks.map(p => p.matchId)).size;
+
   const headerLabel = () => {
     const nonEmpty = columns.filter(c => c.picks.length > 0);
     if (nonEmpty.length === 0) return null;
-    if (nonEmpty.length === 1) return modeLabel(nonEmpty[0].picks.length);
+    if (nonEmpty.length === 1) return modeLabel(matchCount(nonEmpty[0].picks));
     return `${nonEmpty.length} колонки`;
   };
 
@@ -410,7 +417,7 @@ export default function BetSlipPanel() {
           return (
             <>
               <div className="gvb-slip-panel__totalrow">
-                <span className="gvb-slip-panel__totalrow-mode">{modeLabel(s.picks.length)}</span>
+                <span className="gvb-slip-panel__totalrow-mode">{modeLabel(matchCount(s.picks))}</span>
                 <span className="gvb-slip-panel__totalrow-odds">{s.combined.toFixed(2)}</span>
               </div>
 
