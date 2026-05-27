@@ -9274,22 +9274,23 @@ select:focus {
 }
 
 .gvb-slip-panel__head {
-  display: flex;
+  /* 3-col grid: 🗑 left, ФИШ centered in the middle column, ▼ right */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 10px;                         /* 🗑 next to ФИШ */
+  gap: 10px;
   padding: 4px 0 8px;
   border-bottom: 1px solid var(--border-soft, #4d4633);
 }
 .gvb-slip-panel__title {
-  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
-  font-style: italic;
-  font-weight: 800;
-  font-size: 0.92rem;
-  letter-spacing: 0.10em;
+  /* Basic styling — defaults to inherited font; just bold + gold */
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
   color: var(--accent);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  text-align: center;
 }
 .gvb-slip-panel__count {
   background: var(--accent);
