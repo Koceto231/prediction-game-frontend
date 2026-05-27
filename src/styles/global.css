@@ -9482,8 +9482,8 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(240, 197, 25, 0.08);
+  padding: 8px 26px;
+  background: #f0c51914;
   border-top: 1px solid var(--border-soft, #4d4633);
   border-bottom: 1px solid var(--border-soft, #4d4633);
   margin: 0 -18px;
