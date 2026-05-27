@@ -178,6 +178,11 @@ export default function BetSlipPanel() {
     setColumns([fresh]);
     setActiveColumnId(fresh.id);
     setError(''); setSuccess('');
+    // Collapse the panel so the empty-state "Колонка 1 е празна" screen
+    // doesn't linger. Wrapper render check (`totalPicks > 0 || open`)
+    // then hides the whole slip; the next odd-click auto-reopens it
+    // via the totalPicks === 1 effect.
+    setOpen(false);
   };
 
   // ── Derived per-column data ────────────────────────────────────────
