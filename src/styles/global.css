@@ -9830,6 +9830,21 @@ select:focus {
   .gvb-slip-panel__btn { padding: 9px 12px; font-size: 0.78rem; }
 }
 
+/* Hard-square the entire slip surface — wrapper, pill, body, cards,
+   inputs, chips, buttons, badges. Override at the very end of the
+   stylesheet so we don't have to edit every per-component rule
+   individually (there are ~25 of them across this file). */
+.gvb-slip,
+.gvb-slip *,
+.gvb-slip *::before,
+.gvb-slip *::after,
+.gvb-slip-fab,
+.gvb-slip-fab *,
+.gvb-slip-bar,
+.gvb-slip-bar * {
+  border-radius: 0 !important;
+}
+
 /* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Quick Stake modal                       │
    │  (opens when tapping a 1/X/2 odd on the Matches page)        │
