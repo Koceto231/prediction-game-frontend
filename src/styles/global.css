@@ -9762,14 +9762,16 @@ select:focus {
 .gvb-slip-bar__trash {
   background: transparent;
   border: none;
-  color: var(--text-soft, #cfcab8);
-  font-size: 0.98rem;
+  color: var(--accent);             /* gold stroke for the SVG */
   cursor: pointer;
   padding: 4px 6px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
-.gvb-slip-bar__trash:hover { background: rgba(255,255,255,0.08); color: #ff6b6b; }
+.gvb-slip-bar__trash:hover { color: #ff6b6b; }
+.gvb-slip-bar__trash:disabled { opacity: 0.45; cursor: default; }
 
 .gvb-slip-bar__mode {
   font-weight: 800;

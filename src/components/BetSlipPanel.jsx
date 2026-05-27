@@ -348,7 +348,7 @@ export default function BetSlipPanel() {
             onClick={clearAll}
             title="Изчисти всички"
             aria-label="Clear slip"
-          >🗑</button>
+          ><TrashIcon size={20} /></button>
           <span className="gvb-slip-panel__title">ФИШ</span>
           {/* Collapse arrow — right-aligned, only the visible affordance
               to close the slip now that the bottom pill is hidden while
@@ -521,7 +521,7 @@ export default function BetSlipPanel() {
           title="Изчисти всички"
           aria-label="Clear slip"
           disabled={totalPicks === 0}
-        >🗑</button>
+        ><TrashIcon size={16} /></button>
         <span className="gvb-slip-bar__mode">
           {headerLabel() || 'ФИШ'}
         </span>
@@ -550,6 +550,34 @@ function backfillPick(p) {
     line:    p.line    || null,
     key:     p.key     || `${p.matchId}:${p.betType || 'Winner'}:${p.pick}:${p.line || ''}`,
   };
+}
+
+/**
+ * Inline trash icon — Feather/Lucide-style line art, sized via the `size`
+ * prop and stroke-coloured via `currentColor` so the parent button can
+ * theme it with `color`. Used in two places (panel header + collapsed
+ * pill) so we don't ship the same SVG twice as a string in the bundle.
+ */
+function TrashIcon({ size = 18 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
 }
 
 /** Bulgarian word for an N-leg accumulator. */
