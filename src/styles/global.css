@@ -12191,11 +12191,14 @@ select:focus {
 }
 
 .gv-pitch-tracker__event-icon {
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  height: 1.05em;
+  transform: translateY(1px);   /* optical: emoji glyphs sit a hair high vs text */
 }
 .gv-pitch-tracker__event-min {
   font-family: 'Anybody', 'JetBrains Mono', sans-serif;
