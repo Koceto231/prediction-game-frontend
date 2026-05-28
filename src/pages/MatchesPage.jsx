@@ -909,76 +909,60 @@ export default function MatchesPage() {
                     button are hidden because the top-level Gridiron Velocity
                     tabs above already let the user switch sections. */}
 
-                {/* Quick-pick tile grid — matches stitch mockup upgraded_my_bets_overview_5 */}
-                <div className="exact-score-grid">
-                  {[
-                    ['1','0'],['2','0'],['2','1'],['3','0'],['3','1'],['3','2'],
-                    ['0','0'],['1','1'],['2','2'],['3','3'],['0','1'],['1','2'],
-                    ['0','2'],['0','3'],['1','3'],['2','3'],
-                  ].map(([h, a]) => {
-                    const selected = String(homeScore) === h && String(awayScore) === a;
-                    return (
-                      <button
-                        key={`${h}-${a}`}
-                        type="button"
-                        className={`exact-score-tile${selected ? ' exact-score-tile--selected' : ''}`}
-                        onClick={async () => {
-                          setField('homeScore', h);
-                          setField('awayScore', a);
-                          // Fetch the exact-score odds and push the pick into
-                          // the global Bet Slip. Exact Score claims the whole
-                          // match in a column (see slip conflict rules), so
-                          // adding it replaces any other picks for this match.
-                          try {
-                            const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, {
-                              scoreHome: Number(h), scoreAway: Number(a),
-                            });
-                            if (r?.odds != null) {
-                              window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
-                                detail: {
-                                  matchId:     selectedMatch.id,
-                                  betType:     'ExactScore',
-                                  pick:        `${h}-${a}`,
-                                  scoreHome:   Number(h),
-                                  scoreAway:   Number(a),
-                                  odds:        Number(r.odds),
-                                  fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                                  leagueLabel: selectedMatch.leagueName ?? null,
-                                },
-                              }));
-                            }
-                          } catch { /* offline / 404 → no-op */ }
-                        }}
-                      >
-                        <span className="exact-score-tile__score">{h}-{a}</span>
-                        {selected && exactOdds && (
-                          <span className="exact-score-tile__odds">{Number(exactOdds.odds).toFixed(2)}</span>
-                        )}
+                {/* Score stepper — two per-team +/- counters, then one CTA
+                    that fetches the price and adds the exact score to the
+                    global Bet Slip. */}
+                {(() => {
+                  const h = Math.max(0, Math.min(20, Number(homeScore) || 0));
+                  const a = Math.max(0, Math.min(20, Number(awayScore) || 0));
+                  const stepH = (d) => setField('homeScore', String(Math.max(0, Math.min(20, h + d))));
+                  const stepA = (d) => setField('awayScore', String(Math.max(0, Math.min(20, a + d))));
+                  const addExact = async () => {
+                    try {
+                      const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a });
+                      if (r?.odds != null) {
+                        window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+                          detail: {
+                            matchId:     selectedMatch.id,
+                            betType:     'ExactScore',
+                            pick:        `${h}-${a}`,
+                            scoreHome:   h,
+                            scoreAway:   a,
+                            odds:        Number(r.odds),
+                            fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+                            leagueLabel: selectedMatch.leagueName ?? null,
+                          },
+                        }));
+                      }
+                    } catch { /* offline / 404 → no-op */ }
+                  };
+                  return (
+                    <div className="es-stepper">
+                      <div className="es-stepper__teams">
+                        {[
+                          { name: selectedMatch.homeTeamName, logo: selectedMatch.homeTeamLogo, val: h, step: stepH },
+                          { name: selectedMatch.awayTeamName, logo: selectedMatch.awayTeamLogo, val: a, step: stepA },
+                        ].map((t, i) => (
+                          <div className="es-stepper__team" key={i}>
+                            <div className="es-stepper__name">
+                              {t.logo && <img src={t.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                              <span>{t.name}</span>
+                            </div>
+                            <div className="es-stepper__counter">
+                              <button type="button" className="es-stepper__btn" onClick={() => t.step(-1)} aria-label="−">‹</button>
+                              <span className="es-stepper__val">{t.val}</span>
+                              <button type="button" className="es-stepper__btn" onClick={() => t.step(+1)} aria-label="+">›</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="es-stepper__cta" onClick={addExact}>
+                        Добави {h}:{a}
+                        {exactOdds?.odds != null && <span className="es-stepper__cta-odds">{Number(exactOdds.odds).toFixed(2)}</span>}
                       </button>
-                    );
-                  })}
-                </div>
-
-                <details className="exact-score-custom">
-                  <summary>Custom score (not in the grid)</summary>
-                  <div className="scoreboard-card">
-                    <div className="scoreboard-card__head"><span className="scoreboard-card__eyebrow">Enter predicted result</span></div>
-                    <div className="scoreboard">
-                      <div className="scoreboard-team">
-                        <div className="scoreboard-team__name">{selectedMatch.homeTeamName}</div>
-                        <div className="scorebox"><input type="number" min="0" max="20" placeholder="0" value={homeScore} onChange={e => setField('homeScore', e.target.value)} /></div>
-                      </div>
-                      <div className="scoreboard__separator">:</div>
-                      <div className="scoreboard-team">
-                        <div className="scoreboard-team__name">{selectedMatch.awayTeamName}</div>
-                        <div className="scorebox"><input type="number" min="0" max="20" placeholder="0" value={awayScore} onChange={e => setField('awayScore', e.target.value)} /></div>
-                      </div>
                     </div>
-                  </div>
-                </details>
-                {/* Inline "Place bet €" UI for Exact Score removed — clicking
-                    a tile now dispatches the pick into the global Bet Slip,
-                    same as Match Result / BTTS / O-U. */}
+                  );
+                })()}
               </>
             )}
 
