@@ -6374,9 +6374,9 @@ select:focus {
 }
 
 .market-section__name {
-  font-size: 0.78rem;
+  font-size: 1.10rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--text-main);
   flex: 1;
@@ -9718,7 +9718,7 @@ select:focus {
   border-radius: 4px;
 }
 .gvb-slip-pick__sel-label {
-  font-size: 0.74rem;
+  font-size: 0.84rem;
   color: var(--text-main);
   font-weight: 600;
 }
@@ -11318,8 +11318,8 @@ select:focus {
 }
 
 .gvm-card__crest {
-  width: 48px;
-  height: 48px;
+  width: 66px;
+  height: 68px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-soft, #4d4633);
   border-radius: 50%;
