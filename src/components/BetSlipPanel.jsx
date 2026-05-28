@@ -99,15 +99,25 @@ export default function BetSlipPanel() {
   // same selection.
   useEffect(() => {
     const onAdd = (e) => {
-      const { matchId, pick, odds, fixture, leagueLabel, betType, line, scoreHome, scoreAway } = e.detail || {};
+      const {
+        matchId, pick, odds, fixture, leagueLabel, betType, line, scoreHome, scoreAway,
+        // Generic path — callers that handle exotic markets pass a ready-built
+        // backend leg payload plus display strings, so the slip doesn't need a
+        // per-market switch. selKey disambiguates picks that share betType+pick
+        // (e.g. two TeamGoals lines, or Corners 8.5 vs 9.5).
+        leg, label, chip, selKey,
+      } = e.detail || {};
       if (!matchId || !pick || odds == null) return;
       const bt  = betType || 'Winner';
-      const key = `${matchId}:${bt}:${pick}:${line || ''}`;
+      const key = `${matchId}:${bt}:${pick}:${selKey || line || ''}`;
       const newPick = {
         key, matchId, betType: bt, pick,
         line:      line      || null,
         scoreHome: scoreHome ?? null,
         scoreAway: scoreAway ?? null,
+        leg:       leg       || null,    // pre-built DTO (generic markets)
+        label:     label     || null,    // display label (generic markets)
+        chip:      chip      || null,    // short chip code (generic markets)
         odds: Number(odds),
         fixture, leagueLabel,
       };
@@ -269,6 +279,7 @@ export default function BetSlipPanel() {
   // ── Rendering helpers ──────────────────────────────────────────────
   const pickShort = (pick) => pick === 'Home' ? '1' : pick === 'Away' ? '2' : 'X';
   const pickLabel = (p) => {
+    if (p.label) return p.label;          // generic market — caller supplied it
     switch (p.betType) {
       case 'Winner':
         return p.pick === 'Home' ? 'Краен резултат — 1'
@@ -289,6 +300,7 @@ export default function BetSlipPanel() {
     }
   };
   const pickChip = (p) => {
+    if (p.chip) return p.chip;             // generic market — caller supplied it
     switch (p.betType) {
       case 'Winner':       return pickShort(p.pick);
       case 'DoubleChance': return p.pick === 'HomeOrDraw' ? '1X' : p.pick === 'HomeOrAway' ? '12' : 'X2';
@@ -594,6 +606,8 @@ function modeLabel(n) {
  * Mirrors PlaceBetDTO / AccumulatorLegDTO.
  */
 function toLegPayload(p) {
+  // Generic markets ship a fully-formed leg payload from the caller.
+  if (p.leg) return { betType: p.betType, ...p.leg };
   const base = { betType: p.betType || 'Winner' };
   switch (base.betType) {
     case 'Winner':       return { ...base, pick: p.pick };
