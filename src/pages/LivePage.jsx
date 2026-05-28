@@ -466,18 +466,24 @@ function LiveStatsAside({ match }) {
     goalScore.set(g === goalsAsc[idx] ? `${g.minute}|${g.team}|${g.playerName}|${idx}` : idx, `${rh}-${ra}`);
   });
 
-  // Match events — combine goals + cards into a chronological list (newest first)
+  // Match events — combine goals + cards + substitutions into a chronological
+  // list (newest first)
   const events = [
     ...goalsAsc.map((g, idx) => ({
       minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal',
       name: g.playerName, score: goalScore.get(`${g.minute}|${g.team}|${g.playerName}|${idx}`),
     })),
     ...(stats?.cardEvents ?? []).map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
-  ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 6);
+    ...(stats?.subEvents ?? []).map(s => ({
+      minute: s.minute, team: s.team, kind: 'sub',
+      name: s.playerIn, nameOut: s.playerOut,
+    })),
+  ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 8);
 
   const iconFor = (kind) => {
     if (kind === 'goal' || kind === 'og') return '⚽';
     if (kind === 'red')                   return '🟥';
+    if (kind === 'sub')                   return '🔄';
     return '🟨';
   };
 
@@ -516,13 +522,20 @@ function LiveStatsAside({ match }) {
             {events.map((e, i) => {
               const isGoal = e.kind === 'goal' || e.kind === 'og';
               return (
-                <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team}`}>
+                <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team} gv-livestats__event--${e.kind}`}>
                   <span className="gv-livestats__event-min">{e.minute}'</span>
                   {isGoal && e.score && (
                     <span className="gv-livestats__event-score">{e.score.replace('-', ' - ')}</span>
                   )}
                   <span className="gv-livestats__event-icon">{iconFor(e.kind)}</span>
-                  <span className="gv-livestats__event-name">{e.name || '—'}</span>
+                  {e.kind === 'sub' ? (
+                    <span className="gv-livestats__event-name gv-livestats__event-sub">
+                      <span className="gv-livestats__sub-in">{e.name || '—'}</span>
+                      {e.nameOut && <span className="gv-livestats__sub-out">↓ {e.nameOut}</span>}
+                    </span>
+                  ) : (
+                    <span className="gv-livestats__event-name">{e.name || '—'}</span>
+                  )}
                 </div>
               );
             })}
