@@ -137,25 +137,32 @@ export default function MatchesPage() {
   useEffect(() => {
     const onRemove = (e) => {
       const picks = e.detail?.picks || [];
-      for (const { matchId, betType, leg } of picks) {
+      for (const { matchId, betType, pick, line, leg } of picks) {
         if (!selectedMatch || matchId !== selectedMatch.id) continue;
         const team = leg?.pick;     // 'Home' | 'Away' for per-team markets
+        // Pick-aware clears via functional updaters: only blank the field when
+        // it still holds the SELF-SAME selection being removed. This stops a
+        // conflict-eviction (e.g. switching Winner Home → Draw evicts Home and
+        // emits a remove) from wiping the value we just set to the new pick.
+        const bttsLocal = pick === 'Yes' ? 'true' : 'No' === pick ? 'false' : pick;
         switch (betType) {
-          case 'Winner':          setField('winner', ''); break;
-          case 'DoubleChance':    setDCPick(''); break;
-          case 'BTTS':            setField('btts', ''); break;
-          case 'OverUnder':       setField('ouLine', ''); setField('ouPick', ''); break;
+          case 'Winner':       setFields(p => p.winner === pick ? { ...p, winner: '' } : p); break;
+          case 'DoubleChance': setDCPick(v => v === pick ? '' : v); break;
+          case 'BTTS':         setFields(p => p.btts === bttsLocal ? { ...p, btts: '' } : p); break;
+          case 'DrawNoBet':    setDnbPick(v => v === pick ? '' : v); break;
+          case 'Handicap':     setHcpPick(v => v === pick ? '' : v); break;
+          case 'HalfTime':     setHtPick(v => v === pick ? '' : v); break;
+          case 'FirstGoal':    setFgPick(v => v === pick ? '' : v); break;
+          case 'LastToScore':  setLastScorePick(v => v === pick ? '' : v); break;
+          case 'HtFt':         setHtftPick(v => v === pick ? '' : v); break;
+          case 'OverUnder':
+            setFields(p => (p.ouPick === pick && p.ouLine === line) ? { ...p, ouLine: '', ouPick: '' } : p);
+            break;
           case 'ExactScore':      setField('homeScore', ''); setField('awayScore', ''); break;
           case 'Corners':         setCornersLine(''); setCornersOU(''); break;
           case 'YellowCards':     setYellowsLine(''); setYellowsOU(''); break;
           case 'OddEven':         setOddEvenPick(''); break;
-          case 'DrawNoBet':       setDnbPick(''); break;
-          case 'Handicap':        setHcpPick(''); break;
-          case 'HalfTime':        setHtPick(''); break;
           case 'CleanSheet':      setCsPick(''); setCsYN(''); break;
-          case 'FirstGoal':       setFgPick(''); break;
-          case 'LastToScore':     setLastScorePick(''); break;
-          case 'HtFt':            setHtftPick(''); break;
           case 'Btts1stHalf':     setBtts1hPick(''); break;
           case 'Btts2ndHalf':     setBtts2hPick(''); break;
           case 'HalfTimeGoals':   setHtGoalsLine(''); setHtGoalsOU(''); break;
@@ -1046,21 +1053,11 @@ export default function MatchesPage() {
                           <button key={key} type="button"
                             className={`market-option ${winner === key ? 'market-option--active' : ''}`}
                             onClick={() => {
-                              const next = winner === key ? '' : key;
-                              setField('winner', next);
-                              // Also push to the global Bet Slip so the user can build a column
-                              // by adding picks from multiple matches.
-                              if (next && odds != null) {
-                                window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
-                                  detail: {
-                                    matchId: selectedMatch.id,
-                                    pick:    key,
-                                    odds:    Number(odds),
-                                    fixture: `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                                    leagueLabel: selectedMatch.leagueName ?? null,
-                                  },
-                                }));
-                              }
+                              setField('winner', winner === key ? '' : key);
+                              // Always dispatch (even on toggle-off): the slip's
+                              // onAdd adds a new pick or toggles an existing one
+                              // off, so de-selecting here also removes it there.
+                              if (odds != null) addToSlip({ betType: BET_TYPE.Winner, pick: key, odds });
                             }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
@@ -1089,20 +1086,9 @@ export default function MatchesPage() {
                               className={`market-option market-option--htft ${dcPick === key ? 'market-option--active' : ''}`}
                               title={`${a} or ${b}`}
                               onClick={() => {
-                                const next = dcPick === key ? '' : key;
-                                setDCPick(next);
-                                if (next && dcOdds != null) {
-                                  window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
-                                    detail: {
-                                      matchId:     selectedMatch.id,
-                                      betType:     'DoubleChance',
-                                      pick:        key,
-                                      odds:        Number(dcOdds),
-                                      fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                                      leagueLabel: selectedMatch.leagueName ?? null,
-                                    },
-                                  }));
-                                }
+                                setDCPick(dcPick === key ? '' : key);
+                                // Always dispatch — slip adds or toggles off.
+                                if (dcOdds != null) addToSlip({ betType: BET_TYPE.DoubleChance, pick: key, odds: dcOdds });
                               }}>
                               <div className="market-option__label htft-stack">
                                 <span className="htft-stack__line">{a}</span>
@@ -1139,24 +1125,10 @@ export default function MatchesPage() {
                                   className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
                                   onClick={() => {
                                     const isToggleOff = ouLine === line && ouPick === pick;
-                                    if (isToggleOff) {
-                                      setField('ouLine',''); setField('ouPick','');
-                                    } else {
-                                      setField('ouLine', line); setField('ouPick', pick);
-                                      if (ouOdds != null) {
-                                        window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
-                                          detail: {
-                                            matchId:     selectedMatch.id,
-                                            betType:     'OverUnder',
-                                            pick,
-                                            line,
-                                            odds:        Number(ouOdds),
-                                            fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                                            leagueLabel: selectedMatch.leagueName ?? null,
-                                          },
-                                        }));
-                                      }
-                                    }
+                                    if (isToggleOff) { setField('ouLine', ''); setField('ouPick', ''); }
+                                    else             { setField('ouLine', line); setField('ouPick', pick); }
+                                    // Always dispatch — slip adds or toggles off this exact line.
+                                    if (ouOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: ouOdds });
                                   }}>
                                   {ouOdds != null ? Number(ouOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
                                 </button>
@@ -1183,20 +1155,9 @@ export default function MatchesPage() {
                             <button key={val} type="button"
                               className={`market-option ${btts === val ? 'market-option--active' : ''}`}
                               onClick={() => {
-                                const next = btts === val ? '' : val;
-                                setField('btts', next);
-                                if (next && bttsOdds != null) {
-                                  window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
-                                    detail: {
-                                      matchId:     selectedMatch.id,
-                                      betType:     'BTTS',
-                                      pick:        val === 'true' ? 'Yes' : 'No',
-                                      odds:        Number(bttsOdds),
-                                      fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                                      leagueLabel: selectedMatch.leagueName ?? null,
-                                    },
-                                  }));
-                                }
+                                setField('btts', btts === val ? '' : val);
+                                // Always dispatch — slip adds or toggles off.
+                                if (bttsOdds != null) addToSlip({ betType: BET_TYPE.BTTS, pick: val === 'true' ? 'Yes' : 'No', odds: bttsOdds });
                               }}>
                               <div className="market-option__label">{lbl}</div>
                               <div className="market-option__odds">

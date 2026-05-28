@@ -580,7 +580,7 @@ function emitRemoved(picks) {
   window.dispatchEvent(new CustomEvent('bpfl:slip:remove', {
     detail: {
       picks: picks.map(p => ({
-        matchId: p.matchId, betType: p.betType, pick: p.pick, leg: p.leg || null,
+        matchId: p.matchId, betType: p.betType, pick: p.pick, line: p.line || null, leg: p.leg || null,
       })),
     },
   }));
