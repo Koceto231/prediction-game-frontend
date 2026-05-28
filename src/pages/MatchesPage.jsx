@@ -905,24 +905,7 @@ export default function MatchesPage() {
             )}
           </div>
 
-          {/* ── AI Prediction card — italic body, robot emoji header ── */}
-          <div ref={aiRef} style={{ scrollMarginTop: 80 }}>
-            <div className="gvmd-ai">
-              <div className="gvmd-ai__head">
-                <span className="gvmd-ai__emoji">🤖</span>
-                <h3 className="gvmd-ai__title">AI Prediction</h3>
-                {aiPrediction?.confidence != null && (
-                  <span className="gvmd-ai__confidence">AI CONFIDENCE: {String(aiPrediction.confidence).toUpperCase()}</span>
-                )}
-              </div>
-              <p className="gvmd-ai__body">
-                {aiLoading && <em>Analysing match…</em>}
-                {!aiLoading && aiPrediction?.aiAnalysis && aiPrediction.aiAnalysis}
-                {!aiLoading && !aiPrediction?.aiAnalysis && !aiError && <em>No analysis available for this match.</em>}
-                {!aiLoading && aiError && <em>Could not load analysis.</em>}
-              </p>
-            </div>
-          </div>
+          {/* AI Prediction card removed per request. */}
 
           {/* ── Top-level market tabs (Gridiron Velocity match detail) ──
               Replaces the old Exact / Market mode picker. Clicking a tab

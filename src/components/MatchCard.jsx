@@ -77,11 +77,6 @@ export default function MatchCard({ match, selected, onSelect, onOddPick }) {
           </div>
           <div className="gvm-card__center">
             <span className="gvm-card__vs">VS</span>
-            {match.venueName && (
-              <span className="gvm-card__venue" title={match.venueName}>
-                📍 {match.venueName}{match.venueCity ? ` · ${match.venueCity}` : ''}
-              </span>
-            )}
           </div>
           <div className="gvm-card__team">
             <TeamCrest className="gvm-card__crest" logoUrl={match.awayTeamLogo} name={match.awayTeamName} />
