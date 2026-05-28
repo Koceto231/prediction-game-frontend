@@ -12177,10 +12177,10 @@ select:focus {
 .gv-pitch-tracker__status--event {
   border-color: rgba(240, 197, 25, 0.55);
   padding: 8px 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: center;
   max-width: 95%;
-  text-align: center;
   box-shadow: 0 0 16px rgba(240, 197, 25, 0.18);
   animation: gv-event-flash 0.55s ease-out;
 }
@@ -12193,6 +12193,9 @@ select:focus {
 .gv-pitch-tracker__event-icon {
   font-size: 1.05rem;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 .gv-pitch-tracker__event-min {
   font-family: 'Anybody', 'JetBrains Mono', sans-serif;
@@ -12208,12 +12211,16 @@ select:focus {
   font-weight: 800;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
+  line-height: 1;
   color: var(--text-main);
+  white-space: nowrap;
 }
 .gv-pitch-tracker__event-team {
   font-size: 0.78rem;
+  line-height: 1;
   color: var(--text-muted);
   font-weight: 600;
+  white-space: nowrap;
 }
 .gv-pitch-tracker__event-name {
   font-size: 0.74rem;
