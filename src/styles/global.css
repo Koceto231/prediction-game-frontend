@@ -12214,6 +12214,8 @@ select:focus {
   line-height: 1;
   color: var(--text-main);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 .gv-pitch-tracker__event-team {
   font-size: 0.78rem;
@@ -12221,6 +12223,8 @@ select:focus {
   color: var(--text-muted);
   font-weight: 600;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 .gv-pitch-tracker__event-name {
   font-size: 0.74rem;
