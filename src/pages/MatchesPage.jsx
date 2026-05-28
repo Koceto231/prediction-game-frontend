@@ -246,7 +246,7 @@ export default function MatchesPage() {
   const resetPanel = useCallback(() => {
     setMode('market'); setMarketCategory('main');
     setFields(EMPTY); setAmount(''); setFeedback(null); setAiPrediction(null); setAiError(false);
-    setExactOdds(null);
+    setExactOdds(null); exactOddsCache.current.clear();
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
     setScorerPlayer(null); setScorerPlayers([]); setScorerPosFilter('FWD');
@@ -281,15 +281,27 @@ export default function MatchesPage() {
       .finally(() => setScorerLoading(false));
   }, [collapsed.scorer, isMarket, selectedMatch?.id]);
 
-  // Live odds — Exact Score
+  // Live odds — Exact Score.
+  // Cached per "h-a" score (cleared when the match changes) + debounced, so
+  // rapid +/- stepping reads instantly from cache and fires at most one
+  // request once the user pauses, instead of one round-trip per click.
+  const exactOddsCache = useRef(new Map());
   useEffect(() => {
     if (!isExact || !hasBetOdds || home === null || away === null) { setExactOdds(null); return; }
+    const key = `${home}-${away}`;
+    if (exactOddsCache.current.has(key)) {        // instant — no network
+      setExactOdds(exactOddsCache.current.get(key));
+      setExactOddsLoading(false);
+      return;
+    }
     let cancelled = false;
     setExactOddsLoading(true);
-    fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: home, scoreAway: away })
-      .then(r => { if (!cancelled) setExactOdds(r); })
-      .finally(() => { if (!cancelled) setExactOddsLoading(false); });
-    return () => { cancelled = true; };
+    const t = setTimeout(() => {
+      fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: home, scoreAway: away })
+        .then(r => { if (!cancelled) { if (r) exactOddsCache.current.set(key, r); setExactOdds(r); } })
+        .finally(() => { if (!cancelled) setExactOddsLoading(false); });
+    }, 180);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [isExact, selectedMatch?.id, home, away, hasBetOdds]);
 
   // Live odds — all markets from real Sportmonks data (no API calls)
@@ -919,7 +931,16 @@ export default function MatchesPage() {
                   const stepA = (d) => setField('awayScore', String(Math.max(0, Math.min(20, a + d))));
                   const addExact = async () => {
                     try {
-                      const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a });
+                      const ck = `${h}-${a}`;
+                      // Reuse the odds the live effect already fetched/cached for
+                      // this score — avoids a second round-trip before the pick
+                      // lands in the slip. Only hit the network on a cache miss.
+                      let r = exactOddsCache.current.get(ck)
+                        || (exactOdds?.odds != null ? exactOdds : null);
+                      if (r?.odds == null) {
+                        r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a });
+                        if (r) exactOddsCache.current.set(ck, r);
+                      }
                       if (r?.odds != null) {
                         window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
                           detail: {
