@@ -1238,11 +1238,6 @@ export default function LivePage() {
 
           {/* CENTER column — pitch tracker + markets */}
           <div className="gv-live-center">
-            <button
-              type="button"
-              className="gv-back-btn"
-              onClick={() => { setSelectedMatch(null); resetPanel(); }}
-            >← All live matches</button>
 
           {/* Pitch Tracker hero — stitch "Gridiron Velocity" design */}
           <div className="gv-pitch-tracker">
@@ -2241,6 +2236,13 @@ export default function LivePage() {
             activeBets={myActiveBets}
             onCashedOut={handleLiveBetCashedOut}
           />
+
+          {/* Back button — bottom-left of the whole grid section */}
+          <button
+            type="button"
+            className="gv-back-btn gv-back-btn--footer"
+            onClick={() => { setSelectedMatch(null); resetPanel(); }}
+          >← All live matches</button>
         </section>
       )}
 

@@ -11815,6 +11815,21 @@ select:focus {
   border-color: var(--accent);
 }
 
+/* Footer variant — pinned bottom-left of the live grid, larger, square. */
+.gv-back-btn--footer {
+  grid-column: 1;
+  justify-self: start;
+  margin-top: 18px;
+  margin-bottom: 0;
+  border-radius: 0;
+  padding: 12px 22px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+@media (max-width: 1100px) {
+  .gv-back-btn--footer { order: 4; }   /* keep it last in the stacked layout */
+}
+
 /* ╭──────────────────────────────────────────────────────────────╮
    │  GRIDIRON VELOCITY — Pitch Tracker hero                      │
    │  (stitch screen 4f0e56c4… "Streamlined Live Dashboard")      │
