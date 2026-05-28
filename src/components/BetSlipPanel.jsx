@@ -90,7 +90,8 @@ export default function BetSlipPanel() {
     [columns],
   );
   useEffect(() => {
-    if (totalPicks === 1) setOpen(true);
+    if (totalPicks === 1) setOpen(true);     // first pick → pop open
+    if (totalPicks === 0) setOpen(false);    // last pick removed → collapse, no empty screen
   }, [totalPicks]);
 
   // ── Pick add / clear event listeners ───────────────────────────────
@@ -365,9 +366,9 @@ export default function BetSlipPanel() {
   return (
     <>
 
-      {/* Connected slip — pill at the bottom is always visible, full
-          panel body grows out of it upward when open. */}
-      {(totalPicks > 0 || open) && (
+      {/* Connected slip — only rendered while there are picks, so an empty
+          column never shows the "Колонка е празна" screen. */}
+      {totalPicks > 0 && (
       <div className={`gvb-slip${open ? ' gvb-slip--open' : ''}`}>
       <div className="gvb-slip__body">
         <div className="gvb-slip-panel__head">
