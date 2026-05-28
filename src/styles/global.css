@@ -9223,16 +9223,25 @@ select:focus {
   white-space: nowrap;
   margin-left: 2px;          /* sit tight to the ball */
 }
-/* Substitution — player IN (green) on top, player OUT (muted) below */
+/* Substitution — IN (white) then OUT (muted), inline on one row */
 .gv-livestats__event-sub {
   display: inline-flex;
-  flex-direction: column;
-  line-height: 1.15;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
   text-transform: none;
   letter-spacing: 0;
+  min-width: 0;
 }
-.gv-livestats__sub-in  { color: #4ade80; font-weight: 700; }
-.gv-livestats__sub-out { color: var(--text-muted); font-size: 0.64rem; }
+.gv-livestats__sub-in  { color: var(--text-main); font-weight: 700; }
+.gv-livestats__sub-out {
+  color: var(--text-muted);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Green up / red down circular sub icon tint */
+.gv-livestats__event--sub .gv-livestats__event-icon { filter: hue-rotate(70deg) saturate(1.4); }
 
 /* Statistics rows */
 .gv-livestats__statrow {

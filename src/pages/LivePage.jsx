@@ -9,7 +9,7 @@ import useNowTicker from '../hooks/useNowTicker';
 import useLiveEventQueue from '../hooks/useLiveEventQueue';
 import useLiveMomentum from '../hooks/useLiveMomentum';   // still drives the on-pitch pressure glow
 import {
-  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, getTeamInitials,
+  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, liveClockSeconds, getTeamInitials,
 } from '../utils/liveState';
 
 // ── League metadata for the small league chip on each live row ─────
@@ -531,7 +531,7 @@ function LiveStatsAside({ match }) {
                   {e.kind === 'sub' ? (
                     <span className="gv-livestats__event-name gv-livestats__event-sub">
                       <span className="gv-livestats__sub-in">{e.name || '—'}</span>
-                      {e.nameOut && <span className="gv-livestats__sub-out">↓ {e.nameOut}</span>}
+                      {e.nameOut && <span className="gv-livestats__sub-out">{e.nameOut}</span>}
                     </span>
                   ) : (
                     <span className="gv-livestats__event-name">{e.name || '—'}</span>
@@ -805,8 +805,11 @@ export default function LivePage() {
   //   6. Nothing but scheduled MatchDate           → "~67'" (wall-clock guess)
   //   7. Nothing at all                            → "LIVE"
   const displayMinute = (m) => {
-    // Primary: smooth-ticking clock from Sportmonks `periods` snapshot
-    // (handles HT/FT short-circuits, round-up at 45:01→46, and 90+N injury).
+    // Primary: stopwatch MM:SS from the Sportmonks `periods` snapshot, ticking
+    // every second (handles HT/FT short-circuits). Falls back to the
+    // minute-only display when we have no clock data.
+    const secs = liveClockSeconds(m, nowMs);
+    if (secs != null) return secs;
     const live = liveClockDisplay(m, nowMs);
     if (live != null) return live;
 

@@ -90,3 +90,28 @@ export function liveClockDisplay({
   if (display > 45 && is1H(liveState)) return `45+${display - 45}'`;
   return `${display}'`;
 }
+
+/**
+ * Same inputs as liveClockDisplay but returns a ticking "MM:SS" string for a
+ * stopwatch-style clock (e.g. "11:34"). Returns "HT"/"FT" on breaks and null
+ * when we have no clock data (caller falls back to the minute-only display).
+ */
+export function liveClockSeconds({
+  liveMinute,
+  liveSeconds,
+  liveClockUpdatedAt,
+  liveState,
+}, nowMs = Date.now()) {
+  if (isHT(liveState)) return 'HT';
+  if (isFT(liveState)) return 'FT';
+  if (liveMinute == null) return null;
+
+  const baseSec   = liveMinute * 60 + (liveSeconds ?? 0);
+  const elapsedMs = liveClockUpdatedAt
+    ? Math.max(0, nowMs - new Date(liveClockUpdatedAt).getTime())
+    : 0;
+  const totalSec  = Math.floor(baseSec + Math.min(elapsedMs, 90_000) / 1000);
+  const mm = Math.floor(totalSec / 60);
+  const ss = totalSec % 60;
+  return `${mm}:${String(ss).padStart(2, '0')}`;
+}
