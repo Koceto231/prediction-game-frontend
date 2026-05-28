@@ -300,9 +300,34 @@ export default function MatchesPage() {
       fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: home, scoreAway: away })
         .then(r => { if (!cancelled) { if (r) exactOddsCache.current.set(key, r); setExactOdds(r); } })
         .finally(() => { if (!cancelled) setExactOddsLoading(false); });
-    }, 180);
+    }, 120);
     return () => { cancelled = true; clearTimeout(t); };
   }, [isExact, selectedMatch?.id, home, away, hasBetOdds]);
+
+  // Prefetch the common scorelines the moment the Exact Score tab opens, in
+  // parallel, into the same cache. By the time the user steps to any of them
+  // the price is already there → the CTA odds chip shows with no lag. One-off
+  // burst per match; the backend output-caches /Odds so it's cheap.
+  useEffect(() => {
+    if (!isExact || !hasBetOdds || !selectedMatch) return;
+    const common = [
+      [0, 0], [1, 0], [2, 0], [2, 1], [3, 0], [3, 1], [3, 2],
+      [1, 1], [2, 2], [3, 3], [0, 1], [1, 2], [0, 2], [0, 3], [1, 3], [2, 3],
+    ];
+    let cancelled = false;
+    Promise.all(common.map(async ([hh, aa]) => {
+      const k = `${hh}-${aa}`;
+      if (exactOddsCache.current.has(k)) return;
+      const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: hh, scoreAway: aa });
+      if (r) exactOddsCache.current.set(k, r);
+    })).then(() => {
+      if (cancelled) return;
+      const ck = `${home}-${away}`;                 // refresh the chip if current score just landed
+      if (exactOddsCache.current.has(ck)) setExactOdds(exactOddsCache.current.get(ck));
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExact, selectedMatch?.id, hasBetOdds]);
 
   // Live odds — all markets from real Sportmonks data (no API calls)
   useEffect(() => {
