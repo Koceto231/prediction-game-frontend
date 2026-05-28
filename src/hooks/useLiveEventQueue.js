@@ -49,6 +49,8 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
       cornersAway: stats?.corners?.away ?? 0,
       sotHome:     stats?.shotsOnTarget?.home ?? 0,
       sotAway:     stats?.shotsOnTarget?.away ?? 0,
+      shotsHome:   stats?.shots?.home ?? 0,
+      shotsAway:   stats?.shots?.away ?? 0,
       dangerHome:  stats?.dangerousAttacks?.home ?? 0,
       dangerAway:  stats?.dangerousAttacks?.away ?? 0,
       foulsHome:   stats?.fouls?.home ?? 0,
@@ -100,6 +102,9 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
     // SHOT ON TARGET
     if (curr.sotHome > prev.sotHome)         newEvents.push({ team: 'home', kind: 'shot',   title: 'Shot on Target', sub: home });
     if (curr.sotAway > prev.sotAway)         newEvents.push({ team: 'away', kind: 'shot',   title: 'Shot on Target', sub: away });
+    // SHOT OFF TARGET — total shots rose but on-target didn't
+    if (curr.shotsHome > prev.shotsHome && curr.sotHome === prev.sotHome) newEvents.push({ team: 'home', kind: 'shotoff', title: 'Shot off Target', sub: home });
+    if (curr.shotsAway > prev.shotsAway && curr.sotAway === prev.sotAway) newEvents.push({ team: 'away', kind: 'shotoff', title: 'Shot off Target', sub: away });
     // DANGEROUS ATTACK
     if (curr.dangerHome > prev.dangerHome)   newEvents.push({ team: 'home', kind: 'danger', title: 'Dangerous Attack', sub: home });
     if (curr.dangerAway > prev.dangerAway)   newEvents.push({ team: 'away', kind: 'danger', title: 'Dangerous Attack', sub: away });

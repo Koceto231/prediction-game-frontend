@@ -7,6 +7,8 @@ import LiveMatchCard from '../components/LiveMatchCard';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
 import useLiveEventQueue from '../hooks/useLiveEventQueue';
+import useLiveMomentum from '../hooks/useLiveMomentum';
+import LiveMomentum from '../components/LiveMomentum';
 import {
   is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, getTeamInitials,
 } from '../utils/liveState';
@@ -665,6 +667,7 @@ export default function LivePage() {
   // events on the selected match by diffing successive live-stats snapshots
   // and surface ONE event at a time as a banner inside the pitch tracker.
   const liveEvent = useLiveEventQueue(selectedMatch);
+  const momentum  = useLiveMomentum(selectedMatch);   // for the on-pitch pressure glow
   const [mode, setMode]                   = useState('market');  // straight to markets, like the Matches page
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
@@ -1250,6 +1253,12 @@ export default function LivePage() {
                 <div className="gv-pitch-tracker__box gv-pitch-tracker__box--right" />
               </div>
 
+              {/* Pseudo-positional pressure glow — leans toward the goal the
+                  pressing team is attacking (approximated, not real ball pos). */}
+              {momentum.attacking && (
+                <div className={`gv-pitch-tracker__pressure gv-pitch-tracker__pressure--${momentum.attacking}${momentum.surge ? ' is-surge' : ''}`} />
+              )}
+
               {/* Top-row league chip + venue + live pill (all on one level) */}
               <div className="gv-pitch-tracker__topbar">
                 {LEAGUE_META[selectedMatch.leagueCode] && (
@@ -1316,6 +1325,7 @@ export default function LivePage() {
                     : liveEvent.kind === 'yellow' ? '🟨'
                     : liveEvent.kind === 'corner' ? '⛳'
                     : liveEvent.kind === 'shot'   ? '🎯'
+                    : liveEvent.kind === 'shotoff' ? '🥅'
                     : liveEvent.kind === 'danger' ? '🔥'
                     : liveEvent.kind === 'foul'   ? '⚠️' : '•';
                   return (
@@ -1335,6 +1345,10 @@ export default function LivePage() {
               })()}
             </div>
           </div>
+
+          {/* Momentum / pressure indicator — approximated from aggregate
+              stats (no positional feed). Bar + trend sparkline. */}
+          <LiveMomentum match={selectedMatch} />
 
           {feedback && (
             <div className={`alert ${feedback.type === 'ok' ? 'alert-success' : 'alert-error'}`} style={{ margin: '12px 0' }}>
