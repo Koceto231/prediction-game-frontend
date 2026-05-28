@@ -130,6 +130,60 @@ export default function MatchesPage() {
     }));
   }, [selectedMatch]);
 
+  // Mirror slip removals back onto the market grid: when a pick is removed
+  // from the Bet Slip (its ×, a conflicting O/U replacing it, clear-all, …)
+  // the matching market button here must de-select. Listens for the
+  // `bpfl:slip:remove` event the slip emits.
+  useEffect(() => {
+    const onRemove = (e) => {
+      const picks = e.detail?.picks || [];
+      for (const { matchId, betType, leg } of picks) {
+        if (!selectedMatch || matchId !== selectedMatch.id) continue;
+        const team = leg?.pick;     // 'Home' | 'Away' for per-team markets
+        switch (betType) {
+          case 'Winner':          setField('winner', ''); break;
+          case 'DoubleChance':    setDCPick(''); break;
+          case 'BTTS':            setField('btts', ''); break;
+          case 'OverUnder':       setField('ouLine', ''); setField('ouPick', ''); break;
+          case 'ExactScore':      setField('homeScore', ''); setField('awayScore', ''); break;
+          case 'Corners':         setCornersLine(''); setCornersOU(''); break;
+          case 'YellowCards':     setYellowsLine(''); setYellowsOU(''); break;
+          case 'OddEven':         setOddEvenPick(''); break;
+          case 'DrawNoBet':       setDnbPick(''); break;
+          case 'Handicap':        setHcpPick(''); break;
+          case 'HalfTime':        setHtPick(''); break;
+          case 'CleanSheet':      setCsPick(''); setCsYN(''); break;
+          case 'FirstGoal':       setFgPick(''); break;
+          case 'LastToScore':     setLastScorePick(''); break;
+          case 'HtFt':            setHtftPick(''); break;
+          case 'Btts1stHalf':     setBtts1hPick(''); break;
+          case 'Btts2ndHalf':     setBtts2hPick(''); break;
+          case 'HalfTimeGoals':   setHtGoalsLine(''); setHtGoalsOU(''); break;
+          case 'SecondHalfGoals': setShGoalsLine(''); setShGoalsOU(''); break;
+          case 'OddEven1stHalf':  setOe1hPick(''); break;
+          case 'WinToNil':        setWtnTeam(''); setWtnYN(''); break;
+          case 'Goalscorer':      setScorerPlayer(null); break;
+          case 'TeamGoals':
+            if (team === 'Home') { setHGoalsLine(''); setHGoalsOU(''); }
+            else                 { setAGoalsLine(''); setAGoalsOU(''); }
+            break;
+          case 'TeamOddEven':
+            if (team === 'Home') setHomeOEPick(''); else setAwayOEPick('');
+            break;
+          case 'TeamToScore':
+            if (team === 'Home') setHomeTsPick(''); else setAwayTsPick('');
+            break;
+          case 'WinBothHalves':
+            if (team === 'Home') setWbhHomePick(''); else setWbhAwayPick('');
+            break;
+          default: break;
+        }
+      }
+    };
+    window.addEventListener('bpfl:slip:remove', onRemove);
+    return () => window.removeEventListener('bpfl:slip:remove', onRemove);
+  }, [selectedMatch, setField]);
+
   // Scroll to bet/AI panel whenever a match is selected
   useEffect(() => {
     if (!selectedMatch) return;

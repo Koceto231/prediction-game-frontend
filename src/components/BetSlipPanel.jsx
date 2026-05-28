@@ -126,10 +126,14 @@ export default function BetSlipPanel() {
         if (c.id !== activeColumnId) return c;
         // Toggle off if exact same selection already in this column
         if (c.picks.some(p => p.key === key)) {
+          const removed = c.picks.find(p => p.key === key);
+          emitRemoved(removed ? [removed] : []);
           return { ...c, picks: c.picks.filter(p => p.key !== key) };
         }
-        const filtered = c.picks.filter(p => !isConflict(p, newPick));
-        return { ...c, picks: [...filtered, newPick] };
+        // Conflicting picks get dropped — tell the page to de-select them too
+        const conflicts = c.picks.filter(p => isConflict(p, newPick));
+        if (conflicts.length) emitRemoved(conflicts);
+        return { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] };
       }));
       setError(''); setSuccess('');
     };
@@ -154,6 +158,8 @@ export default function BetSlipPanel() {
   };
 
   const removeColumn = (colId) => {
+    const col = columns.find(c => c.id === colId);
+    if (col) emitRemoved(col.picks);
     setColumns(prev => {
       const remaining = prev.filter(c => c.id !== colId);
       if (remaining.length === 0) return [newColumn()];
@@ -166,9 +172,19 @@ export default function BetSlipPanel() {
   };
 
   const removePick = (colId, key) => {
+    const col = columns.find(c => c.id === colId);
+    const removed = col?.picks.find(p => p.key === key);
+    if (removed) emitRemoved([removed]);
     setColumns(prev => prev.map(c =>
       c.id === colId ? { ...c, picks: c.picks.filter(p => p.key !== key) } : c,
     ));
+  };
+
+  // Remove every pick of a single match from the active column.
+  const removeMatch = (matchId) => {
+    const col = columns.find(c => c.id === activeColumnId);
+    emitRemoved((col?.picks || []).filter(p => p.matchId === matchId));
+    updateActive(c => ({ picks: c.picks.filter(p => p.matchId !== matchId) }));
   };
 
   const setColumnStake = (colId, stake) => {
@@ -179,6 +195,7 @@ export default function BetSlipPanel() {
 
   const clearAll = (e) => {
     e?.stopPropagation?.();
+    emitRemoved(columns.flatMap(c => c.picks));   // de-select on the page too
     // Re-point activeColumnId at the brand-new column. Without this the
     // dispatch handler keeps looking for the now-deleted id (`c.id ===
     // activeColumnId` fails for every column) and silently drops every
@@ -394,9 +411,7 @@ export default function BetSlipPanel() {
               <button
                 type="button"
                 className="gvb-slip-pick__remove"
-                onClick={() => updateActive((c) => ({
-                  picks: c.picks.filter(p => p.matchId !== g.matchId),
-                }))}
+                onClick={() => removeMatch(g.matchId)}
                 aria-label="Премахни мача"
                 title="Премахни всички picks от мача"
               >×</button>
@@ -553,6 +568,22 @@ export default function BetSlipPanel() {
 // ─────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Tell the rest of the app that some picks left the slip, so a page that
+ * mirrors slip state (the match-detail market grid) can de-select the
+ * matching buttons. Carries enough to identify the source control.
+ */
+function emitRemoved(picks) {
+  if (!picks || picks.length === 0) return;
+  window.dispatchEvent(new CustomEvent('bpfl:slip:remove', {
+    detail: {
+      picks: picks.map(p => ({
+        matchId: p.matchId, betType: p.betType, pick: p.pick, leg: p.leg || null,
+      })),
+    },
+  }));
+}
 
 /** Back-fill `key` / `betType` on a saved pick from before the refactor. */
 function backfillPick(p) {
