@@ -317,10 +317,10 @@ export default function MatchesPage() {
   // burst per match; the backend output-caches /Odds so it's cheap.
   useEffect(() => {
     if (!isExact || !selectedMatch) return;
-    const common = [
-      [0, 0], [1, 0], [2, 0], [2, 1], [3, 0], [3, 1], [3, 2],
-      [1, 1], [2, 2], [3, 3], [0, 1], [1, 2], [0, 2], [0, 3], [1, 3], [2, 3],
-    ];
+    // Every scoreline up to 4-4 (25 combinations) → instant chip while
+    // stepping anywhere in that range.
+    const common = [];
+    for (let hh = 0; hh <= 4; hh++) for (let aa = 0; aa <= 4; aa++) common.push([hh, aa]);
     let cancelled = false;
     Promise.all(common.map(async ([hh, aa]) => {
       const k = `${hh}-${aa}`;
