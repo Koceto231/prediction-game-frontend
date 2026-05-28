@@ -636,22 +636,75 @@ function isConflict(existing, incoming) {
   //    other market added later drops the ExactScore.
   if (bt === 'ExactScore' || existing.betType === 'ExactScore') return true;
 
-  // 1. Same-market dedupe
+  // 1. Same-market dedupe — only ONE selection per "single-choice" market
   if ((bt === 'Winner' || bt === 'DoubleChance')
       && (existing.betType === 'Winner' || existing.betType === 'DoubleChance')) return true;
-  if (bt === 'BTTS' && existing.betType === 'BTTS') return true;
-  if (bt === 'OverUnder' && existing.betType === 'OverUnder'
-      && (existing.line || '') === (incoming.line || '')) return true;
+  if (bt === 'BTTS'         && existing.betType === 'BTTS')         return true;
+  if (bt === 'DrawNoBet'    && existing.betType === 'DrawNoBet')    return true;
+  if (bt === 'Handicap'     && existing.betType === 'Handicap')     return true;
+  if (bt === 'HalfTime'     && existing.betType === 'HalfTime')     return true;
+  if (bt === 'FirstGoal'    && existing.betType === 'FirstGoal')    return true;
+  if (bt === 'LastToScore'  && existing.betType === 'LastToScore')  return true;
+  if (bt === 'HtFt'         && existing.betType === 'HtFt')         return true;
+  if (bt === 'OddEven'      && existing.betType === 'OddEven')      return true;
+  if (bt === 'OddEven1stHalf' && existing.betType === 'OddEven1stHalf') return true;
+  if (bt === 'Btts1stHalf'  && existing.betType === 'Btts1stHalf')  return true;
+  if (bt === 'Btts2ndHalf'  && existing.betType === 'Btts2ndHalf')  return true;
+
+  // 1b. O/U-style ladders — at most ONE line per (market + scope).
+  //     • Same direction (Over 1.5 + Over 2.5) → redundant, newer replaces
+  //       older (Over 2.5 already implies Over 1.5).
+  //     • Opposite direction with an impossible range (Over 1.5 + Under 1.5,
+  //       or any Under-line ≤ Over-line) → can never both win.
+  //     • Opposite direction with a valid window (Over 1.5 + Under 3.5)
+  //       survives as a genuine "goals between" range bet.
+  const OU_STYLE = ['OverUnder', 'HalfTimeGoals', 'SecondHalfGoals', 'TeamGoals', 'Corners', 'YellowCards'];
+  if (OU_STYLE.includes(bt) && existing.betType === bt) {
+    const LINE_MAP = { Line05: 0.5, Line15: 1.5, Line25: 2.5, Line35: 3.5 };
+    const dir   = (p) => p.leg?.oUPick || p.pick;                 // 'Over' | 'Under'
+    const scope = (p) => bt === 'TeamGoals' ? (p.leg?.pick || '') : '';
+    const lineOf = (p) => p.leg?.lineValue != null
+      ? Number(p.leg.lineValue)
+      : (LINE_MAP[p.line || p.leg?.oULine] ?? null);
+
+    if (scope(incoming) === scope(existing)) {
+      if (dir(incoming) === dir(existing)) return true;           // ladder → replace
+      const over  = dir(incoming) === 'Over' ? incoming : existing;
+      const under = dir(incoming) === 'Over' ? existing : incoming;
+      const ol = lineOf(over), ul = lineOf(under);
+      if (ol != null && ul != null && ul <= ol) return true;      // impossible window
+    }
+  }
+
+  // 1c. Per-team single-choice markets (Win to Nil, Clean Sheet,
+  //     Team to Score, Team Odd/Even, Win Both Halves) — one pick per team.
+  const PER_TEAM = ['WinToNil', 'CleanSheet', 'TeamToScore', 'TeamOddEven', 'WinBothHalves'];
+  if (PER_TEAM.includes(bt) && existing.betType === bt) {
+    const team = (p) => p.leg?.pick || p.pick;
+    if (team(incoming) === team(existing)) return true;
+  }
 
   // 2. Semantic conflicts — combinations that can never both win
+  const isUnder05or15 = (p) => p.betType === 'OverUnder'
+    && (p.leg?.oUPick === 'Under' || p.pick === 'Under')
+    && ['Line05', 'Line15'].includes(p.line || p.leg?.oULine);
   const isUnder05 = (p) => p.betType === 'OverUnder'
-    && p.pick === 'Under' && p.line === 'Line05';
+    && (p.leg?.oUPick === 'Under' || p.pick === 'Under')
+    && (p.line || p.leg?.oULine) === 'Line05';
   const needsAtLeastOneGoal = (p) =>
        (p.betType === 'Winner'       && (p.pick === 'Home' || p.pick === 'Away'))
-    || (p.betType === 'DoubleChance' && p.pick === 'HomeOrAway');
+    || (p.betType === 'DoubleChance' &&  p.pick === 'HomeOrAway');
+  const isBttsYes = (p) =>
+       (p.betType === 'BTTS' && p.pick === 'Yes')
+    || (p.betType === 'BTTS' && p.pick === 'true');
 
+  // A winner / "12" needs ≥1 goal → can't pair with total Under 0.5
   if (needsAtLeastOneGoal(incoming) && isUnder05(existing)) return true;
   if (needsAtLeastOneGoal(existing) && isUnder05(incoming)) return true;
+
+  // BTTS Yes needs ≥2 goals → can't pair with total Under 0.5 / Under 1.5
+  if (isBttsYes(incoming) && isUnder05or15(existing)) return true;
+  if (isBttsYes(existing) && isUnder05or15(incoming)) return true;
 
   return false;
 }
