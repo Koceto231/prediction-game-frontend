@@ -288,11 +288,14 @@ export default function MatchesPage() {
   const exactOddsCache = useRef(new Map());
   useEffect(() => {
     // NB: don't gate on hasBetOdds — that flag means "1X2 winner odds exist".
-    // Exact-score odds are priced independently, so requiring it left the
-    // chip blank on matches without synced winner odds even though the
-    // exact-score price was available.
-    if (!isExact || !selectedMatch || home === null || away === null) { setExactOdds(null); return; }
-    const key = `${home}-${away}`;
+    // Exact-score odds are priced independently. Also coerce empty → 0 so the
+    // chip matches the stepper, which shows 0 for an unset field (the parsed
+    // `home`/`away` are null on an empty input, which used to blank the chip
+    // at the default 0:0).
+    if (!isExact || !selectedMatch) { setExactOdds(null); return; }
+    const h = Math.max(0, Math.min(20, Number(homeScore) || 0));
+    const a = Math.max(0, Math.min(20, Number(awayScore) || 0));
+    const key = `${h}-${a}`;
     if (exactOddsCache.current.has(key)) {        // instant — no network
       setExactOdds(exactOddsCache.current.get(key));
       setExactOddsLoading(false);
@@ -301,12 +304,12 @@ export default function MatchesPage() {
     let cancelled = false;
     setExactOddsLoading(true);
     const t = setTimeout(() => {
-      fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: home, scoreAway: away })
+      fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a })
         .then(r => { if (!cancelled) { if (r) exactOddsCache.current.set(key, r); setExactOdds(r); } })
         .finally(() => { if (!cancelled) setExactOddsLoading(false); });
     }, 120);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [isExact, selectedMatch?.id, home, away]);
+  }, [isExact, selectedMatch?.id, homeScore, awayScore]);
 
   // Prefetch the common scorelines the moment the Exact Score tab opens, in
   // parallel, into the same cache. By the time the user steps to any of them
@@ -326,7 +329,8 @@ export default function MatchesPage() {
       if (r) exactOddsCache.current.set(k, r);
     })).then(() => {
       if (cancelled) return;
-      const ck = `${home}-${away}`;                 // refresh the chip if current score just landed
+      // refresh the chip for the currently shown score (empty → 0)
+      const ck = `${Number(homeScore) || 0}-${Number(awayScore) || 0}`;
       if (exactOddsCache.current.has(ck)) setExactOdds(exactOddsCache.current.get(ck));
     });
     return () => { cancelled = true; };
