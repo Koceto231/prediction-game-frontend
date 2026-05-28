@@ -456,9 +456,22 @@ function LiveStatsAside({ match }) {
   const pa = stats?.possession?.away ?? null;
   const possessionKnown = ph != null && pa != null;
 
+  // Running score per goal — tally home/away in chronological order so each
+  // goal event can show the scoreline AT THAT MOMENT (e.g. "0-1").
+  const goalsAsc = [...goals].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+  let rh = 0, ra = 0;
+  const goalScore = new Map();
+  goalsAsc.forEach((g, idx) => {
+    if (g.team === 'home') rh++; else ra++;
+    goalScore.set(g === goalsAsc[idx] ? `${g.minute}|${g.team}|${g.playerName}|${idx}` : idx, `${rh}-${ra}`);
+  });
+
   // Match events — combine goals + cards into a chronological list (newest first)
   const events = [
-    ...goals.map(g => ({ minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal', name: g.playerName })),
+    ...goalsAsc.map((g, idx) => ({
+      minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal',
+      name: g.playerName, score: goalScore.get(`${g.minute}|${g.team}|${g.playerName}|${idx}`),
+    })),
     ...(stats?.cardEvents ?? []).map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
   ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 6);
 
@@ -500,13 +513,19 @@ function LiveStatsAside({ match }) {
         <div className="gv-livestats__block">
           <h4 className="gv-livestats__subtitle">MATCH EVENTS</h4>
           <div className="gv-livestats__events">
-            {events.map((e, i) => (
-              <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team}`}>
-                <span className="gv-livestats__event-min">{e.minute}'</span>
-                <span className="gv-livestats__event-icon">{iconFor(e.kind)}</span>
-                <span className="gv-livestats__event-name">{e.name || '—'}</span>
-              </div>
-            ))}
+            {events.map((e, i) => {
+              const isGoal = e.kind === 'goal' || e.kind === 'og';
+              return (
+                <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team}`}>
+                  <span className="gv-livestats__event-min">{e.minute}'</span>
+                  {isGoal && e.score && (
+                    <span className="gv-livestats__event-score">{e.score.replace('-', ' - ')}</span>
+                  )}
+                  <span className="gv-livestats__event-icon">{iconFor(e.kind)}</span>
+                  <span className="gv-livestats__event-name">{e.name || '—'}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
