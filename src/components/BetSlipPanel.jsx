@@ -702,7 +702,15 @@ function isConflict(existing, incoming) {
  * Handicap, Odd/Even, half-goal totals) return all-null = "no constraint".
  */
 function constraintsOf(p) {
-  const c = { ft: null, ht: null, homeScored: null, awayScored: null, tMin: 0, tMax: Infinity };
+  // Per-team goal bounds (hMin..hMax, aMin..aMax) + total bounds + outcome
+  // sets. Scored/not-scored is expressed through the bounds (hMin≥1 = scored,
+  // hMax=0 = didn't score), so there's a single source of truth.
+  const c = {
+    ft: null, ht: null,
+    hMin: 0, hMax: Infinity,
+    aMin: 0, aMax: Infinity,
+    tMin: 0, tMax: Infinity,
+  };
   const LINE = { Line05: 0.5, Line15: 1.5, Line25: 2.5, Line35: 3.5 };
   const lineNum = p.leg?.lineValue != null
     ? Number(p.leg.lineValue)
@@ -730,8 +738,8 @@ function constraintsOf(p) {
       break;
     case 'WinToNil':                      // win AND opponent scores 0
       if (yes(p.leg?.bTTSPick)) {
-        if (p.pick === 'Home') { c.ft = new Set(['H']); c.awayScored = false; }
-        else                   { c.ft = new Set(['A']); c.homeScored = false; }
+        if (p.pick === 'Home') { c.ft = new Set(['H']); c.aMax = 0; }
+        else                   { c.ft = new Set(['A']); c.hMax = 0; }
       }
       break;
     case 'HtFt': {                        // 'HA' = HT Home, FT Away …
@@ -740,33 +748,42 @@ function constraintsOf(p) {
       if (code.length === 2) { c.ht = new Set([map[code[0]]]); c.ft = new Set([map[code[1]]]); }
       break;
     }
-    case 'CleanSheet':                    // team concedes 0 (opponent 0 goals)
+    case 'CleanSheet':                    // team concedes 0 ⇒ opponent 0 goals
       if (yes(p.leg?.bTTSPick)) {
-        if (p.pick === 'Home') c.awayScored = false; else c.homeScored = false;
+        if (p.pick === 'Home') c.aMax = 0; else c.hMax = 0;
       }
       break;
     case 'TeamToScore': {
       const v = yes(p.leg?.bTTSPick);
-      if (p.pick === 'Home') c.homeScored = v; else c.awayScored = v;
+      if (p.pick === 'Home') { if (v) c.hMin = 1; else c.hMax = 0; }
+      else                   { if (v) c.aMin = 1; else c.aMax = 0; }
       break;
     }
     case 'BTTS':
-      if (yes(p.pick) || yes(p.leg?.bTTSPick)) { c.homeScored = true; c.awayScored = true; c.tMin = 2; }
+      if (yes(p.pick) || yes(p.leg?.bTTSPick)) { c.hMin = 1; c.aMin = 1; }
       break;
     case 'FirstGoal':
     case 'LastToScore':
-      if (p.pick === 'Home') c.homeScored = true;
-      else if (p.pick === 'Away') c.awayScored = true;
+      if (p.pick === 'Home') c.hMin = 1;
+      else if (p.pick === 'Away') c.aMin = 1;
       else c.tMax = 0;                    // Draw == "No Goal" == 0-0
       break;
     case 'OverUnder':
       if (lineNum != null && ou === 'Over')  c.tMin = Math.floor(lineNum) + 1;
       if (lineNum != null && ou === 'Under') c.tMax = Math.ceil(lineNum) - 1;
       break;
-    case 'TeamGoals':                     // only the 0.5 line maps to scored/not
-      if (lineNum != null && lineNum < 1) {
-        const scored = ou === 'Over';
-        if (p.pick === 'Home') c.homeScored = scored; else c.awayScored = scored;
+    case 'OddEven':                       // total goals parity; Odd ⇒ ≥1 (0 is even)
+      if (p.pick === 'Odd' || yes(p.leg?.bTTSPick)) c.tMin = Math.max(c.tMin, 1);
+      break;
+    case 'TeamGoals':                     // per-team O/U → that team's goal bound
+      if (lineNum != null) {
+        if (ou === 'Over') {
+          const m = Math.floor(lineNum) + 1;
+          if (p.pick === 'Home') c.hMin = m; else c.aMin = m;
+        } else if (ou === 'Under') {
+          const m = Math.ceil(lineNum) - 1;
+          if (p.pick === 'Home') c.hMax = m; else c.aMax = m;
+        }
       }
       break;
     default:
@@ -786,31 +803,27 @@ function semanticConflict(a, b) {
   if (ft && ft.length === 0) return true;
   if (ht && ht.length === 0) return true;
 
-  // Tri-state scored flags must agree
-  const merge = (x, y) => x == null ? y : y == null ? x : x === y ? x : 'X';
-  const hs = merge(ca.homeScored, cb.homeScored);
-  const as = merge(ca.awayScored, cb.awayScored);
-  if (hs === 'X' || as === 'X') return true;
-
-  // Total-goal window must be feasible
-  const tMin = Math.max(ca.tMin, cb.tMin);
-  const tMax = Math.min(ca.tMax, cb.tMax);
+  // Combine per-team + total goal bounds; any inverted range = impossible
+  const hMin = Math.max(ca.hMin, cb.hMin), hMax = Math.min(ca.hMax, cb.hMax);
+  const aMin = Math.max(ca.aMin, cb.aMin), aMax = Math.min(ca.aMax, cb.aMax);
+  if (hMin > hMax || aMin > aMax) return true;
+  const tMin = Math.max(ca.tMin, cb.tMin, hMin + aMin);
+  const tMax = Math.min(ca.tMax, cb.tMax, hMax + aMax);
   if (tMin > tMax) return true;
 
-  // Couplings between outcome and goals
+  // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
   if (ftFinal && ftFinal.size === 1) {
-    if (ftFinal.has('H')) {               // home wins ⇒ home scores ≥1, total ≥1
-      if (hs === false) return true;
-      if (tMax < 1) return true;
+    if (ftFinal.has('H')) {               // home wins ⇒ home ≥1 AND home > away
+      if (hMax < 1) return true;
+      if (hMax <= aMin) return true;
     }
-    if (ftFinal.has('A')) {               // away wins ⇒ away scores ≥1, total ≥1
-      if (as === false) return true;
-      if (tMax < 1) return true;
+    if (ftFinal.has('A')) {               // away wins ⇒ away ≥1 AND away > home
+      if (aMax < 1) return true;
+      if (aMax <= hMin) return true;
     }
-    if (ftFinal.has('D')) {               // draw ⇒ both sides score the same
-      if (hs === true && as === false) return true;
-      if (as === true && hs === false) return true;
+    if (ftFinal.has('D')) {               // draw ⇒ home == away must be reachable
+      if (Math.max(hMin, aMin) > Math.min(hMax, aMax)) return true;
     }
   }
   return false;
