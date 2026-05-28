@@ -11874,6 +11874,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: auto;
 }
 .gv-pitch-tracker__league {
@@ -12180,21 +12181,19 @@ select:focus {
 .gv-pitch-tracker__venue {
   position: relative;
   z-index: 2;
-  margin-top: 8px;
-  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 12px;
+  padding: 4px 12px;
   background: rgba(19, 19, 19, 0.55);
   border: 1px solid var(--outline-variant, #4d4633);
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.84rem;          /* bumped up per request */
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.02em;
   white-space: nowrap;
-  max-width: 90%;
+  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
 }

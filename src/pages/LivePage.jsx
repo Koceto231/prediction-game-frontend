@@ -665,7 +665,7 @@ export default function LivePage() {
   // events on the selected match by diffing successive live-stats snapshots
   // and surface ONE event at a time as a banner inside the pitch tracker.
   const liveEvent = useLiveEventQueue(selectedMatch);
-  const [mode, setMode]                   = useState('');
+  const [mode, setMode]                   = useState('market');  // straight to markets, like the Matches page
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
   const [loading, setLoading]             = useState(false);
@@ -839,7 +839,7 @@ export default function LivePage() {
   }, [collapsed.scorer, mode, selectedMatch?.id]);
 
   const resetPanel = useCallback(() => {
-    setMode(''); setFields(EMPTY); setAmount(''); setFeedback(null);
+    setMode('market'); setFields(EMPTY); setAmount(''); setFeedback(null);
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
@@ -1255,7 +1255,7 @@ export default function LivePage() {
                 <div className="gv-pitch-tracker__box gv-pitch-tracker__box--right" />
               </div>
 
-              {/* Top-row league chip + live pill */}
+              {/* Top-row league chip + venue + live pill (all on one level) */}
               <div className="gv-pitch-tracker__topbar">
                 {LEAGUE_META[selectedMatch.leagueCode] && (
                   <span className="gv-pitch-tracker__league">
@@ -1263,18 +1263,16 @@ export default function LivePage() {
                     <span>{LEAGUE_META[selectedMatch.leagueCode].short}</span>
                   </span>
                 )}
+                {selectedMatch.venueName && (
+                  <span className="gv-pitch-tracker__venue" title={selectedMatch.venueName}>
+                    📍 {selectedMatch.venueName}
+                    {selectedMatch.venueCity && <span> · {selectedMatch.venueCity}</span>}
+                  </span>
+                )}
                 <span className="gv-pitch-tracker__live">
                   <span className="gv-pitch-tracker__live-dot" /> LIVE
                 </span>
               </div>
-
-              {/* Venue line — small chip under the top bar */}
-              {selectedMatch.venueName && (
-                <div className="gv-pitch-tracker__venue">
-                  📍 {selectedMatch.venueName}
-                  {selectedMatch.venueCity && <span> · {selectedMatch.venueCity}</span>}
-                </div>
-              )}
 
               {/* Score + shields */}
               <div className="gv-pitch-tracker__main">
@@ -1355,41 +1353,9 @@ export default function LivePage() {
               the pitch (see .gv-live-grid responsive). Active cash-outs live in the
               BetSlipAside on the right (also stacked on mobile). */}
 
-          {!mode && (
-            <>
-              <div className="premium-mode-grid">
-                <button
-                  type="button"
-                  className="premium-mode-card premium-mode-card--exact"
-                  onClick={() => setMode('exact')}
-                  disabled
-                  style={{ opacity: 0.38, cursor: 'not-allowed', filter: 'grayscale(0.5)' }}
-                  title="Not available during live play"
-                >
-                  <div className="premium-mode-card__top">
-                    <span className="premium-mode-card__icon">🎯</span>
-                    <span className="premium-mode-card__points">5 pts</span>
-                  </div>
-                  <div className="premium-mode-card__title">Exact Score</div>
-                  <div className="premium-mode-card__text">Not available during live play.</div>
-                </button>
-                <button type="button" className="premium-mode-card premium-mode-card--market" onClick={() => setMode('market')}>
-                  <div className="premium-mode-card__top">
-                    <span className="premium-mode-card__icon">📈</span>
-                    <span className="premium-mode-card__points">up to 3 pts</span>
-                  </div>
-                  <div className="premium-mode-card__title">Market Pick</div>
-                  <div className="premium-mode-card__text">Combine any markets — winner, BTTS, corners, goalscorer and more.</div>
-                </button>
-              </div>
-              {selectedMatch.homeOdds != null && (
-                <>
-                  <div className="quick-bet-divider"><span>or place a quick bet</span></div>
-                  <QuickBetPanel match={selectedMatch} />
-                </>
-              )}
-            </>
-          )}
+          {/* Mode picker + quick-bet removed — live detail goes straight to
+              the market grid, same as the Matches page. Live rules (locked
+              sections during play) still apply via dis.*/}
 
           <div className="prediction-form">
 
@@ -1463,12 +1429,6 @@ export default function LivePage() {
             {/* Market Pick */}
             {isMarket && (
               <>
-                <div className="mode-card mode-card--market">
-                  <div className="mode-card__top"><span className="mode-badge">MARKET PICK — UP TO 3 PTS</span></div>
-                  <div className="mode-card__title">Pick any combination of markets</div>
-                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); resetPanel(); }}>Change type</button>
-                </div>
-
                 <div className="market-tabs">
                   {MARKET_TABS.map(t => (
                     <button
