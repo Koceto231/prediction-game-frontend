@@ -11936,7 +11936,7 @@ select:focus {
 
 .gv-pitch-tracker__bg {
   position: relative;
-  height: 340px;
+  height: 460px;
   padding: 18px 22px;
   border-radius: var(--radius-2xl, 22px);
   background: radial-gradient(circle at center, #2a2a2a 0%, #131313 100%);
@@ -12251,7 +12251,7 @@ select:focus {
 
 /* Responsive — squeeze on small screens */
 @media (max-width: 640px) {
-  .gv-pitch-tracker__bg { height: auto; padding: 16px 14px; min-height: 280px; }
+  .gv-pitch-tracker__bg { height: auto; padding: 16px 14px; min-height: 380px; }
   .gv-pitch-tracker__main { gap: 12px; }
   .gv-pitch-tracker__shield { width: 56px; height: 56px; }
   .gv-pitch-tracker__teamname { font-size: 0.72rem; }

@@ -7,8 +7,7 @@ import LiveMatchCard from '../components/LiveMatchCard';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
 import useLiveEventQueue from '../hooks/useLiveEventQueue';
-import useLiveMomentum from '../hooks/useLiveMomentum';
-import LiveMomentum from '../components/LiveMomentum';
+import useLiveMomentum from '../hooks/useLiveMomentum';   // still drives the on-pitch pressure glow
 import {
   is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, getTeamInitials,
 } from '../utils/liveState';
@@ -1345,10 +1344,6 @@ export default function LivePage() {
               })()}
             </div>
           </div>
-
-          {/* Momentum / pressure indicator — approximated from aggregate
-              stats (no positional feed). Bar + trend sparkline. */}
-          <LiveMomentum match={selectedMatch} />
 
           {feedback && (
             <div className={`alert ${feedback.type === 'ok' ? 'alert-success' : 'alert-error'}`} style={{ margin: '12px 0' }}>
