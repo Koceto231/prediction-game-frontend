@@ -490,7 +490,11 @@ function LiveStatsAside({ match }) {
         minute: (x.kind === 'so-goal' || x.kind === 'so-miss') ? 999 : x.minute,
         team: x.team, kind: x.kind, name: x.playerName,
       })),
-  ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 8);
+  ]
+    // Keep the most recent 8, but display oldest→newest (top to bottom).
+    .sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0))
+    .slice(0, 8)
+    .reverse();
 
   // Bulgarian labels for the less-common event kinds (shown after the player name).
   const KIND_LABEL = {
