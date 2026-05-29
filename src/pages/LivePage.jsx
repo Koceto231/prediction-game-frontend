@@ -1362,7 +1362,12 @@ export default function LivePage() {
                   <div className="gv-pitch-tracker__score">
                     {selectedMatch.homeScore ?? 0} <span>-</span> {selectedMatch.awayScore ?? 0}
                   </div>
-                  <div className="gv-pitch-tracker__minute">{displayMinute(selectedMatch)}</div>
+                  <div className="gv-pitch-tracker__minute">
+                    {displayMinute(selectedMatch)}
+                    {selectedMatch.liveStats?.addedTime > 0 && !isFT(selectedMatch.liveState) && (
+                      <span className="gv-pitch-tracker__added">+{selectedMatch.liveStats.addedTime}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="gv-pitch-tracker__team gv-pitch-tracker__team--away">

@@ -12316,6 +12316,13 @@ select:focus {
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
 }
+/* Stoppage / added time shown next to the clock, e.g. "59:22 +3" */
+.gv-pitch-tracker__added {
+  margin-left: 5px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #8a1c1c;
+}
 
 /* Status pill at bottom of pitch tracker (mockup "CITY ATTACKING: PENALTY AREA") */
 .gv-pitch-tracker__status {
