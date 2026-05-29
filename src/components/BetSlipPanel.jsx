@@ -123,19 +123,51 @@ export default function BetSlipPanel() {
         fixture, leagueLabel,
       };
 
-      setColumns(prev => prev.map(c => {
-        if (c.id !== activeColumnId) return c;
-        // Toggle off if exact same selection already in this column
-        if (c.picks.some(p => p.key === key)) {
-          const removed = c.picks.find(p => p.key === key);
+      // ExactScore is exclusive within a column (backend can't carry it as an
+      // accumulator leg). Instead of evicting, route the new pick to a fresh
+      // column so both selections stay live as separate placeable bets.
+      let splitToColId = null;
+      setColumns(prev => {
+        const active = prev.find(c => c.id === activeColumnId);
+        if (!active) return prev;
+
+        // Same key → toggle off (existing behavior)
+        if (active.picks.some(p => p.key === key)) {
+          const removed = active.picks.find(p => p.key === key);
           emitRemoved(removed ? [removed] : []);
-          return { ...c, picks: c.picks.filter(p => p.key !== key) };
+          return prev.map(c => c.id === activeColumnId ? { ...c, picks: c.picks.filter(p => p.key !== key) } : c);
         }
-        // Conflicting picks get dropped — tell the page to de-select them too
-        const conflicts = c.picks.filter(p => isConflict(p, newPick));
+
+        const needsExactSplit = active.picks.some(p =>
+          p.matchId === newPick.matchId &&
+          (p.betType === 'ExactScore' || newPick.betType === 'ExactScore')
+        );
+        if (needsExactSplit) {
+          // Try an existing column that already holds matching picks (e.g. a
+          // previously-split ExactScore column) before opening a brand new one.
+          const reuse = prev.find(c =>
+            c.id !== activeColumnId &&
+            c.picks.length > 0 &&
+            !c.picks.some(p => isConflict(p, newPick))
+          );
+          if (reuse) {
+            splitToColId = reuse.id;
+            return prev.map(c => c.id === reuse.id ? { ...c, picks: [...c.picks, newPick] } : c);
+          }
+          const fresh = newColumn();
+          fresh.picks = [newPick];
+          splitToColId = fresh.id;
+          return [...prev, fresh];
+        }
+
+        // Regular path: drop conflicting picks within the active column.
+        const conflicts = active.picks.filter(p => isConflict(p, newPick));
         if (conflicts.length) emitRemoved(conflicts);
-        return { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] };
-      }));
+        return prev.map(c => c.id === activeColumnId
+          ? { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] }
+          : c);
+      });
+      if (splitToColId) setActiveColumnId(splitToColId);
       setError(''); setSuccess('');
     };
     const onClear = () => {
