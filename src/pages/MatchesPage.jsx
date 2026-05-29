@@ -46,6 +46,7 @@ export default function MatchesPage() {
   const [cornersOU, setCornersOU]             = useState('');
   const [yellowsLine, setYellowsLine]         = useState('');
   const [yellowsOU, setYellowsOU]             = useState('');
+  const [ouPicks, setOuPicks]                 = useState(() => new Set());  // Set<`${line}:${pick}`> — multiple O/U picks, mirrors the slip
   const [scorerPicks, setScorerPicks]         = useState(() => new Set());  // Set<playerId> — multiple goalscorers allowed
   const [scorerPlayers, setScorerPlayers]     = useState([]);
   const [scorerLoading, setScorerLoading]     = useState(false);
@@ -155,6 +156,7 @@ export default function MatchesPage() {
           case 'LastToScore':  setLastScorePick(v => v === pick ? '' : v); break;
           case 'HtFt':         setHtftPick(v => v === pick ? '' : v); break;
           case 'OverUnder':
+            setOuPicks(s => { const k = `${line}:${pick}`; if (!s.has(k)) return s; const n = new Set(s); n.delete(k); return n; });
             setFields(p => (p.ouPick === pick && p.ouLine === line) ? { ...p, ouLine: '', ouPick: '' } : p);
             break;
           case 'ExactScore':      setField('homeScore', ''); setField('awayScore', ''); break;
@@ -261,7 +263,7 @@ export default function MatchesPage() {
     setExactOdds(null); exactOddsCache.current.clear();
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
-    setScorerPicks(new Set()); setScorerPlayers([]);
+    setOuPicks(new Set()); setScorerPicks(new Set()); setScorerPlayers([]);
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -1099,7 +1101,7 @@ export default function MatchesPage() {
                   <div data-cat="goals" className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('goals')}>
                       <span className="market-section__name">Goals — Over / Under</span>
-                      {ouLine && ouPick && <span className="market-section__badge">{ouPick} {ouLine.replace('Line','').replace(/(\d)(\d)/,'$1.$2')}</span>}
+                      {ouPicks.size > 0 && <span className="market-section__badge">{ouPicks.size}</span>}
                       <span className="market-section__toggle">{collapsed.goals ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.goals && (
@@ -1110,14 +1112,15 @@ export default function MatchesPage() {
                             <span className="ou-table__line">{label}</span>
                             {['Over', 'Under'].map(pick => {
                               const ouOdds = preOdds.ou?.[line]?.[pick];
+                              const k = `${line}:${pick}`;
                               return (
                                 <button key={pick} type="button"
-                                  className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}`}
+                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
                                   onClick={() => {
-                                    const isToggleOff = ouLine === line && ouPick === pick;
-                                    if (isToggleOff) { setField('ouLine', ''); setField('ouPick', ''); }
-                                    else             { setField('ouLine', line); setField('ouPick', pick); }
-                                    // Always dispatch — slip adds or toggles off this exact line.
+                                    // Multi-select: toggle this exact line in/out; the slip
+                                    // toggles the matching key and enforces conflict rules.
+                                    setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                    setField('ouLine', line); setField('ouPick', pick);
                                     if (ouOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: ouOdds });
                                   }}>
                                   {ouOdds != null ? Number(ouOdds).toFixed(2) : preOddsLoading ? '…' : '—'}

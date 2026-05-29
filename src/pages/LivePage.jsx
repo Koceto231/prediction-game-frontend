@@ -753,6 +753,35 @@ export default function LivePage() {
   const [cornersOU, setCornersOU]             = useState('');
   const [yellowsLine, setYellowsLine]         = useState('');
   const [yellowsOU, setYellowsOU]             = useState('');
+  const [ouPicks, setOuPicks]                 = useState(() => new Set());  // Set<`${line}:${pick}`> — live O/U accumulator, mirrors the global slip
+
+  // Live O/U flows into the GLOBAL bet slip (accumulator + conflict rules),
+  // not the inline live slip. Dispatch + mirror removals for cell highlighting.
+  const addToSlip = useCallback((detail) => {
+    if (!selectedMatch || detail?.odds == null) return;
+    window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
+      detail: {
+        matchId:     selectedMatch.id,
+        fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
+        leagueLabel: selectedMatch.leagueName ?? null,
+        ...detail,
+        odds: Number(detail.odds),
+      },
+    }));
+  }, [selectedMatch]);
+
+  useEffect(() => {
+    const onRemove = (e) => {
+      for (const { matchId, betType, pick, line } of (e.detail?.picks || [])) {
+        if (!selectedMatch || matchId !== selectedMatch.id) continue;
+        if (betType === 'OverUnder') {
+          setOuPicks(s => { const k = `${line}:${pick}`; if (!s.has(k)) return s; const n = new Set(s); n.delete(k); return n; });
+        }
+      }
+    };
+    window.addEventListener('bpfl:slip:remove', onRemove);
+    return () => window.removeEventListener('bpfl:slip:remove', onRemove);
+  }, [selectedMatch]);
 
   const [oddEvenPick, setOddEvenPick]   = useState('');
   const [dnbPick, setDnbPick]           = useState('');
@@ -904,6 +933,7 @@ export default function LivePage() {
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
+    setOuPicks(new Set());
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -1573,7 +1603,7 @@ export default function LivePage() {
                   <div data-cat="goals" className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('goals')}>
                       <span className="market-section__name">Goals — Over / Under</span>
-                      {ouLine && ouPick && <span className="market-section__badge">{ouPick} {ouLine.replace('Line','').replace(/(\d)(\d)/,'$1.$2')}</span>}
+                      {ouPicks.size > 0 && <span className="market-section__badge">{ouPicks.size}</span>}
                       <span className="market-section__toggle">{collapsed.goals ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.goals && (
@@ -1584,14 +1614,24 @@ export default function LivePage() {
                           return (
                           <div key={line} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{label}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const cellOdds = preOdds.ou?.[line]?.[pick];
+                              const k = `${line}:${pick}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${ouLine === line && ouPick === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (ouLine === line && ouPick === pick) { setField('ouLine',''); setField('ouPick',''); } else { setField('ouLine', line); setField('ouPick', pick); } }}>
-                                {preOdds.ou?.[line]?.[pick] != null ? Number(preOdds.ou[line][pick]).toFixed(2) : '—'}
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  // Accumulator: toggle this line in the global slip (which
+                                  // enforces conflict rules) and mirror the highlight.
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  if (cellOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: cellOdds });
+                                }}>
+                                {cellOdds != null ? Number(cellOdds).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
