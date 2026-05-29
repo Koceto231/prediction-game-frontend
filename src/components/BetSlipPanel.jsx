@@ -123,51 +123,19 @@ export default function BetSlipPanel() {
         fixture, leagueLabel,
       };
 
-      // ExactScore is exclusive within a column (backend can't carry it as an
-      // accumulator leg). Instead of evicting, route the new pick to a fresh
-      // column so both selections stay live as separate placeable bets.
-      let splitToColId = null;
-      setColumns(prev => {
-        const active = prev.find(c => c.id === activeColumnId);
-        if (!active) return prev;
-
-        // Same key → toggle off (existing behavior)
-        if (active.picks.some(p => p.key === key)) {
-          const removed = active.picks.find(p => p.key === key);
+      setColumns(prev => prev.map(c => {
+        if (c.id !== activeColumnId) return c;
+        // Toggle off if exact same selection already in this column
+        if (c.picks.some(p => p.key === key)) {
+          const removed = c.picks.find(p => p.key === key);
           emitRemoved(removed ? [removed] : []);
-          return prev.map(c => c.id === activeColumnId ? { ...c, picks: c.picks.filter(p => p.key !== key) } : c);
+          return { ...c, picks: c.picks.filter(p => p.key !== key) };
         }
-
-        const needsExactSplit = active.picks.some(p =>
-          p.matchId === newPick.matchId &&
-          (p.betType === 'ExactScore' || newPick.betType === 'ExactScore')
-        );
-        if (needsExactSplit) {
-          // Try an existing column that already holds matching picks (e.g. a
-          // previously-split ExactScore column) before opening a brand new one.
-          const reuse = prev.find(c =>
-            c.id !== activeColumnId &&
-            c.picks.length > 0 &&
-            !c.picks.some(p => isConflict(p, newPick))
-          );
-          if (reuse) {
-            splitToColId = reuse.id;
-            return prev.map(c => c.id === reuse.id ? { ...c, picks: [...c.picks, newPick] } : c);
-          }
-          const fresh = newColumn();
-          fresh.picks = [newPick];
-          splitToColId = fresh.id;
-          return [...prev, fresh];
-        }
-
-        // Regular path: drop conflicting picks within the active column.
-        const conflicts = active.picks.filter(p => isConflict(p, newPick));
+        // Conflicting picks get dropped — tell the page to de-select them too
+        const conflicts = c.picks.filter(p => isConflict(p, newPick));
         if (conflicts.length) emitRemoved(conflicts);
-        return prev.map(c => c.id === activeColumnId
-          ? { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] }
-          : c);
-      });
-      if (splitToColId) setActiveColumnId(splitToColId);
+        return { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] };
+      }));
       setError(''); setSuccess('');
     };
     const onClear = () => {
@@ -274,17 +242,6 @@ export default function BetSlipPanel() {
   // ── Submit ─────────────────────────────────────────────────────────
   const handlePlaceAll = async () => {
     if (loading || placeableCount === 0 || overBalance) return;
-
-    // Exact Score legs can only be placed as single bets — backend's
-    // AccumulatorLegDTO has no scoreHome/scoreAway fields. Block submit
-    // if any column tries to combine ExactScore with other picks.
-    const badEsColumn = columns.find(c =>
-      c.picks.length >= 2 && c.picks.some(p => p.betType === 'ExactScore'),
-    );
-    if (badEsColumn) {
-      setError('Точен резултат не може да се комбинира с други маркети в една колонка. Премести го в собствена колонка.');
-      return;
-    }
 
     setLoading(true); setError(''); setSuccess('');
     try {
@@ -692,13 +649,10 @@ function isConflict(existing, incoming) {
 
   const bt = incoming.betType;
 
-  // 0. ExactScore is exclusive — it determines the winner, BTTS and all
-  //    O/U lines, so combining it with anything else on the same match
-  //    is either redundant or impossible. The backend also can't carry
-  //    an Exact Score leg inside an accumulator. So ExactScore CLAIMS
-  //    the match in a column: adding it drops every other pick, and any
-  //    other market added later drops the ExactScore.
-  if (bt === 'ExactScore' || existing.betType === 'ExactScore') return true;
+  // 0. Two different ExactScore picks on the same match are mutually
+  //    exclusive (a match has exactly one final score). The same score
+  //    twice is already handled as a key-toggle.
+  if (bt === 'ExactScore' && existing.betType === 'ExactScore') return true;
 
   // 1. Same-market dedupe — only ONE selection per "single-choice" market
   if ((bt === 'Winner' || bt === 'DoubleChance')
@@ -774,6 +728,8 @@ function constraintsOf(p) {
     hMin: 0, hMax: Infinity,
     aMin: 0, aMax: Infinity,
     tMin: 0, tMax: Infinity,
+    // Parity constraints — null = unconstrained, 'odd' | 'even' otherwise.
+    hParity: null, aParity: null, tParity: null,
   };
   const LINE = { Line05: 0.5, Line15: 1.5, Line25: 2.5, Line35: 3.5 };
   const lineNum = p.leg?.lineValue != null
@@ -837,8 +793,35 @@ function constraintsOf(p) {
       if (lineNum != null && ou === 'Under') c.tMax = Math.ceil(lineNum) - 1;
       break;
     case 'OddEven':                       // total goals parity; Odd ⇒ ≥1 (0 is even)
-      if (p.pick === 'Odd' || yes(p.leg?.bTTSPick)) c.tMin = Math.max(c.tMin, 1);
+      if (p.pick === 'Odd' || yes(p.leg?.bTTSPick)) { c.tParity = 'odd'; c.tMin = Math.max(c.tMin, 1); }
+      else                                          { c.tParity = 'even'; }
       break;
+    case 'OddEven1stHalf':                // not derivable from ExactScore — skip
+      break;
+    case 'TeamOddEven': {                 // per-team goals parity
+      const isOdd = (p.leg?.bTTSPick === true || p.pick === 'Odd');
+      if (p.pick === 'Home' || p.leg?.pick === 'Home') {
+        if (isOdd) { c.hParity = 'odd'; c.hMin = Math.max(c.hMin, 1); }
+        else c.hParity = 'even';
+      } else {
+        if (isOdd) { c.aParity = 'odd'; c.aMin = Math.max(c.aMin, 1); }
+        else c.aParity = 'even';
+      }
+      break;
+    }
+    case 'ExactScore': {                  // tight bounds: exact (h, a) goals
+      const h = Number(p.scoreHome), a = Number(p.scoreAway);
+      if (Number.isFinite(h) && Number.isFinite(a)) {
+        c.hMin = c.hMax = h;
+        c.aMin = c.aMax = a;
+        c.tMin = c.tMax = h + a;
+        c.ft = new Set([h > a ? 'H' : h < a ? 'A' : 'D']);
+        c.hParity = h % 2 === 0 ? 'even' : 'odd';
+        c.aParity = a % 2 === 0 ? 'even' : 'odd';
+        c.tParity = (h + a) % 2 === 0 ? 'even' : 'odd';
+      }
+      break;
+    }
     case 'TeamGoals':                     // per-team O/U → that team's goal bound
       if (lineNum != null) {
         if (ou === 'Over') {
@@ -874,6 +857,12 @@ function semanticConflict(a, b) {
   const tMin = Math.max(ca.tMin, cb.tMin, hMin + aMin);
   const tMax = Math.min(ca.tMax, cb.tMax, hMax + aMax);
   if (tMin > tMax) return true;
+
+  // Parity intersections — if both sides claim a parity, they must agree.
+  const clashParity = (x, y) => x && y && x !== y;
+  if (clashParity(ca.hParity, cb.hParity)) return true;
+  if (clashParity(ca.aParity, cb.aParity)) return true;
+  if (clashParity(ca.tParity, cb.tParity)) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
