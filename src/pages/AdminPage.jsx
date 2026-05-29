@@ -302,7 +302,7 @@ export default function AdminPage() {
                 {loading === 'wc-fix' ? 'Checking…' : 'Check WC fixtures (next 200d)'}
               </button>
               <button className="admin-btn" type="button" disabled={loading === 'wc-sub'}
-                onClick={() => run('wc-sub', () => api.get('/admin/sync/debug/raw?path=my/leagues/included'))}>
+                onClick={() => run('wc-sub', () => api.get('/admin/sync/debug/raw?path=' + encodeURIComponent('leagues?per_page=200')))}>
                 {loading === 'wc-sub' ? 'Checking…' : 'List my plan leagues'}
               </button>
               <button className="admin-btn" type="button" disabled={loading === 'wc-odds'}
