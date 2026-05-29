@@ -12425,6 +12425,46 @@ select:focus {
   font-style: italic;
 }
 
+/* ── Live event banner ───────────────────────────────────────────────
+   GOAL  → solid gold bar with dark bold text.
+   Everything else (VAR, cards, corners, shots, attacks, fouls) → dark
+   bar with a gold border + gold text. */
+.gv-live-banner {
+  position: relative;
+  z-index: 2;
+  margin: auto auto 0;
+  align-self: center;
+  max-width: 96%;
+  padding: 9px 20px;
+  border-radius: 6px;
+  text-align: center;
+  animation: gv-event-flash 0.5s ease-out;
+}
+.gv-live-banner__text {
+  display: block;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.94rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gv-live-banner--goal {
+  background: var(--accent);
+  border: 2px solid #0e0e0e;
+  box-shadow: 0 0 24px rgba(240, 197, 25, 0.45);
+}
+.gv-live-banner--goal .gv-live-banner__text { color: #0e0e0e; }
+.gv-live-banner--alert {
+  background: rgba(16, 16, 16, 0.92);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 16px rgba(240, 197, 25, 0.22);
+}
+.gv-live-banner--alert .gv-live-banner__text { color: var(--accent); }
+
 /* Event-kind color variants — border tint cues the type at a glance */
 .gv-pitch-tracker__status--goal,
 .gv-pitch-tracker__status--og {

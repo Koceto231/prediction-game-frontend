@@ -39,6 +39,8 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
     const stats = match.liveStats;
     const goals = match.goalScorers ?? [];
     const cards = stats?.cardEvents ?? [];
+    const varEvents = (stats?.extraEvents ?? []).filter(e => e.kind === 'var');
+    const lastVar   = varEvents[varEvents.length - 1] ?? null;
 
     const curr = {
       matchId:     match.id,
@@ -56,6 +58,7 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
       foulsHome:   stats?.fouls?.home ?? 0,
       foulsAway:   stats?.fouls?.away ?? 0,
       lastCard:    cards[cards.length - 1] ?? null,
+      varKey:      lastVar ? `${lastVar.minute}|${lastVar.detail ?? ''}` : null,
     };
     const prev = prevRef.current;
     prevRef.current = curr;
@@ -70,21 +73,34 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
     const newEvents = [];
     const home = match.homeTeamName, away = match.awayTeamName;
 
+    // VAR — fire when a new VAR event arrives (review or decision). High
+    // priority so it isn't crowded out by stat-delta events in the same cycle.
+    if (curr.varKey && prev.varKey !== curr.varKey) {
+      newEvents.push({
+        team: lastVar.team, kind: 'var',
+        title: 'VAR CHECK',
+        sub: lastVar.detail ? `${lastVar.detail} (${lastVar.minute}')` : `(${lastVar.minute}')`,
+      });
+    }
     // GOAL — fire on score change (most reliable on Sportmonks)
     if (curr.homeScore > prev.homeScore) {
       const lastHomeGoal = [...goals].reverse().find(g => g.team === 'home');
       newEvents.push({
         team: 'home', kind: 'goal',
-        title: lastHomeGoal?.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
-        sub: `${home}${lastHomeGoal ? ` — ${lastHomeGoal.playerName} ${lastHomeGoal.minute}'` : ''}`,
+        title: lastHomeGoal?.isOwnGoal ? 'OWN GOAL' : 'GOAL!',
+        sub: lastHomeGoal
+          ? `${home} (${lastHomeGoal.minute}') – ${lastHomeGoal.playerName}`
+          : home,
       });
     }
     if (curr.awayScore > prev.awayScore) {
       const lastAwayGoal = [...goals].reverse().find(g => g.team === 'away');
       newEvents.push({
         team: 'away', kind: 'goal',
-        title: lastAwayGoal?.isOwnGoal ? 'AUTOGOL' : 'GOAL!',
-        sub: `${away}${lastAwayGoal ? ` — ${lastAwayGoal.playerName} ${lastAwayGoal.minute}'` : ''}`,
+        title: lastAwayGoal?.isOwnGoal ? 'OWN GOAL' : 'GOAL!',
+        sub: lastAwayGoal
+          ? `${away} (${lastAwayGoal.minute}') – ${lastAwayGoal.playerName}`
+          : away,
       });
     }
     // CARD

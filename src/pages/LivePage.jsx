@@ -1385,19 +1385,15 @@ export default function LivePage() {
                   : 'IN PLAY';
 
                 if (liveEvent) {
-                  const icon = liveEvent.kind === 'goal' || liveEvent.kind === 'og' ? '⚽'
-                    : liveEvent.kind === 'red'    ? '🟥'
-                    : liveEvent.kind === 'yellow' ? '🟨'
-                    : liveEvent.kind === 'corner' ? '⛳'
-                    : liveEvent.kind === 'shot'   ? '🎯'
-                    : liveEvent.kind === 'shotoff' ? '🥅'
-                    : liveEvent.kind === 'danger' ? '🔥'
-                    : liveEvent.kind === 'foul'   ? '⚠️' : '•';
+                  const isGoal = liveEvent.kind === 'goal' || liveEvent.kind === 'og';
+                  // Goal → solid gold banner; everything else (VAR, cards,
+                  // corners, shots, dangerous attacks, fouls) → dark gold-bordered alert.
+                  const text = isGoal
+                    ? `${liveEvent.title}${liveEvent.sub ? ` ${liveEvent.sub}` : ''}`
+                    : `${liveEvent.title}${liveEvent.sub ? `: ${liveEvent.sub}` : ''}`;
                   return (
-                    <div className={`gv-pitch-tracker__status gv-pitch-tracker__status--event gv-pitch-tracker__status--${liveEvent.kind}`}>
-                      <span className="gv-pitch-tracker__event-icon">{icon}</span>
-                      <span className="gv-pitch-tracker__event-kind">{liveEvent.title}</span>
-                      <span className="gv-pitch-tracker__event-team">— {liveEvent.sub}</span>
+                    <div className={`gv-live-banner gv-live-banner--${isGoal ? 'goal' : 'alert'} gv-live-banner--${liveEvent.kind}`}>
+                      <span className="gv-live-banner__text">{text}</span>
                     </div>
                   );
                 }
