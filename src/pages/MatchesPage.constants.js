@@ -93,4 +93,5 @@ export const LEAGUE_LIST = [
   { code: 'SA',  label: 'Serie A',        flag: '🇮🇹' },
   { code: 'PD',  label: 'La Liga',        flag: '🇪🇸' },
   { code: 'BGL', label: 'Efbet Liga',     flag: '🇧🇬' },
+  { code: 'WC',  label: 'World Cup',      flag: '🏆' },
 ];
