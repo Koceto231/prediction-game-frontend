@@ -6413,11 +6413,14 @@ select:focus {
   gap: 1px;
   background: rgba(255, 255, 255, 0.04);
 }
+/* minmax(0, 1fr) lets each column shrink below its content width so all
+   cells stay EXACTLY equal even with long team names — the label ellipsizes
+   instead of stretching its column (important on narrow phone screens). */
 .market-options--2 {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .market-options--3 {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .market-option {
