@@ -772,11 +772,9 @@ export default function LivePage() {
 
   useEffect(() => {
     const onRemove = (e) => {
-      for (const { matchId, betType, pick, line } of (e.detail?.picks || [])) {
-        if (!selectedMatch || matchId !== selectedMatch.id) continue;
-        if (betType === 'OverUnder') {
-          setOuPicks(s => { const k = `${line}:${pick}`; if (!s.has(k)) return s; const n = new Set(s); n.delete(k); return n; });
-        }
+      for (const { key, matchId } of (e.detail?.picks || [])) {
+        if (!selectedMatch || matchId !== selectedMatch.id || !key) continue;
+        setOuPicks(s => { if (!s.has(key)) return s; const n = new Set(s); n.delete(key); return n; });
       }
     };
     window.addEventListener('bpfl:slip:remove', onRemove);
@@ -1616,7 +1614,7 @@ export default function LivePage() {
                             <span className="ou-table__line">{label}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => {
                               const cellOdds = preOdds.ou?.[line]?.[pick];
-                              const k = `${line}:${pick}`;
+                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
                               return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
@@ -1675,14 +1673,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.Corners}:${pick}:COR-${l}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${cornersLine === String(l) && cornersOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (cornersLine === String(l) && cornersOU === pick) { setCornersLine(''); setCornersOU(''); } else { setCornersLine(String(l)); setCornersOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.Corners, pick, selKey: `COR-${l}`,
+                                    odds: cornersPreOdds[l]?.[pick],
+                                    leg: { lineValue: Number(l), oUPick: pick },
+                                    label: `Корнери ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {cornersPreOdds[l]?.[pick] != null ? Number(cornersPreOdds[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
@@ -1705,14 +1716,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.YellowCards}:${pick}:YC-${l}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${yellowsLine === String(l) && yellowsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (yellowsLine === String(l) && yellowsOU === pick) { setYellowsLine(''); setYellowsOU(''); } else { setYellowsLine(String(l)); setYellowsOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.YellowCards, pick, selKey: `YC-${l}`,
+                                    odds: yellowsPreOdds[l]?.[pick],
+                                    leg: { lineValue: Number(l), oUPick: pick },
+                                    label: `Жълти картони ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {yellowsPreOdds[l]?.[pick] != null ? Number(yellowsPreOdds[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
@@ -1830,14 +1854,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${hGoalsLine === String(l) && hGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (hGoalsLine === String(l) && hGoalsOU === pick) { setHGoalsLine(''); setHGoalsOU(''); } else { setHGoalsLine(String(l)); setHGoalsOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
+                                    odds: preOdds.homeGoals?.[l]?.[pick],
+                                    leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
+                                    label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {preOdds.homeGoals?.[l]?.[pick] != null ? Number(preOdds.homeGoals[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
@@ -1860,14 +1897,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${aGoalsLine === String(l) && aGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (aGoalsLine === String(l) && aGoalsOU === pick) { setAGoalsLine(''); setAGoalsOU(''); } else { setAGoalsLine(String(l)); setAGoalsOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
+                                    odds: preOdds.awayGoals?.[l]?.[pick],
+                                    leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
+                                    label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {preOdds.awayGoals?.[l]?.[pick] != null ? Number(preOdds.awayGoals[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
@@ -2008,14 +2058,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.HalfTimeGoals}:${pick}:HTG-${l}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${htGoalsLine === l && htGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (htGoalsLine === l && htGoalsOU === pick) { setHtGoalsLine(''); setHtGoalsOU(''); } else { setHtGoalsLine(l); setHtGoalsOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.HalfTimeGoals, pick, selKey: `HTG-${l}`,
+                                    odds: preOdds.htGoals?.[l]?.[pick],
+                                    leg: { oULine: lineToKey(l), oUPick: pick },
+                                    label: `Голове 1-во полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {preOdds.htGoals?.[l]?.[pick] != null ? Number(preOdds.htGoals[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
@@ -2039,14 +2102,27 @@ export default function LivePage() {
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
-                            {['Over', 'Under'].map(pick => (
+                            {['Over', 'Under'].map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.SecondHalfGoals}:${pick}:SHG-${l}`;
+                              return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
-                                className={`ou-cell ${shGoalsLine === l && shGoalsOU === pick ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
-                                onClick={() => { if (cellLocked) return; if (shGoalsLine === l && shGoalsOU === pick) { setShGoalsLine(''); setShGoalsOU(''); } else { setShGoalsLine(l); setShGoalsOU(pick); } }}>
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                onClick={() => {
+                                  if (cellLocked) return;
+                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.SecondHalfGoals, pick, selKey: `SHG-${l}`,
+                                    odds: preOdds.shGoals?.[l]?.[pick],
+                                    leg: { oULine: lineToKey(l), oUPick: pick },
+                                    label: `Голове 2-ро полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                  });
+                                }}>
                                 {preOdds.shGoals?.[l]?.[pick] != null ? Number(preOdds.shGoals[l][pick]).toFixed(2) : '—'}
                               </button>
-                            ))}
+                              );
+                            })}
                           </div>
                           );
                         })}
