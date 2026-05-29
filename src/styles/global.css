@@ -12432,10 +12432,11 @@ select:focus {
 .gv-live-banner {
   position: relative;
   z-index: 2;
-  margin: auto auto 0;
-  align-self: center;
+  width: fit-content;          /* shrink to content … */
   max-width: 96%;
-  padding: 9px 20px;
+  margin: auto auto 0;         /* … and centre horizontally (left/right auto) */
+  align-self: center;
+  padding: 6px 16px;
   border-radius: 6px;
   text-align: center;
   animation: gv-event-flash 0.5s ease-out;
@@ -12445,12 +12446,14 @@ select:focus {
   font-family: 'Anybody', 'JetBrains Mono', sans-serif;
   font-style: italic;
   font-weight: 800;
-  font-size: 0.94rem;
+  /* readable on desktop, scales down on phones without getting tiny */
+  font-size: clamp(0.76rem, 2.4vw, 0.95rem);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 .gv-live-banner--goal {
   background: var(--accent);
