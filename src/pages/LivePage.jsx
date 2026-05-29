@@ -416,7 +416,6 @@ const DC_OPTIONS  = [{ key: 'HomeOrDraw', label: '1X' }, { key: 'HomeOrAway', la
 const CORNER_LINES  = [8.5, 9.5, 10.5];
 const YELLOW_LINES  = [2.5, 3.5, 4.5];
 const TEAM_GOAL_LINES = [0.5, 1.5, 2.5];
-const POS_ORDER   = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
 const parseScore = v => { if (v === '' || v == null) return null; const n = Number(v); return Number.isNaN(n) ? null : n; };
 const EMPTY = { homeScore: '', awayScore: '', winner: '', btts: '', ouLine: '', ouPick: '' };
@@ -751,7 +750,6 @@ export default function LivePage() {
   const [scorerPlayer, setScorerPlayer]       = useState(null);
   const [scorerPlayers, setScorerPlayers]     = useState([]);
   const [scorerLoading, setScorerLoading]     = useState(false);
-  const [scorerPosFilter, setScorerPosFilter] = useState('FWD');
 
   const [oddEvenPick, setOddEvenPick]   = useState('');
   const [dnbPick, setDnbPick]           = useState('');
@@ -913,7 +911,7 @@ export default function LivePage() {
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
-    setScorerPlayer(null); setScorerPlayers([]); setScorerPosFilter('FWD');
+    setScorerPlayer(null); setScorerPlayers([]);
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -1098,8 +1096,6 @@ export default function LivePage() {
     homeOEPick || awayOEPick || oe1hPick || homeTsPick || awayTsPick ||
     wbhHomePick || wbhAwayPick || lastScorePick || htftPick;
 
-  const scorerPositions = [...new Set(scorerPlayers.map(p => p.position))].sort((a, b) => (POS_ORDER[a] ?? 9) - (POS_ORDER[b] ?? 9));
-  const scorerFiltered  = scorerPlayers.filter(p => p.position === scorerPosFilter);
 
   // ── Place Bet ──────────────────────────────────────────────────
   const placeBet = async () => {
@@ -2226,15 +2222,8 @@ export default function LivePage() {
                             )}
                             {!scorerLoading && scorerPlayers.length > 0 && (
                               <>
-                                <div className="pos-tabs">
-                                  {scorerPositions.map(pos => (
-                                    <button key={pos} type="button"
-                                      className={`pos-tab ${scorerPosFilter === pos ? 'pos-tab--active' : ''}`}
-                                      onClick={() => setScorerPosFilter(pos)}>{pos}</button>
-                                  ))}
-                                </div>
                                 <div className="gs-list">
-                                  {[...scorerFiltered].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
+                                  {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
                                     const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
                                     const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
                                     return (

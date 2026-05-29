@@ -5320,8 +5320,6 @@ button:focus-visible {
 .gs-list {
   display: flex;
   flex-direction: column;
-  max-height: 360px;
-  overflow-y: auto;
   margin-bottom: 12px;
 }
 .gs-row {

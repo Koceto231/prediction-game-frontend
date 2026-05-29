@@ -7,7 +7,7 @@ import QuickBetPanel from '../components/QuickBetPanel';
 import { useWallet } from '../context/WalletContext';
 import {
   BET_TYPE, WINNER_MAP, OU_LINE_MAP, OU_PICK_MAP, DC_OPTIONS,
-  CORNER_LINES, YELLOW_LINES, TEAM_GOAL_LINES, POS_ORDER,
+  CORNER_LINES, YELLOW_LINES, TEAM_GOAL_LINES,
   EMPTY_FORM as EMPTY, lineToKey, parseScore, fetchOdds, LEAGUE_LIST,
 } from './MatchesPage.constants';
 
@@ -49,7 +49,6 @@ export default function MatchesPage() {
   const [scorerPlayer, setScorerPlayer]       = useState(null);  // { playerId, name, odds }
   const [scorerPlayers, setScorerPlayers]     = useState([]);
   const [scorerLoading, setScorerLoading]     = useState(false);
-  const [scorerPosFilter, setScorerPosFilter] = useState('FWD');
 
   // Phase 1 markets
   const [oddEvenPick, setOddEvenPick]   = useState('');   // '' | 'true' (Odd) | 'false' (Even)
@@ -256,7 +255,7 @@ export default function MatchesPage() {
     setExactOdds(null); exactOddsCache.current.clear();
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
-    setScorerPlayer(null); setScorerPlayers([]); setScorerPosFilter('FWD');
+    setScorerPlayer(null); setScorerPlayers([]);
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -640,10 +639,6 @@ export default function MatchesPage() {
     homeOEPick || awayOEPick || oe1hPick || homeTsPick || awayTsPick ||
     wbhHomePick || wbhAwayPick || lastScorePick || htftPick;
 
-  // Position list from loaded players
-  const scorerPositions = [...new Set(scorerPlayers.map(p => p.position))]
-    .sort((a, b) => (POS_ORDER[a] ?? 9) - (POS_ORDER[b] ?? 9));
-  const scorerFiltered = scorerPlayers.filter(p => p.position === scorerPosFilter);
 
   // ── Place Bet ────────────────────────────────────────────────
   const placeBet = async () => {
@@ -1987,15 +1982,8 @@ export default function MatchesPage() {
                             )}
                             {!scorerLoading && scorerPlayers.length > 0 && (
                               <>
-                                <div className="pos-tabs">
-                                  {scorerPositions.map(pos => (
-                                    <button key={pos} type="button"
-                                      className={`pos-tab ${scorerPosFilter === pos ? 'pos-tab--active' : ''}`}
-                                      onClick={() => setScorerPosFilter(pos)}>{pos}</button>
-                                  ))}
-                                </div>
                                 <div className="gs-list">
-                                  {[...scorerFiltered].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
+                                  {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
                                     const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
                                     const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
                                     return (
