@@ -462,8 +462,10 @@ function LiveStatsAside({ match }) {
   let rh = 0, ra = 0;
   const goalScore = new Map();
   goalsAsc.forEach((g, idx) => {
-    if (g.team === 'home') rh++; else ra++;
-    goalScore.set(g === goalsAsc[idx] ? `${g.minute}|${g.team}|${g.playerName}|${idx}` : idx, `${rh}-${ra}`);
+    // An own goal counts for the OPPONENT of the player's team.
+    const creditsHome = g.isOwnGoal ? g.team !== 'home' : g.team === 'home';
+    if (creditsHome) rh++; else ra++;
+    goalScore.set(`${g.minute}|${g.team}|${g.playerName}|${idx}`, `${rh}-${ra}`);
   });
 
   // Match events — combine goals + cards + substitutions into a chronological
@@ -479,10 +481,15 @@ function LiveStatsAside({ match }) {
       minute: s.minute, team: s.team, kind: 'sub',
       name: s.playerIn, nameOut: s.playerOut,
     })),
-    // Missed penalty, second-yellow→red, shootout goal/miss, VAR — all carry team + player
-    ...(stats?.extraEvents ?? []).map(x => ({
-      minute: x.minute, team: x.team, kind: x.kind, name: x.playerName,
-    })),
+    // Missed penalty, second-yellow→red, shootout goal/miss, VAR — all carry team + player.
+    // Drop player-less VAR rows (pure noise); shootout events have no real minute so
+    // give them a high sort key to keep them at the top (newest), displayed as "ПЕН".
+    ...(stats?.extraEvents ?? [])
+      .filter(x => !(x.kind === 'var' && !x.playerName))
+      .map(x => ({
+        minute: (x.kind === 'so-goal' || x.kind === 'so-miss') ? 999 : x.minute,
+        team: x.team, kind: x.kind, name: x.playerName,
+      })),
   ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 8);
 
   // Bulgarian labels for the less-common event kinds (shown after the player name).
@@ -540,9 +547,10 @@ function LiveStatsAside({ match }) {
           <div className="gv-livestats__events">
             {events.map((e, i) => {
               const isGoal = e.kind === 'goal' || e.kind === 'og';
+              const minLabel = (e.kind === 'so-goal' || e.kind === 'so-miss') ? 'ПЕН' : `${e.minute}'`;
               return (
                 <div key={i} className={`gv-livestats__event gv-livestats__event--${e.team} gv-livestats__event--${e.kind}`}>
-                  <span className="gv-livestats__event-min">{e.minute}'</span>
+                  <span className="gv-livestats__event-min">{minLabel}</span>
                   {isGoal && e.score && (
                     <span className="gv-livestats__event-score">{e.score.replace('-', ' - ')}</span>
                   )}
@@ -553,12 +561,13 @@ function LiveStatsAside({ match }) {
                       {e.nameOut && <span className="gv-livestats__sub-out">{e.nameOut}</span>}
                     </span>
                   ) : (
-                    <span className="gv-livestats__event-name">
-                      {e.name || '—'}
+                    <>
+                      <span className="gv-livestats__event-name">{e.name || '—'}</span>
+                      {isGoal && e.kind === 'og' && <span className="gv-livestats__event-tag">автогол</span>}
                       {isGoal && e.isPenalty && <span className="gv-livestats__event-tag">дузпа</span>}
                       {isGoal && e.assist && <span className="gv-livestats__event-assist">асист: {e.assist}</span>}
                       {KIND_LABEL[e.kind] && <span className="gv-livestats__event-tag">{KIND_LABEL[e.kind]}</span>}
-                    </span>
+                    </>
                   )}
                 </div>
               );

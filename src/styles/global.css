@@ -9221,7 +9221,8 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-left: 2px;          /* sit tight to the ball */
+  min-width: 0;              /* allow ellipsis inside the flex row */
+  flex: 0 1 auto;           /* shrink the name, never the tags */
 }
 /* Substitution — IN (white) then OUT (muted), inline on one row */
 .gv-livestats__event-sub {
@@ -9243,9 +9244,9 @@ select:focus {
 /* Green up / red down circular sub icon tint */
 .gv-livestats__event--sub .gv-livestats__event-icon { filter: hue-rotate(70deg) saturate(1.4); }
 
-/* Small qualifier tag after a player name (дузпа, втори жълт, VAR, …) */
+/* Small qualifier tag after a player name (автогол, дузпа, втори жълт, VAR, …) */
 .gv-livestats__event-tag {
-  margin-left: 6px;
+  flex-shrink: 0;            /* tags stay visible; the name ellipsizes instead */
   padding: 1px 5px;
   border-radius: 3px;
   background: rgba(255,255,255,0.08);
@@ -9254,16 +9255,17 @@ select:focus {
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  vertical-align: middle;
+  white-space: nowrap;
 }
 /* Assist provider, shown muted after the scorer */
 .gv-livestats__event-assist {
-  margin-left: 6px;
+  flex-shrink: 0;
   color: var(--text-muted);
   font-size: 0.62rem;
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 /* Tinted icons for the extra event kinds */
 .gv-livestats__event--penmiss .gv-livestats__event-icon,
