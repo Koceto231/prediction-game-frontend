@@ -6410,6 +6410,57 @@ select:focus {
   overflow: hidden;
 }
 
+/* ── Live odds suspension (anti-cheat: lock on goal / VAR / attack) ── */
+.market-table-wrap { position: relative; }
+.market-table--suspended {
+  pointer-events: none;   /* block all market interaction */
+  filter: blur(1.5px) saturate(0.6);
+  opacity: 0.6;
+  transition: opacity 0.15s, filter 0.15s;
+}
+.odds-suspend {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 28px;
+  pointer-events: all;    /* swallow taps over the locked markets */
+  background: rgba(10, 10, 10, 0.35);
+  border-radius: var(--radius-md);
+}
+.odds-suspend__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 22px;
+  background: var(--surface-container-high, #2a2a2a);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: odds-suspend-pop 0.16s ease-out;
+}
+@keyframes odds-suspend-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.odds-suspend__icon  { font-size: 1.5rem; line-height: 1; }
+.odds-suspend__title {
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.odds-suspend__reason {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #b9b3a3);
+}
+
 /* ── Section ── */
 .market-section {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);

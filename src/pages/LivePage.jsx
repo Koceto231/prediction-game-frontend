@@ -8,6 +8,7 @@ import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import useNowTicker from '../hooks/useNowTicker';
 import useLiveEventQueue from '../hooks/useLiveEventQueue';
 import useLiveMomentum from '../hooks/useLiveMomentum';   // still drives the on-pitch pressure glow
+import useOddsSuspension from '../hooks/useOddsSuspension'; // locks live odds on goal/VAR/attack
 import {
   is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, liveClockSeconds, getTeamInitials,
 } from '../utils/liveState';
@@ -731,6 +732,7 @@ export default function LivePage() {
   // and surface ONE event at a time as a banner inside the pitch tracker.
   const liveEvent = useLiveEventQueue(selectedMatch);
   const momentum  = useLiveMomentum(selectedMatch);   // for the on-pitch pressure glow
+  const suspension = useOddsSuspension(selectedMatch); // null | { kind, reason, until }
   const [mode, setMode]                   = useState('market');  // straight to markets, like the Matches page
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
@@ -1510,7 +1512,17 @@ export default function LivePage() {
                   ))}
                 </div>
 
-                <div className="market-table" data-cat={marketCategory}>
+                <div className="market-table-wrap">
+                {suspension && (
+                  <div className="odds-suspend" role="status" aria-live="polite">
+                    <div className="odds-suspend__card">
+                      <span className="odds-suspend__icon">🔒</span>
+                      <span className="odds-suspend__title">Залаганията са спрени</span>
+                      <span className="odds-suspend__reason">{suspension.reason}</span>
+                    </div>
+                  </div>
+                )}
+                <div className={`market-table${suspension ? ' market-table--suspended' : ''}`} data-cat={marketCategory}>
 
                   {/* Match Result */}
                   <div data-cat="main" className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
@@ -2249,6 +2261,7 @@ export default function LivePage() {
                   </div>
 
                 </div>{/* end market-table */}
+                </div>{/* end market-table-wrap */}
 
                 {/* Combined slip */}
                 {hasBetOdds && anyMarketSelected && (
