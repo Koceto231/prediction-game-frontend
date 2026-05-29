@@ -2233,15 +2233,23 @@ export default function LivePage() {
                                       onClick={() => setScorerPosFilter(pos)}>{pos}</button>
                                   ))}
                                 </div>
-                                <div className="player-grid">
-                                  {scorerFiltered.map(p => (
-                                    <button key={p.playerId} type="button" className="player-card"
-                                      onClick={() => setScorerPlayer({ playerId: p.playerId, name: p.name, odds: p.odds })}>
-                                      <span className="player-card__team">{p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>
-                                      <span className="player-card__name">{p.name}</span>
-                                      <span className="player-card__odds">{Number(p.odds).toFixed(2)}</span>
-                                    </button>
-                                  ))}
+                                <div className="gs-list">
+                                  {[...scorerFiltered].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
+                                    const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
+                                    const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
+                                    return (
+                                      <button key={p.playerId} type="button" className="gs-row"
+                                        onClick={() => setScorerPlayer({ playerId: p.playerId, name: p.name, odds: p.odds })}>
+                                        <span className="gs-row__crest">
+                                          {logo
+                                            ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                            : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
+                                        </span>
+                                        <span className="gs-row__name">{p.name}</span>
+                                        <span className="gs-row__odds">{Number(p.odds).toFixed(2)}</span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </>
                             )}
