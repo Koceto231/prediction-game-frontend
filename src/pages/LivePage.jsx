@@ -10,7 +10,7 @@ import useLiveEventQueue from '../hooks/useLiveEventQueue';
 import useLiveMomentum from '../hooks/useLiveMomentum';   // still drives the on-pitch pressure glow
 import useOddsSuspension from '../hooks/useOddsSuspension'; // locks live odds on goal/VAR/attack
 import {
-  is1H, is2H, isHT, isET, isFT, isActive, isFinal, liveClockDisplay, liveClockSeconds, getTeamInitials,
+  is1H, is2H, isHT, isET, isPenalties, isFT, isActive, isFinal, liveClockDisplay, liveClockSeconds, getTeamInitials,
 } from '../utils/liveState';
 
 // ── League metadata for the small league chip on each live row ─────
@@ -1399,6 +1399,11 @@ export default function LivePage() {
                   <div className="gv-pitch-tracker__score">
                     {selectedMatch.homeScore ?? 0} <span>-</span> {selectedMatch.awayScore ?? 0}
                   </div>
+                  {selectedMatch.liveStats?.penHome != null && selectedMatch.liveStats?.penAway != null && (
+                    <div className="gv-pitch-tracker__pen">
+                      пенали {selectedMatch.liveStats.penHome} – {selectedMatch.liveStats.penAway}
+                    </div>
+                  )}
                   <div className="gv-pitch-tracker__minute">
                     {displayMinute(selectedMatch)}
                     {selectedMatch.liveStats?.addedTime > 0 && !isFT(selectedMatch.liveState) && (
@@ -1428,6 +1433,7 @@ export default function LivePage() {
                   : is1H(selectedMatch.liveState) ? 'FIRST HALF — IN PLAY'
                   : is2H(selectedMatch.liveState) ? 'SECOND HALF — IN PLAY'
                   : isET(selectedMatch.liveState) ? 'EXTRA TIME — IN PLAY'
+                  : isPenalties(selectedMatch.liveState) ? 'ДУЗПИ — IN PLAY'
                   : 'IN PLAY';
 
                 if (liveEvent) {

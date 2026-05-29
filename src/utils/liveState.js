@@ -40,6 +40,7 @@ export const is1H = s => s === 'INPLAY_1ST_HALF' || s === '1H';
 export const is2H = s => s === 'INPLAY_2ND_HALF' || s === '2H';
 export const isHT = s => s === 'HT' || s === 'INT' || s === 'INTERRUPTED' || s === 'BREAK';
 export const isET = s => s === 'INPLAY_ET' || s === 'ET' || s === 'EXTRA_TIME_BREAK';
+export const isPenalties = s => s === 'INPLAY_PENALTIES' || s === 'PEN_LIVE' || s === 'PEN_BREAK';
 export const isFT = s => s === 'FT' || s === 'AET' || s === 'FT_PEN' || s === 'FTP';
 export const isFinal = s => FINAL_STATES.has(s);
 export const isActive = s => ACTIVE_STATES.has(s);
@@ -70,6 +71,7 @@ export function liveClockDisplay({
   liveClockUpdatedAt,
   liveState,
 }, nowMs = Date.now()) {
+  if (isPenalties(liveState)) return 'PEN';
   if (isHT(liveState)) return 'HT';
   if (isFT(liveState)) return 'FT';
   if (liveMinute == null) return null;
@@ -84,6 +86,11 @@ export function liveClockDisplay({
   // Round UP per user request: 45:01 → 46
   const display   = Math.floor(totalSec / 60) + (totalSec % 60 > 0 ? 1 : 0);
 
+  // Extra time: show plain 91-120; stoppage of ET as "120+N".
+  if (isET(liveState)) {
+    if (display > 120) return `120+${display - 120}'`;
+    return `${display}'`;
+  }
   // 2H stoppage time
   if (display > 90) return `90+${display - 90}'`;
   // 1H stoppage time (still in 1H)
@@ -102,6 +109,7 @@ export function liveClockSeconds({
   liveClockUpdatedAt,
   liveState,
 }, nowMs = Date.now()) {
+  if (isPenalties(liveState)) return 'PEN';
   if (isHT(liveState)) return 'HT';
   if (isFT(liveState)) return 'FT';
   if (liveMinute == null) return null;

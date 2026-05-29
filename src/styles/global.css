@@ -12327,6 +12327,19 @@ select:focus {
   font-weight: 900;
   color: #8a1c1c;
 }
+/* Penalty-shootout score under the main scoreline ("пенали 4 – 3") */
+.gv-pitch-tracker__pen {
+  margin-top: 6px;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Status pill at bottom of pitch tracker (mockup "CITY ATTACKING: PENALTY AREA") */
 .gv-pitch-tracker__status {
