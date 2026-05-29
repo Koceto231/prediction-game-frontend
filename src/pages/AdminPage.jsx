@@ -286,6 +286,23 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Covers 7 days back + selected days ahead. Safe to re-run.</p>
+
+            {/* Diagnostics: does Sportmonks actually return WC (league 732) data? */}
+            <div className="admin-actions" style={{ marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
+              <button className="admin-btn" type="button" disabled={loading === 'wc-league'}
+                onClick={() => run('wc-league', () => api.get('/admin/sync/debug/raw?path=leagues/732'))}>
+                {loading === 'wc-league' ? 'Checking…' : 'Check WC league (732)'}
+              </button>
+              <button className="admin-btn" type="button" disabled={loading === 'wc-fix'}
+                onClick={() => run('wc-fix', () => {
+                  const from = new Date().toISOString().slice(0, 10);
+                  const to   = new Date(Date.now() + 200 * 864e5).toISOString().slice(0, 10);
+                  return api.get(`/admin/sync/debug/raw?path=${encodeURIComponent(`fixtures/between/${from}/${to}?filters=fixtureLeagues:732&include=participants;league&per_page=20`)}`);
+                })}>
+                {loading === 'wc-fix' ? 'Checking…' : 'Check WC fixtures (next 200d)'}
+              </button>
+            </div>
+            <p className="admin-hint">If "Check WC league" errors → your plan has no World Cup access. If fixtures count is 0 → no WC matches scheduled in your data yet.</p>
           </AdminSection>
 
           {/* ── Historical match import ── */}
