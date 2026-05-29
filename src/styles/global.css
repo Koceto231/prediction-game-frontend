@@ -7014,7 +7014,7 @@ select:focus {
     font-size: 16px; /* prevents iOS zoom */
     border-radius: 10px;
   }
-  .gvb-slip__pill { min-height: 40px; }
+  .gvb-slip__pill { min-height: 48px; }
 
   /* Wallet balance badge: smaller */
   .wallet-badge { font-size: 0.74rem; padding: 4px 10px; }
@@ -9458,8 +9458,8 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px;
-  min-height: 42px;
+  padding: 10px 12px;
+  min-height: 50px;
   background: var(--surface-container-high, #2a2a2a);
   border-top: 1px solid var(--border-soft, #4d4633);
   color: var(--text-main, #f3f1ec);
@@ -10059,7 +10059,7 @@ select:focus {
     padding: 12px 12px 14px;
   }
   .gvb-slip__pill {
-    padding: 6px 12px;
+    padding: 10px 12px;
     gap: 10px;
     justify-content: space-between;
   }
