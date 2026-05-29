@@ -857,7 +857,9 @@ export default function MatchesPage() {
               type="button"
               className="gvmd-hero__back"
               onClick={() => { setSelectedMatch(null); resetPanel(); }}
-            >← All matches</button>
+              aria-label="All matches"
+              title="All matches"
+            >←</button>
 
             <div className="gvmd-hero__row">
               {/* HOME shield + name */}

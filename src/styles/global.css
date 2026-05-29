@@ -10914,14 +10914,20 @@ select:focus {
   position: absolute;
   top: 12px;
   left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   background: var(--surface-2, #1c1b1b);
   color: var(--text-main);
   border: 1px solid var(--outline-variant, #4d4633);
   border-radius: 999px;
-  padding: 5px 12px;
   font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
   cursor: pointer;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
@@ -11112,7 +11118,7 @@ select:focus {
 
 @media (max-width: 720px) {
   .gvmd-hero { padding: 48px 12px 14px; overflow: hidden; }
-  .gvmd-hero__back { font-size: 0.68rem; padding: 4px 10px; }
+  .gvmd-hero__back { width: 26px; height: 26px; font-size: 0.85rem; padding: 0; }
   .gvmd-hero__row {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 10px;
