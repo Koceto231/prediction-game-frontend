@@ -753,9 +753,6 @@ export default function LivePage() {
   const [cornersOU, setCornersOU]             = useState('');
   const [yellowsLine, setYellowsLine]         = useState('');
   const [yellowsOU, setYellowsOU]             = useState('');
-  const [scorerPlayer, setScorerPlayer]       = useState(null);
-  const [scorerPlayers, setScorerPlayers]     = useState([]);
-  const [scorerLoading, setScorerLoading]     = useState(false);
 
   const [oddEvenPick, setOddEvenPick]   = useState('');
   const [dnbPick, setDnbPick]           = useState('');
@@ -902,22 +899,11 @@ export default function LivePage() {
     setMyActiveBets(prev => prev.filter(b => b.id !== betId));
   };
 
-  // Load players when scorer expanded
-  useEffect(() => {
-    if (collapsed.scorer || mode !== 'market' || !selectedMatch) return;
-    setScorerPlayers([]); setScorerLoading(true);
-    api.get(`/Match/${selectedMatch.id}/players`)
-      .then(r => setScorerPlayers(r.data ?? []))
-      .catch(() => {})
-      .finally(() => setScorerLoading(false));
-  }, [collapsed.scorer, mode, selectedMatch?.id]);
-
   const resetPanel = useCallback(() => {
     setMode('market'); setFields(EMPTY); setAmount(''); setFeedback(null);
     setExactOdds(null);
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
-    setScorerPlayer(null); setScorerPlayers([]);
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -1063,7 +1049,6 @@ export default function LivePage() {
     dcPick                     ? mpOdds.dc        : null,
     (cornersLine && cornersOU) ? mpOdds.corners   : null,
     (yellowsLine && yellowsOU) ? mpOdds.yellows   : null,
-    scorerPlayer               ? scorerPlayer.odds : null,
     oddEvenPick                ? mpOdds.oddEven   : null,
     dnbPick                    ? mpOdds.dnb       : null,
     (wtnTeam && wtnYN)         ? mpOdds.wtn       : null,
@@ -1094,7 +1079,7 @@ export default function LivePage() {
   const marketPotential = combinedOdds && betAmt > 0 ? betAmt * combinedOdds : null;
 
   const anyMarketSelected = winner || btts || (ouLine && ouPick) || dcPick ||
-    (cornersLine && cornersOU) || (yellowsLine && yellowsOU) || scorerPlayer ||
+    (cornersLine && cornersOU) || (yellowsLine && yellowsOU) ||
     oddEvenPick || dnbPick || (wtnTeam && wtnYN) || hcpPick ||
     (hGoalsLine && hGoalsOU) || (aGoalsLine && aGoalsOU) ||
     htPick || (csPick && csYN) || fgPick ||
@@ -1123,7 +1108,6 @@ export default function LivePage() {
           if (ouLine && ouPick && mpOdds.ou != null) legs.push({ betType: BET_TYPE.OverUnder, oULine: OU_LINE_MAP[ouLine], oUPick: OU_PICK_MAP[ouPick] });
           if (cornersLine && cornersOU && mpOdds.corners != null) legs.push({ betType: BET_TYPE.Corners, lineValue: Number(cornersLine), oUPick: cornersOU });
           if (yellowsLine && yellowsOU && mpOdds.yellows != null) legs.push({ betType: BET_TYPE.YellowCards, lineValue: Number(yellowsLine), oUPick: yellowsOU });
-          if (scorerPlayer) legs.push({ betType: BET_TYPE.Goalscorer, goalscorerId: scorerPlayer.playerId });
           if (oddEvenPick && mpOdds.oddEven != null) legs.push({ betType: BET_TYPE.OddEven, bTTSPick: oddEvenPick === 'true' });
           if (dnbPick && mpOdds.dnb != null) legs.push({ betType: BET_TYPE.DrawNoBet, pick: dnbPick });
           if (wtnTeam && wtnYN && mpOdds.wtn != null) legs.push({ betType: BET_TYPE.WinToNil, pick: wtnTeam, bTTSPick: wtnYN === 'true' });
@@ -2213,58 +2197,6 @@ export default function LivePage() {
                     })()}
                   </div>
 
-                  {/* Goalscorer */}
-                  <div data-cat="goals" className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('scorer')}>
-                      <span className="market-section__name">◉ Goalscorer</span>
-                      {scorerPlayer && <span className="market-section__badge">{scorerPlayer.name} · {Number(scorerPlayer.odds).toFixed(2)}</span>}
-                      <span className="market-section__toggle">{collapsed.scorer ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.scorer && (
-                      <div style={{ padding: '12px 16px' }}>
-                        {scorerPlayer ? (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: '0.88rem' }}>{scorerPlayer.name} to score</span>
-                            <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{Number(scorerPlayer.odds).toFixed(2)}</span>
-                            <button type="button" onClick={() => setScorerPlayer(null)}
-                              style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'none', border: '1px solid rgba(255,255,255,0.1)', padding: '3px 8px', cursor: 'pointer', borderRadius: 3 }}>
-                              Clear
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            {scorerLoading && <div className="muted-text" style={{ fontSize: '0.82rem' }}>Loading players...</div>}
-                            {!scorerLoading && scorerPlayers.length === 0 && (
-                              <div className="muted-text" style={{ fontSize: '0.78rem' }}>No players found.</div>
-                            )}
-                            {!scorerLoading && scorerPlayers.length > 0 && (
-                              <>
-                                <div className="gs-list">
-                                  {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
-                                    const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
-                                    const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
-                                    return (
-                                      <button key={p.playerId} type="button" className="gs-row"
-                                        onClick={() => setScorerPlayer({ playerId: p.playerId, name: p.name, odds: p.odds })}>
-                                        <span className="gs-row__crest">
-                                          {logo
-                                            ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                            : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
-                                        </span>
-                                        <span className="gs-row__name">{p.name}</span>
-                                        <span className="gs-row__odds">{Number(p.odds).toFixed(2)}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
                 </div>{/* end market-table */}
                 </div>{/* end market-table-wrap */}
 
@@ -2282,7 +2214,6 @@ export default function LivePage() {
                             {ouLine && ouPick && mpOdds.ou != null && <span className="bet-slip__leg">Goals {ouPick} {ouLine.replace('Line','').replace(/(\d)(\d)/,'$1.$2')}<em>{Number(mpOdds.ou).toFixed(2)}</em></span>}
                             {cornersLine && cornersOU && mpOdds.corners != null && <span className="bet-slip__leg">Corners {cornersOU} {cornersLine}<em>{Number(mpOdds.corners).toFixed(2)}</em></span>}
                             {yellowsLine && yellowsOU && mpOdds.yellows != null && <span className="bet-slip__leg">YC {yellowsOU} {yellowsLine}<em>{Number(mpOdds.yellows).toFixed(2)}</em></span>}
-                            {scorerPlayer && <span className="bet-slip__leg">{scorerPlayer.name} to score<em>{Number(scorerPlayer.odds).toFixed(2)}</em></span>}
                             {oddEvenPick && mpOdds.oddEven != null && <span className="bet-slip__leg">{oddEvenPick === 'true' ? 'Odd' : 'Even'} Goals<em>{Number(mpOdds.oddEven).toFixed(2)}</em></span>}
                             {dnbPick && mpOdds.dnb != null && <span className="bet-slip__leg">DNB {dnbPick}<em>{Number(mpOdds.dnb).toFixed(2)}</em></span>}
                             {wtnTeam && wtnYN && mpOdds.wtn != null && <span className="bet-slip__leg">WtN {wtnTeam} {wtnYN === 'true' ? 'Yes' : 'No'}<em>{Number(mpOdds.wtn).toFixed(2)}</em></span>}
