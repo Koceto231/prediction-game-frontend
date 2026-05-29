@@ -10982,14 +10982,14 @@ select:focus {
   align-items: center;
   justify-content: center;
   width: 46px;
-  height: 20px;
+  height: 30px;
   padding: 0;
   background: var(--accent-soft, rgba(240,197,25,0.12));
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 999px;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.55rem;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -11186,7 +11186,7 @@ select:focus {
     width: 42px;
     height: 26px;
     font-size: 1.12rem;
-    padding: 0 0 4px;
+    padding: 0;
   }
   .gvmd-hero__row {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
