@@ -317,10 +317,18 @@ export default function AdminPage() {
             <p className="admin-hint">If "Check WC league" errors → your plan has no World Cup access. If fixtures count is 0 → no WC matches scheduled in your data yet.</p>
 
             {/* Force the Sportmonks 1X2 odds sync now (instead of waiting for the cron). */}
-            <div className="admin-actions" style={{ marginTop: 8 }}>
+            <div className="admin-actions" style={{ marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
               <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'odds-now'}
                 onClick={() => run('odds-now', () => api.post('/admin/sync/odds/sync-1x2'))}>
                 {loading === 'odds-now' ? 'Syncing odds…' : 'Sync odds now'}
+              </button>
+              <button className="admin-btn" type="button" disabled={loading === 'odds-diag'}
+                onClick={() => {
+                  const mid = prompt('Internal match id to diagnose (e.g. 2369):');
+                  if (!mid) return Promise.resolve({ data: 'cancelled' });
+                  return run('odds-diag', () => api.post(`/admin/sync/odds/diagnose/${mid}`));
+                }}>
+                {loading === 'odds-diag' ? 'Diagnosing…' : 'Diagnose odds for match'}
               </button>
             </div>
             <p className="admin-hint">Pulls real Sportmonks 1X2 odds for all upcoming matches in the 60-day window. Safe to re-run.</p>
