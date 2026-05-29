@@ -5338,7 +5338,11 @@ button:focus-visible {
   transition: background 0.12s;
 }
 .gs-row:hover  { background: rgba(255, 255, 255, 0.04); }
-.gs-row--active { background: rgba(240, 197, 25, 0.10); }
+.gs-row--active {
+  background: rgba(240, 197, 25, 0.14);
+  box-shadow: inset 3px 0 0 0 var(--accent);   /* gold bar marks the selection */
+}
+.gs-row--active .gs-row__name { color: var(--accent); }
 .gs-row__crest {
   align-self: center;
   width: 24px;
