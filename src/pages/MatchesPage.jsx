@@ -990,9 +990,13 @@ export default function MatchesPage() {
                               <span>{t.name}</span>
                             </div>
                             <div className="es-stepper__counter">
-                              <button type="button" className="es-stepper__btn" onClick={() => t.step(-1)} aria-label="−">‹</button>
+                              <button type="button" className="es-stepper__btn" onClick={() => t.step(-1)} aria-label="−">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+                              </button>
                               <span className="es-stepper__val">{t.val}</span>
-                              <button type="button" className="es-stepper__btn" onClick={() => t.step(+1)} aria-label="+">›</button>
+                              <button type="button" className="es-stepper__btn" onClick={() => t.step(+1)} aria-label="+">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
+                              </button>
                             </div>
                           </div>
                         ))}
