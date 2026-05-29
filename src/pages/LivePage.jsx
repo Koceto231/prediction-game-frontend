@@ -472,18 +472,37 @@ function LiveStatsAside({ match }) {
     ...goalsAsc.map((g, idx) => ({
       minute: g.minute, team: g.team, kind: g.isOwnGoal ? 'og' : 'goal',
       name: g.playerName, score: goalScore.get(`${g.minute}|${g.team}|${g.playerName}|${idx}`),
+      isPenalty: g.isPenalty, assist: g.assist,
     })),
     ...(stats?.cardEvents ?? []).map(c => ({ minute: c.minute, team: c.team, kind: c.type, name: c.playerName })),
     ...(stats?.subEvents ?? []).map(s => ({
       minute: s.minute, team: s.team, kind: 'sub',
       name: s.playerIn, nameOut: s.playerOut,
     })),
+    // Missed penalty, second-yellow→red, shootout goal/miss, VAR — all carry team + player
+    ...(stats?.extraEvents ?? []).map(x => ({
+      minute: x.minute, team: x.team, kind: x.kind, name: x.playerName,
+    })),
   ].sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0)).slice(0, 8);
+
+  // Bulgarian labels for the less-common event kinds (shown after the player name).
+  const KIND_LABEL = {
+    penmiss:   'пропусната дузпа',
+    yellowred: 'втори жълт',
+    'so-goal': 'дузпа ✓',
+    'so-miss': 'дузпа ✗',
+    var:       'VAR',
+  };
 
   const iconFor = (kind) => {
     if (kind === 'goal' || kind === 'og') return '⚽';
     if (kind === 'red')                   return '🟥';
+    if (kind === 'yellowred')             return '🟥';
     if (kind === 'sub')                   return '🔄';
+    if (kind === 'penmiss')               return '❌';
+    if (kind === 'so-goal')               return '✅';
+    if (kind === 'so-miss')               return '❌';
+    if (kind === 'var')                   return '📺';
     return '🟨';
   };
 
@@ -534,7 +553,12 @@ function LiveStatsAside({ match }) {
                       {e.nameOut && <span className="gv-livestats__sub-out">{e.nameOut}</span>}
                     </span>
                   ) : (
-                    <span className="gv-livestats__event-name">{e.name || '—'}</span>
+                    <span className="gv-livestats__event-name">
+                      {e.name || '—'}
+                      {isGoal && e.isPenalty && <span className="gv-livestats__event-tag">дузпа</span>}
+                      {isGoal && e.assist && <span className="gv-livestats__event-assist">асист: {e.assist}</span>}
+                      {KIND_LABEL[e.kind] && <span className="gv-livestats__event-tag">{KIND_LABEL[e.kind]}</span>}
+                    </span>
                   )}
                 </div>
               );

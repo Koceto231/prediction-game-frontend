@@ -9243,6 +9243,33 @@ select:focus {
 /* Green up / red down circular sub icon tint */
 .gv-livestats__event--sub .gv-livestats__event-icon { filter: hue-rotate(70deg) saturate(1.4); }
 
+/* Small qualifier tag after a player name (дузпа, втори жълт, VAR, …) */
+.gv-livestats__event-tag {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+/* Assist provider, shown muted after the scorer */
+.gv-livestats__event-assist {
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* Tinted icons for the extra event kinds */
+.gv-livestats__event--penmiss .gv-livestats__event-icon,
+.gv-livestats__event--so-miss .gv-livestats__event-icon { filter: saturate(1.3); }
+.gv-livestats__event--var .gv-livestats__event-icon { filter: grayscale(0.3); }
+
 /* Statistics rows */
 .gv-livestats__statrow {
   display: grid;
