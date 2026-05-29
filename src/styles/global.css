@@ -10917,8 +10917,8 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 20px;
   padding: 0;
   background: var(--surface-2, #1c1b1b);
   color: var(--text-main);
@@ -11118,7 +11118,7 @@ select:focus {
 
 @media (max-width: 720px) {
   .gvmd-hero { padding: 48px 12px 14px; overflow: hidden; }
-  .gvmd-hero__back { width: 26px; height: 26px; font-size: 0.85rem; padding: 0; }
+  .gvmd-hero__back { width: 28px; height: 18px; font-size: 0.8rem; padding: 0; }
   .gvmd-hero__row {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 10px;
