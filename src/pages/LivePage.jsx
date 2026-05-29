@@ -1119,6 +1119,7 @@ export default function LivePage() {
   // ── Place Bet ──────────────────────────────────────────────────
   const placeBet = async () => {
     if (!selectedMatch || loading) return;
+    if (suspension) { setFeedback({ type: 'err', msg: 'Залаганията са временно спрени.' }); return; }
     setLoading(true); setFeedback(null);
     const idemKey = newIdempotencyKey();   // one key for this bet attempt — survives retries
     const idemCfg = { headers: { 'X-Idempotency-Key': idemKey } };
@@ -2358,7 +2359,8 @@ export default function LivePage() {
                           <span className="bet-slip__odds">{combinedOdds.toFixed(2)}</span>
                         )}
                       </div>
-                      <BetSlipStake amount={amount} setAmount={setAmount} potential={marketPotential} onPlace={placeBet} loading={loading} disabled={!anyMarketSelected} />
+                      {suspension && <div className="muted-text" style={{ padding: '0 14px 8px', color: 'var(--accent)', fontSize: '0.78rem' }}>🔒 Залаганията са спрени — {suspension.reason}</div>}
+                      <BetSlipStake amount={amount} setAmount={setAmount} potential={marketPotential} onPlace={placeBet} loading={loading} disabled={!anyMarketSelected || !!suspension} />
                     </div>
                   </div>
                 )}
