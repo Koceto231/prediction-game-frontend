@@ -12566,6 +12566,10 @@ select:focus {
   text-overflow: ellipsis;
 }
 .gv-pitch-tracker__venue span { color: var(--accent); margin-left: 2px; }
+/* Hide the venue on phones — saves space in the live header */
+@media (max-width: 640px) {
+  .gv-pitch-tracker__venue { display: none; }
+}
 
 .match-hero--live-v2 .match-hero__live-pill {
   display: inline-flex;
