@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/apiClient';
 
-const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD'];
+const SM_LEAGUES = ['BGL', 'PL', 'BL1', 'SA', 'PD', 'WC'];
 
 function TeamMatchSearch() {
   const [query, setQuery]     = useState('');
