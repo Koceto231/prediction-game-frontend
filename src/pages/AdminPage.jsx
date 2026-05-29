@@ -301,6 +301,18 @@ export default function AdminPage() {
                 })}>
                 {loading === 'wc-fix' ? 'Checking…' : 'Check WC fixtures (next 200d)'}
               </button>
+              <button className="admin-btn" type="button" disabled={loading === 'wc-sub'}
+                onClick={() => run('wc-sub', () => api.get('/admin/sync/debug/raw?path=my/leagues/included'))}>
+                {loading === 'wc-sub' ? 'Checking…' : 'List my plan leagues'}
+              </button>
+              <button className="admin-btn" type="button" disabled={loading === 'wc-odds'}
+                onClick={() => {
+                  const fid = prompt('Enter a WC fixture ID (from "Check WC fixtures" response):');
+                  if (!fid) return Promise.resolve({ data: 'cancelled' });
+                  return run('wc-odds', () => api.get(`/admin/sync/debug/odds/${fid}`));
+                }}>
+                {loading === 'wc-odds' ? 'Checking…' : 'Check odds for fixture'}
+              </button>
             </div>
             <p className="admin-hint">If "Check WC league" errors → your plan has no World Cup access. If fixtures count is 0 → no WC matches scheduled in your data yet.</p>
 
