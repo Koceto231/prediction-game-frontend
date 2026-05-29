@@ -7147,6 +7147,10 @@ select:focus {
     align-items: stretch;
   }
 
+  /* Lift the bet-slip above the bottom tab-bar so it isn't tucked behind it
+     (covers the 600–768px range; the ≤600px block pins it the same way). */
+  .gvb-slip { bottom: 74px; }
+
   .bottom-tab {
     flex: 1;
     display: flex;
@@ -10052,7 +10056,7 @@ select:focus {
     right: 8px;
     left: 8px;
     width: auto;
-    bottom: 48px;
+    bottom: 74px;   /* clear the 64px bottom tab-bar */
   }
   .gvb-slip--open .gvb-slip__body {
     max-height: 78vh;
