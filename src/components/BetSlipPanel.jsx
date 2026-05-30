@@ -664,6 +664,7 @@ function isConflict(existing, incoming) {
   if (bt === 'FirstGoal'    && existing.betType === 'FirstGoal')    return true;
   if (bt === 'LastToScore'  && existing.betType === 'LastToScore')  return true;
   if (bt === 'HtFt'         && existing.betType === 'HtFt')         return true;
+  if (bt === 'DoubleChance1stHalf' && existing.betType === 'DoubleChance1stHalf') return true;
   if (bt === 'OddEven'      && existing.betType === 'OddEven')      return true;
   if (bt === 'OddEven1stHalf' && existing.betType === 'OddEven1stHalf') return true;
   if (bt === 'Btts1stHalf'  && existing.betType === 'Btts1stHalf')  return true;
@@ -751,6 +752,10 @@ function constraintsOf(p) {
       break;
     case 'HalfTime':
       c.ht = new Set(p.pick === 'Home' ? ['H'] : p.pick === 'Away' ? ['A'] : ['D']);
+      break;
+    case 'DoubleChance1stHalf':           // DC at HT — narrows the HT outcome set
+      c.ht = new Set(p.pick === 'HomeOrDraw' ? ['H', 'D']
+                   : p.pick === 'HomeOrAway' ? ['H', 'A'] : ['D', 'A']);
       break;
     case 'WinBothHalves':                 // win both halves ⇒ win the match
       if (p.pick === 'Home') { c.ft = new Set(['H']); c.ht = new Set(['H']); }

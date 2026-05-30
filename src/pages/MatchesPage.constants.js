@@ -36,6 +36,7 @@ export const BET_TYPE = {
   WinBothHalves:    'WinBothHalves',
   LastToScore:      'LastToScore',
   HtFt:             'HtFt',
+  DoubleChance1stHalf: 'DoubleChance1stHalf',
 };
 
 export const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
