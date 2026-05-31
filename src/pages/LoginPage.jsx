@@ -136,13 +136,17 @@ export default function LoginPage() {
           >
             Login
           </button>
-          <button
-            className={mode === 'register' ? 'active' : ''}
-            onClick={() => { setMode('register'); setFeedback(''); }}
-            type="button"
-          >
-            Register
-          </button>
+          {/* Register tab only shows up when an invite token is present —
+              the rest of the time registration is closed. */}
+          {inviteToken && (
+            <button
+              className={mode === 'register' ? 'active' : ''}
+              onClick={() => { setMode('register'); setFeedback(''); }}
+              type="button"
+            >
+              Register
+            </button>
+          )}
         </div>
 
         {mode === 'login' ? (
