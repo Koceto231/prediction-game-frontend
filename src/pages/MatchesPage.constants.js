@@ -40,6 +40,7 @@ export const BET_TYPE = {
   HalfTimeCorrectScore: 'HalfTimeCorrectScore',
   ExactTotalGoals:      'ExactTotalGoals',
   WinningMargin:        'WinningMargin',
+  NumberOfGoals:        'NumberOfGoals',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */

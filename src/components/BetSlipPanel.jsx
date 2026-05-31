@@ -863,6 +863,14 @@ function constraintsOf(p) {
       c.etgPick = raw;
       break;
     }
+    case 'NumberOfGoals': {               // pick: Under2 | TwoOrThree | Over3
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      if (raw === 'Under2')     c.tMax = Math.min(c.tMax, 1);
+      else if (raw === 'TwoOrThree') { c.tMin = Math.max(c.tMin, 2); c.tMax = Math.min(c.tMax, 3); }
+      else if (raw === 'Over3') c.tMin = Math.max(c.tMin, 4);
+      c.nogPick = raw;
+      break;
+    }
     case 'WinningMargin': {               // pick: H1|H2|H3+|A1|A2|A3+|Draw|NoGoal
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       // Force the FT outcome set and derive the total-goal parity/bounds
@@ -936,6 +944,9 @@ function semanticConflict(a, b) {
   // Two different Winning Margin picks on the same match can never both win
   // (a match resolves to exactly one margin).
   if (ca.wmPick && cb.wmPick && ca.wmPick !== cb.wmPick) return true;
+
+  // Number of Goals buckets are disjoint, so two different picks clash.
+  if (ca.nogPick && cb.nogPick && ca.nogPick !== cb.nogPick) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

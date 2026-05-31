@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -597,6 +597,8 @@ export default function MatchesPage() {
       etg:       (() => { try { return m.exactTotalGoalsOddsJson ? JSON.parse(m.exactTotalGoalsOddsJson) : {}; } catch { return {}; } })(),
       // Winning Margin (market 126) — { H1,H2,H3+,A1,A2,A3+,Draw,NoGoal }.
       wm:        (() => { try { return m.winningMarginOddsJson ? JSON.parse(m.winningMarginOddsJson) : {}; } catch { return {}; } })(),
+      // Number of Goals in Match (market 83) — { Under2, TwoOrThree, Over3 }.
+      nog:       (() => { try { return m.numberOfGoalsOddsJson ? JSON.parse(m.numberOfGoalsOddsJson) : {}; } catch { return {}; } })(),
     });
     setCornersPreOdds({
       8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
@@ -1342,6 +1344,45 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Number of Goals in Match (Sportmonks market 83) — 3 buckets */}
+                  <div data-cat="goals" className={`market-section ${collapsed.nog ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('nog')}>
+                      <span className="market-section__name">⊜ Number of Goals</span>
+                      <span className="market-section__toggle">{collapsed.nog ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.nog && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { k: 'Under2',     lbl: 'Под 2 голa' },
+                          { k: 'TwoOrThree', lbl: '2 или 3 голa' },
+                          { k: 'Over3',      lbl: 'Над 3 голa' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.nog?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.NumberOfGoals}:${k}:NOG`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.NumberOfGoals, pick: k, selKey: 'NOG',
+                                  odds: o,
+                                  leg: { stringPick: k },
+                                  label: `Брой голове — ${lbl}`,
+                                  chip: k === 'Under2' ? '<2' : k === 'Over3' ? '>3' : '2-3',
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
