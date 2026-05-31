@@ -845,6 +845,24 @@ function constraintsOf(p) {
       }
       break;
     }
+    case 'ExactTotalGoals': {             // pick is "0".."6" or "7+"
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      if (raw.endsWith('+')) {
+        const n = Number(raw.slice(0, -1));
+        if (Number.isFinite(n)) c.tMin = Math.max(c.tMin, n);
+      } else {
+        const n = Number(raw);
+        if (Number.isFinite(n)) {
+          c.tMin = Math.max(c.tMin, n);
+          c.tMax = Math.min(c.tMax, n);
+          c.tParity = n % 2 === 0 ? 'even' : 'odd';
+        }
+      }
+      // Mark the pick so two different ETG selections clash even when
+      // they could happen to share parity (e.g. "1 goal" vs "3 goals").
+      c.etgPick = raw;
+      break;
+    }
     case 'TeamGoals':                     // per-team O/U → that team's goal bound
       if (lineNum != null) {
         if (ou === 'Over') {
@@ -889,6 +907,11 @@ function semanticConflict(a, b) {
 
   // Two different HT correct-score picks on the same match can never both win.
   if (ca.htScore && cb.htScore && ca.htScore !== cb.htScore) return true;
+
+  // Two different Exact Total Goals picks on the same match can never both
+  // win. The tMin/tMax clash above catches "3" vs "5" via the bounds, but
+  // not "5+" vs "7+" (where ranges overlap) — this catches all of them.
+  if (ca.etgPick && cb.etgPick && ca.etgPick !== cb.etgPick) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
