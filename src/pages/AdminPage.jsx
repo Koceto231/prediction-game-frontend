@@ -341,6 +341,108 @@ function UserBalanceRow({ user, onAdjust }) {
   );
 }
 
+/**
+ * Email-invitation management. Lets the admin issue, list and revoke
+ * registration invitations. Open registration is disabled — every
+ * signup must redeem one of these tokens.
+ */
+function InvitationsManagement() {
+  const [email, setEmail]       = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [invites, setInvites]   = useState([]);
+  const [loading, setLoading]   = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/admin/invitations');
+      setInvites(r.data ?? []);
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Зареждането се провали.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const send = async () => {
+    if (!email.trim()) { setFeedback('Въведи имейл.'); return; }
+    setFeedback('');
+    try {
+      const r = await api.post('/admin/invitations', { email: email.trim() });
+      setFeedback(r.data?.message || 'Поканата е изпратена.');
+      setEmail('');
+      load();
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Изпращането се провали.');
+    }
+  };
+
+  const revoke = async (id) => {
+    if (!window.confirm('Премахни тази покана?')) return;
+    try {
+      await api.delete(`/admin/invitations/${id}`);
+      setInvites(arr => arr.filter(i => i.id !== id));
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Премахването се провали.');
+    }
+  };
+
+  const statusBadge = (s) => {
+    if (s === 'used')    return <span style={{ color: 'var(--text-muted)' }}>използвана</span>;
+    if (s === 'expired') return <span style={{ color: '#e74c3c' }}>изтекла</span>;
+    return <span style={{ color: 'var(--accent)' }}>чака</span>;
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <input className="admin-input" placeholder="email@example.com"
+          value={email} onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && send()}
+          style={{ flex: 1 }} />
+        <button className="admin-btn admin-btn--accent" type="button" onClick={send}>
+          Изпрати покана
+        </button>
+        <button className="admin-btn" type="button" onClick={load} disabled={loading}>
+          {loading ? '…' : '↻'}
+        </button>
+      </div>
+
+      {feedback && (
+        <p className="admin-hint" style={{ color: 'var(--accent)' }}>{feedback}</p>
+      )}
+
+      <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)',
+                    borderRadius: 6 }}>
+        {invites.map(i => (
+          <div key={i.id} style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+            borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {i.email}
+              </div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                създадена {new Date(i.createdAt).toLocaleString()} · изтича {new Date(i.expiresAt).toLocaleDateString()}
+              </div>
+            </div>
+            <div style={{ minWidth: 90, textAlign: 'right' }}>{statusBadge(i.status)}</div>
+            <button className="admin-btn admin-btn--danger" type="button"
+              onClick={() => revoke(i.id)}
+              style={{ padding: '2px 8px', fontSize: '0.72rem' }}>🗑️</button>
+          </div>
+        ))}
+        {invites.length === 0 && (
+          <p className="admin-hint" style={{ padding: 10 }}>Няма покани.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -407,6 +509,11 @@ export default function AdminPage() {
           {/* ── Wallet management ── */}
           <AdminSection title="Управление на баланси">
             <WalletManagement />
+          </AdminSection>
+
+          {/* ── Email invitations ── */}
+          <AdminSection title="Покани за регистрация">
+            <InvitationsManagement />
           </AdminSection>
 
           {/* ── Matches via Sportmonks ── */}

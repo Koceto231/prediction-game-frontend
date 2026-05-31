@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/apiClient';
 
 export default function LoginPage() {
   const { login, register, loginWithGoogle } = useAuth();
@@ -16,21 +17,41 @@ export default function LoginPage() {
   const [feedbackType, setFeedbackType] = useState('info');
   const [loading, setLoading] = useState(false);
 
+  // ── Invitation token from URL — closes registration to non-invited users.
+  const inviteToken = searchParams.get('invite') || '';
+  const [inviteOk, setInviteOk] = useState(null); // null=loading, true/false
+
   useEffect(() => {
     const verified = searchParams.get('verified');
     const reset = searchParams.get('reset');
 
     if (verified === 'true') {
-      setFeedback('Email verified successfully. You can now log in.');
+      setFeedback('Имейлът е потвърден. Можеш да влезеш.');
       setFeedbackType('success');
     } else if (verified === 'false') {
-      setFeedback('Email verification failed or the link has expired.');
+      setFeedback('Потвърждението на имейла се провали или линкът е изтекъл.');
       setFeedbackType('error');
     } else if (reset === 'success') {
-      setFeedback('Password reset successfully. You can now log in.');
+      setFeedback('Паролата е сменена. Можеш да влезеш.');
       setFeedbackType('success');
     }
-  }, [searchParams]);
+
+    // If the URL carries an invite token, jump to register mode and resolve
+    // the token so we can pre-fill the email and lock it from edits.
+    if (inviteToken) {
+      setMode('register');
+      api.get(`/Auth/invite/${encodeURIComponent(inviteToken)}`)
+        .then(r => {
+          setEmail(r.data?.email || '');
+          setInviteOk(true);
+        })
+        .catch(err => {
+          setInviteOk(false);
+          setFeedback(err?.response?.data?.message || 'Невалидна или изтекла покана.');
+          setFeedbackType('error');
+        });
+    }
+  }, [searchParams, inviteToken]);
 
   const passwordChecks = {
     length: password.length >= 8,
@@ -58,17 +79,22 @@ export default function LoginPage() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (!inviteToken) {
+      setFeedback('Регистрацията изисква покана от админ.');
+      setFeedbackType('error');
+      return;
+    }
     setLoading(true);
     setFeedback('');
     setFeedbackType('info');
     try {
-      await register(username, email, password);
-      setFeedback('Registration successful. Check your email for a verification link, then log in.');
+      await register(username, email, password, inviteToken);
+      setFeedback('Регистрацията е успешна. Можеш да влезеш.');
       setFeedbackType('success');
       setMode('login');
       setPassword('');
     } catch (err) {
-      setFeedback(err?.response?.data?.message || err.message || 'Register failed.');
+      setFeedback(err?.response?.data?.message || err.message || 'Регистрацията се провали.');
       setFeedbackType('error');
     } finally {
       setLoading(false);
@@ -168,10 +194,19 @@ export default function LoginPage() {
               />
             </div>
           </form>
+        ) : !inviteToken ? (
+          <div className="alert alert-info" style={{ marginTop: 16 }}>
+            Регистрацията в системата е по покана. Свържи се с админ за
+            достъп — той ще ти изпрати имейл с линк за регистрация.
+          </div>
+        ) : inviteOk === false ? (
+          <div className="alert alert-error" style={{ marginTop: 16 }}>
+            Поканата е невалидна или изтекла. Свържи се с админ за нова.
+          </div>
         ) : (
           <form onSubmit={handleRegister} className="auth-form">
             <div className="auth-field">
-              <label className="auth-label" htmlFor="reg-username">Username</label>
+              <label className="auth-label" htmlFor="reg-username">Потребителско име</label>
               <input
                 id="reg-username"
                 placeholder="your_username"
@@ -182,19 +217,23 @@ export default function LoginPage() {
             </div>
 
             <div className="auth-field">
-              <label className="auth-label" htmlFor="reg-email">Email address</label>
+              <label className="auth-label" htmlFor="reg-email">Email адрес</label>
               <input
                 id="reg-email"
                 type="email"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                readOnly
+                disabled
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
               />
+              <div className="muted-text" style={{ fontSize: '0.72rem', marginTop: 4 }}>
+                Имейлът е фиксиран от поканата.
+              </div>
             </div>
 
             <div className="auth-field">
-              <label className="auth-label" htmlFor="reg-password">Password</label>
+              <label className="auth-label" htmlFor="reg-password">Парола</label>
               <input
                 id="reg-password"
                 placeholder="••••••••"
@@ -206,18 +245,18 @@ export default function LoginPage() {
             </div>
 
             <div className="password-rules">
-              <div className="password-rules__title">Password must contain:</div>
+              <div className="password-rules__title">Паролата трябва да съдържа:</div>
               <ul>
-                <li className={passwordChecks.length ? 'rule-ok' : ''}>At least 8 characters</li>
-                <li className={passwordChecks.upper ? 'rule-ok' : ''}>At least 1 uppercase letter</li>
-                <li className={passwordChecks.lower ? 'rule-ok' : ''}>At least 1 lowercase letter</li>
-                <li className={passwordChecks.number ? 'rule-ok' : ''}>At least 1 number</li>
-                <li className={passwordChecks.special ? 'rule-ok' : ''}>At least 1 special character</li>
+                <li className={passwordChecks.length ? 'rule-ok' : ''}>Поне 8 символа</li>
+                <li className={passwordChecks.upper ? 'rule-ok' : ''}>Поне 1 главна буква</li>
+                <li className={passwordChecks.lower ? 'rule-ok' : ''}>Поне 1 малка буква</li>
+                <li className={passwordChecks.number ? 'rule-ok' : ''}>Поне 1 цифра</li>
+                <li className={passwordChecks.special ? 'rule-ok' : ''}>Поне 1 специален знак</li>
               </ul>
             </div>
 
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account →'}
+            <button className="primary-button" type="submit" disabled={loading || inviteOk !== true}>
+              {loading ? 'Създаване…' : 'Създай профил →'}
             </button>
           </form>
         )}

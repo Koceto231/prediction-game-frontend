@@ -46,8 +46,12 @@ export function AuthProvider({ children }) {
   };
 
   // ── Register ───────────────────────────────────────────────────────
-  const register = async (username, email, password) => {
-    const response = await api.post('/Auth/register', { username, email, password });
+  // Open registration is closed — every signup must carry an inviteToken
+  // issued by an admin. The /register page reads it from the URL query.
+  const register = async (username, email, password, inviteToken) => {
+    const response = await api.post('/Auth/register', {
+      username, email, password, inviteToken,
+    });
     return response.data;
   };
 

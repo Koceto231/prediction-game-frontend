@@ -105,6 +105,10 @@ export default function App() {
         path="/login"
         element={isAuthenticated ? <Navigate to="/matches" replace /> : <LoginPage />}
       />
+      {/* Admin-issued invitation links land here — same component handles
+          both modes; the LoginPage swaps to register when the URL carries
+          an invite token. */}
+      <Route path="/register" element={<LoginPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
