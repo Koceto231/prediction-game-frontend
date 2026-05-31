@@ -812,6 +812,18 @@ function constraintsOf(p) {
         if (isOdd) c.tMin = Math.max(c.tMin, 1); // 1H odd ⇒ ≥1 goal in 1H ⇒ ≥1 total
       }
       break;
+    case 'ScoreBothHalves': {             // Pick=Home/Away, bTTSPick=Yes/No
+      const side = p.pick === 'Home' ? 'H' : p.pick === 'Away' ? 'A' : '';
+      const isYes = yes(p.leg?.bTTSPick);
+      if (side === 'H') {
+        c.sbhHome = isYes;
+        if (isYes) { c.hMin = Math.max(c.hMin, 2); c.tMin = Math.max(c.tMin, 2); }
+      } else if (side === 'A') {
+        c.sbhAway = isYes;
+        if (isYes) { c.aMin = Math.max(c.aMin, 2); c.tMin = Math.max(c.tMin, 2); }
+      }
+      break;
+    }
     case 'SecondHalfOddEven':             // 2H goals parity — same idea for 2H
       {
         const isOdd = (p.pick === 'Odd' || yes(p.leg?.bTTSPick));
@@ -1037,6 +1049,10 @@ function semanticConflict(a, b) {
     const ftClaimed = ca.tParity || cb.tParity;
     if (ftClaimed && ftClaimed !== ftDerived) return true;
   }
+
+  // Score-in-both-halves clashes — Yes vs No on the same team.
+  if (clashBool(ca.sbhHome, cb.sbhHome)) return true;
+  if (clashBool(ca.sbhAway, cb.sbhAway)) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -585,6 +585,10 @@ export default function MatchesPage() {
       awayOE:    { true: m.awayOddGoals ?? null, false: m.awayEvenGoals ?? null },
       oe1h:      { true: m.oddGoals1H   ?? null, false: m.evenGoals1H   ?? null },
       oe2h:      { true: m.oddGoals2H   ?? null, false: m.evenGoals2H   ?? null },
+      sbh: {
+        Home: { true: m.scoreBothHomeYes ?? null, false: m.scoreBothHomeNo ?? null },
+        Away: { true: m.scoreBothAwayYes ?? null, false: m.scoreBothAwayNo ?? null },
+      },
       homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
       awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
       wbh: {
@@ -2076,6 +2080,47 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Score in Both Halves (Sportmonks market 88) */}
+                  <div data-cat="special" className={`market-section ${collapsed.sbh ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('sbh')}>
+                      <span className="market-section__name">⋈ Отбор бележи в двете полувремена</span>
+                      <span className="market-section__toggle">{collapsed.sbh ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.sbh && (
+                      <div className="exact-score-grid">
+                        {[
+                          { side: 'Home', yn: 'true',  lbl: `${selectedMatch.homeTeamName} / Да` },
+                          { side: 'Home', yn: 'false', lbl: `${selectedMatch.homeTeamName} / Не` },
+                          { side: 'Away', yn: 'true',  lbl: `${selectedMatch.awayTeamName} / Да` },
+                          { side: 'Away', yn: 'false', lbl: `${selectedMatch.awayTeamName} / Не` },
+                        ].map(({ side, yn, lbl }) => {
+                          const o = preOdds.sbh?.[side]?.[yn];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.ScoreBothHalves}:${side}${yn === 'true' ? 'Yes' : 'No'}:SBH`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={`${side}-${yn}`} type="button"
+                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.ScoreBothHalves,
+                                  pick: side, selKey: 'SBH',
+                                  odds: o,
+                                  leg: { pick: side, bTTSPick: yn === 'true' },
+                                  label: `Бележи в двете полувремена — ${lbl}`,
+                                  chip: `${side === 'Home' ? '1' : '2'}↔${yn === 'true' ? 'Y' : 'N'}`,
+                                });
+                              }}>
+                              <div className="exact-score-tile__label">{lbl}</div>
+                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
