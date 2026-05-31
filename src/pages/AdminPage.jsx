@@ -322,9 +322,11 @@ function WalletManagement() {
         <p className="admin-hint" style={{ color: 'var(--accent)' }}>{feedback}</p>
       )}
 
-      {/* User list */}
-      <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)',
-                    borderRadius: 6 }}>
+      {/* User list — overflowX:auto so the fixed-width grid stays aligned
+          and just adds a horizontal scrollbar if the row is wider than the
+          container. */}
+      <div style={{ maxHeight: 360, overflowY: 'auto', overflowX: 'auto',
+                    border: '1px solid var(--border)', borderRadius: 6 }}>
         {filtered.map(u => (
           <UserBalanceRow key={u.id} user={u} onAdjust={adjust} onSetRole={setRole} onDelete={deleteUser} />
         ))}
@@ -342,38 +344,48 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+      // Grid keeps every column the same width across all rows, so the
+      // inputs and buttons line up no matter how long the username is.
+      display: 'grid',
+      gridTemplateColumns:
+        'minmax(160px, 1fr) 80px 90px 32px 32px 240px 240px',
+      alignItems: 'center', gap: 8, padding: '8px 10px',
       borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {user.username}
           {isAdmin && (
             <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--accent)' }}>(admin)</span>
           )}
         </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{user.email}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {user.email}
+        </div>
       </div>
-      <div style={{ fontFamily: 'monospace', minWidth: 80, textAlign: 'right' }}>
+      <div style={{ fontFamily: 'monospace', textAlign: 'right' }}>
         {Number(user.balance).toFixed(2)}
       </div>
       <input className="admin-input" type="number" value={delta}
         onChange={e => setDelta(e.target.value)}
-        style={{ width: 80 }} />
+        style={{ width: '100%' }} />
       <button className="admin-btn admin-btn--accent" type="button"
         onClick={() => onAdjust(user.id, Number(delta))}
-        style={{ padding: '4px 10px' }}>+</button>
+        style={{ padding: '4px 0' }}>+</button>
       <button className="admin-btn admin-btn--danger" type="button"
         onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
-        style={{ padding: '4px 10px' }}>−</button>
+        style={{ padding: '4px 0' }}>−</button>
       <button className="admin-btn" type="button"
         onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
-        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
+                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
       </button>
       <button className="admin-btn admin-btn--danger" type="button"
         onClick={() => onDelete(user.id, user.username)}
-        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
+                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
         Изтрий профил на {user.username}
       </button>
     </div>
