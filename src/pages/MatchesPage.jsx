@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -589,6 +589,7 @@ export default function MatchesPage() {
         Home: { true: m.scoreBothHomeYes ?? null, false: m.scoreBothHomeNo ?? null },
         Away: { true: m.scoreBothAwayYes ?? null, false: m.scoreBothAwayNo ?? null },
       },
+      hwmg: { '1stHalf': m.hwMG1H ?? null, '2ndHalf': m.hwMG2H ?? null, Tie: m.hwMGTie ?? null },
       homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
       awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
       wbh: {
@@ -2080,6 +2081,45 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Half with Most Goals (Sportmonks market 101) */}
+                  <div data-cat="halves" className={`market-section ${collapsed.hwmg ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('hwmg')}>
+                      <span className="market-section__name">⊕ Полувреме с повече голове</span>
+                      <span className="market-section__toggle">{collapsed.hwmg ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.hwmg && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { k: '1stHalf', lbl: '1-во полувреме' },
+                          { k: '2ndHalf', lbl: '2-ро полувреме' },
+                          { k: 'Tie',     lbl: 'Равни' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.hwmg?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.HalfWithMostGoals}:${k}:HWMG`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.HalfWithMostGoals, pick: k, selKey: 'HWMG',
+                                  odds: o,
+                                  leg: { stringPick: k },
+                                  label: `Полувреме с повече голове — ${lbl}`,
+                                  chip: k === '1stHalf' ? '1H>' : k === '2ndHalf' ? '2H>' : '1H=2H',
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

@@ -825,6 +825,15 @@ function constraintsOf(p) {
         if (isOdd) c.hg1Min = Math.max(c.hg1Min, 1);
       }
       break;
+    case 'HalfWithMostGoals': {           // pick: 1stHalf | 2ndHalf | Tie
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      c.hwmgPick = raw;
+      // 1stHalf wins ⇒ hg1 ≥ 1 (and hg1 > hg2, checked in semanticConflict).
+      // 2ndHalf wins ⇒ hg2 ≥ 1.
+      if (raw === '1stHalf') c.hg1Min = Math.max(c.hg1Min, 1);
+      if (raw === '2ndHalf') c.hg2Min = Math.max(c.hg2Min, 1);
+      break;
+    }
     case 'ScoreBothHalves': {             // Pick=Home/Away, bTTSPick=Yes/No
       const side = p.pick === 'Home' ? 'H' : p.pick === 'Away' ? 'A' : '';
       const isYes = yes(p.leg?.bTTSPick);
@@ -1080,6 +1089,15 @@ function semanticConflict(a, b) {
   // Score-in-both-halves clashes — Yes vs No on the same team.
   if (clashBool(ca.sbhHome, cb.sbhHome)) return true;
   if (clashBool(ca.sbhAway, cb.sbhAway)) return true;
+
+  // Half-with-most-goals: two different picks always clash, and the chosen
+  // ordering of hg1 vs hg2 must be feasible against the bounds we've already
+  // collected.
+  const hwmg = ca.hwmgPick || cb.hwmgPick;
+  if (ca.hwmgPick && cb.hwmgPick && ca.hwmgPick !== cb.hwmgPick) return true;
+  if (hwmg === '1stHalf' && hg1Max <= hg2Min) return true; // need hg1 > hg2
+  if (hwmg === '2ndHalf' && hg2Max <= hg1Min) return true;
+  if (hwmg === 'Tie' && (hg1Min > hg2Max || hg2Min > hg1Max)) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
