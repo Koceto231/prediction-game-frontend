@@ -225,18 +225,21 @@ function ActiveBetCard({ bet, onCashedOut }) {
 
   // Distinct fixtures referenced by this bet — single-match bets just show
   // their home / away pair; multi-match accumulators dedupe the legs and
-  // render one badge per fixture.
+  // render one badge per fixture. Legs that don't carry team data (legacy
+  // bets placed before the upgrade) inherit the parent bet's home / away
+  // so we don't end up with "null vs null".
   const fixtures = (() => {
-    if (isAccum && legs.some(l => l.matchId)) {
+    if (isAccum && legs.some(l => l.matchId && (l.homeTeam || l.awayTeam))) {
       const seen = new Map();
       legs.forEach(l => {
         if (!l.matchId || seen.has(l.matchId)) return;
+        if (!l.homeTeam && !l.awayTeam) return;
         seen.set(l.matchId, {
           home: l.homeTeam, away: l.awayTeam,
           homeLogo: l.homeTeamLogo, awayLogo: l.awayTeamLogo,
         });
       });
-      return [...seen.values()];
+      if (seen.size > 0) return [...seen.values()];
     }
     return [{
       home: bet.homeTeam, away: bet.awayTeam,
