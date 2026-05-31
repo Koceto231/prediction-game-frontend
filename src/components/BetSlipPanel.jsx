@@ -805,7 +805,19 @@ function constraintsOf(p) {
       if (p.pick === 'Odd' || yes(p.leg?.bTTSPick)) { c.tParity = 'odd'; c.tMin = Math.max(c.tMin, 1); }
       else                                          { c.tParity = 'even'; }
       break;
-    case 'OddEven1stHalf':                // not derivable from ExactScore — skip
+    case 'OddEven1stHalf':                // 1H goals parity — clashed against 2H combo
+      {
+        const isOdd = (p.pick === 'Odd' || yes(p.leg?.bTTSPick));
+        c.hg1Parity = isOdd ? 'odd' : 'even';
+        if (isOdd) c.tMin = Math.max(c.tMin, 1); // 1H odd ⇒ ≥1 goal in 1H ⇒ ≥1 total
+      }
+      break;
+    case 'SecondHalfOddEven':             // 2H goals parity — same idea for 2H
+      {
+        const isOdd = (p.pick === 'Odd' || yes(p.leg?.bTTSPick));
+        c.hg2Parity = isOdd ? 'odd' : 'even';
+        if (isOdd) c.tMin = Math.max(c.tMin, 1);
+      }
       break;
     case 'TeamOddEven': {                 // per-team goals parity
       const isOdd = (p.leg?.bTTSPick === true || p.pick === 'Odd');
@@ -1012,6 +1024,19 @@ function semanticConflict(a, b) {
 
   // Same for HT Result/BTTS combo picks.
   if (ca.htrbPick && cb.htrbPick && ca.htrbPick !== cb.htrbPick) return true;
+
+  // Per-half parity clashes (1H Odd vs 1H Even, etc.) plus a derived
+  // FT-parity check: 1H parity XOR 2H parity determines FT parity.
+  if (clashParity(ca.hg1Parity, cb.hg1Parity)) return true;
+  if (clashParity(ca.hg2Parity, cb.hg2Parity)) return true;
+  const hg1 = ca.hg1Parity || cb.hg1Parity;
+  const hg2 = ca.hg2Parity || cb.hg2Parity;
+  if (hg1 && hg2) {
+    // odd + odd = even; odd + even = odd; even + even = even.
+    const ftDerived = (hg1 === hg2) ? 'even' : 'odd';
+    const ftClaimed = ca.tParity || cb.tParity;
+    if (ftClaimed && ftClaimed !== ftDerived) return true;
+  }
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

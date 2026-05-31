@@ -43,6 +43,7 @@ export const BET_TYPE = {
   NumberOfGoals:        'NumberOfGoals',
   BttsHalfByHalf:       'BttsHalfByHalf',
   HtResultBtts:         'HtResultBtts',
+  SecondHalfOddEven:    'SecondHalfOddEven',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
