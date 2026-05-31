@@ -89,10 +89,10 @@ export default function LoginPage() {
     setFeedbackType('info');
     try {
       await register(username, email, password, inviteToken);
-      setFeedback('Регистрацията е успешна. Можеш да влезеш.');
-      setFeedbackType('success');
-      setMode('login');
-      setPassword('');
+      // Auto-login with the same credentials so the user lands in the
+      // app immediately — no extra "go to login" step.
+      await login(email, password);
+      navigate('/matches');
     } catch (err) {
       setFeedback(err?.response?.data?.message || err.message || 'Регистрацията се провали.');
       setFeedbackType('error');
