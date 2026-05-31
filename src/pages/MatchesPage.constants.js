@@ -39,10 +39,14 @@ export const BET_TYPE = {
   DoubleChance1stHalf:  'DoubleChance1stHalf',
   HalfTimeCorrectScore: 'HalfTimeCorrectScore',
   ExactTotalGoals:      'ExactTotalGoals',
+  WinningMargin:        'WinningMargin',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
 export const EXACT_TOTAL_GOALS_PICKS = ['0', '1', '2', '3', '4', '5', '6', '7+'];
+
+/** Winning Margin picks — short codes the backend understands. */
+export const WINNING_MARGIN_PICKS = ['H1', 'H2', 'H3+', 'A1', 'A2', 'A3+', 'Draw', 'NoGoal'];
 
 export const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
 export const OU_LINE_MAP = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };

@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -595,6 +595,8 @@ export default function MatchesPage() {
       // Exact Total Goals (market 93) — backend ships a {"0".."6"/"7+": odds}
       // dict, we just thread it through to the tile grid.
       etg:       (() => { try { return m.exactTotalGoalsOddsJson ? JSON.parse(m.exactTotalGoalsOddsJson) : {}; } catch { return {}; } })(),
+      // Winning Margin (market 126) — { H1,H2,H3+,A1,A2,A3+,Draw,NoGoal }.
+      wm:        (() => { try { return m.winningMarginOddsJson ? JSON.parse(m.winningMarginOddsJson) : {}; } catch { return {}; } })(),
     });
     setCornersPreOdds({
       8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
@@ -1371,6 +1373,50 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{k}</div>
+                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Winning Margin (Sportmonks market 126) — special tab */}
+                  <div data-cat="special" className={`market-section ${collapsed.wm ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('wm')}>
+                      <span className="market-section__name">▭ Winning Margin</span>
+                      <span className="market-section__toggle">{collapsed.wm ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.wm && (
+                      <div className="exact-score-grid">
+                        {[
+                          { k: 'H1',     lbl: `${selectedMatch.homeTeamName} +1` },
+                          { k: 'H2',     lbl: `${selectedMatch.homeTeamName} +2` },
+                          { k: 'H3+',    lbl: `${selectedMatch.homeTeamName} +3` },
+                          { k: 'A1',     lbl: `${selectedMatch.awayTeamName} +1` },
+                          { k: 'A2',     lbl: `${selectedMatch.awayTeamName} +2` },
+                          { k: 'A3+',    lbl: `${selectedMatch.awayTeamName} +3` },
+                          { k: 'Draw',   lbl: 'Score Draw' },
+                          { k: 'NoGoal', lbl: '0-0' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.wm?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.WinningMargin}:${k}:WM`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.WinningMargin, pick: k, selKey: 'WM',
+                                  odds: o,
+                                  leg: { stringPick: k },
+                                  label: `Печалба с разлика — ${lbl}`,
+                                  chip: k === 'NoGoal' ? '0-0' : k === 'Draw' ? 'X' : k,
+                                });
+                              }}>
+                              <div className="exact-score-tile__label">{lbl}</div>
                               <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
                             </button>
                           );

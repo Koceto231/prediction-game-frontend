@@ -863,6 +863,26 @@ function constraintsOf(p) {
       c.etgPick = raw;
       break;
     }
+    case 'WinningMargin': {               // pick: H1|H2|H3+|A1|A2|A3+|Draw|NoGoal
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      // Force the FT outcome set and derive the total-goal parity/bounds
+      // that the margin implies — diff=1 ⇒ total odd, diff=2 ⇒ total even.
+      if (raw === 'NoGoal')  { c.ft = new Set(['D']); c.hMax = 0; c.aMax = 0; c.tMax = 0; }
+      else if (raw === 'Draw') { c.ft = new Set(['D']); c.tMin = Math.max(c.tMin, 2); c.tParity = 'even'; }
+      else if (raw.startsWith('H')) {
+        c.ft = new Set(['H']);
+        if (raw === 'H1')  { c.tMin = Math.max(c.tMin, 1); c.tParity = 'odd'; }
+        if (raw === 'H2')  { c.tMin = Math.max(c.tMin, 2); c.tParity = 'even'; }
+        if (raw === 'H3+') { c.tMin = Math.max(c.tMin, 3); }
+      } else if (raw.startsWith('A')) {
+        c.ft = new Set(['A']);
+        if (raw === 'A1')  { c.tMin = Math.max(c.tMin, 1); c.tParity = 'odd'; }
+        if (raw === 'A2')  { c.tMin = Math.max(c.tMin, 2); c.tParity = 'even'; }
+        if (raw === 'A3+') { c.tMin = Math.max(c.tMin, 3); }
+      }
+      c.wmPick = raw;
+      break;
+    }
     case 'TeamGoals':                     // per-team O/U → that team's goal bound
       if (lineNum != null) {
         if (ou === 'Over') {
@@ -912,6 +932,10 @@ function semanticConflict(a, b) {
   // win. The tMin/tMax clash above catches "3" vs "5" via the bounds, but
   // not "5+" vs "7+" (where ranges overlap) — this catches all of them.
   if (ca.etgPick && cb.etgPick && ca.etgPick !== cb.etgPick) return true;
+
+  // Two different Winning Margin picks on the same match can never both win
+  // (a match resolves to exactly one margin).
+  if (ca.wmPick && cb.wmPick && ca.wmPick !== cb.wmPick) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
