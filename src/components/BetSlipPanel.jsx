@@ -898,6 +898,22 @@ function constraintsOf(p) {
       c.bhhPick = raw;
       break;
     }
+    case 'HtResultBtts': {                // pick: HomeYes/HomeNo/DrawYes/…
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      const side = raw.startsWith('Home') ? 'H' : raw.startsWith('Draw') ? 'D' : raw.startsWith('Away') ? 'A' : '';
+      if (side) c.ht = new Set([side]);
+      if (raw.endsWith('Yes')) {
+        c.btts1h = true;
+        // BTTS in 1H ⇒ both teams scored ⇒ ≥1 each FT.
+        c.hMin = Math.max(c.hMin, 1);
+        c.aMin = Math.max(c.aMin, 1);
+        c.tMin = Math.max(c.tMin, 2);
+      } else if (raw.endsWith('No')) {
+        c.btts1h = false;
+      }
+      c.htrbPick = raw;
+      break;
+    }
     case 'NumberOfGoals': {               // pick: Under2 | TwoOrThree | Over3
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       if (raw === 'Under2')     c.tMax = Math.min(c.tMax, 1);
@@ -993,6 +1009,9 @@ function semanticConflict(a, b) {
 
   // Two different BTTS-halves picks on the same match are mutually exclusive.
   if (ca.bhhPick && cb.bhhPick && ca.bhhPick !== cb.bhhPick) return true;
+
+  // Same for HT Result/BTTS combo picks.
+  if (ca.htrbPick && cb.htrbPick && ca.htrbPick !== cb.htrbPick) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
