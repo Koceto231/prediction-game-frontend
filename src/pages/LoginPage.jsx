@@ -128,17 +128,18 @@ export default function LoginPage() {
         <h1>Welcome back</h1>
         <p>Sign in to your account to continue</p>
 
-        <div className="auth-tabs">
-          <button
-            className={mode === 'login' ? 'active' : ''}
-            onClick={() => { setMode('login'); setFeedback(''); }}
-            type="button"
-          >
-            Login
-          </button>
-          {/* Register tab only shows up when an invite token is present —
-              the rest of the time registration is closed. */}
-          {inviteToken && (
+        {/* The tab switcher only makes sense when both modes are available
+            — i.e. when an invite token is in the URL. Otherwise the page
+            is login-only and the single Login tab was just visual noise. */}
+        {inviteToken && (
+          <div className="auth-tabs">
+            <button
+              className={mode === 'login' ? 'active' : ''}
+              onClick={() => { setMode('login'); setFeedback(''); }}
+              type="button"
+            >
+              Login
+            </button>
             <button
               className={mode === 'register' ? 'active' : ''}
               onClick={() => { setMode('register'); setFeedback(''); }}
@@ -146,8 +147,8 @@ export default function LoginPage() {
             >
               Register
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="auth-form">
