@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -594,6 +594,7 @@ export default function MatchesPage() {
         Home: { '1stHalf': m.homeHsH1H ?? null, '2ndHalf': m.homeHsH2H ?? null, Tie: m.homeHsHTie ?? null },
         Away: { '1stHalf': m.awayHsH1H ?? null, '2ndHalf': m.awayHsH2H ?? null, Tie: m.awayHsHTie ?? null },
       },
+      rtg: (() => { try { return m.resultTotalGoalsOddsJson ? JSON.parse(m.resultTotalGoalsOddsJson) : {}; } catch { return {}; } })(),
       homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
       awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
       wbh: {
@@ -2085,6 +2086,48 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Result / Total Goals 2.5 combo (Sportmonks market 37) */}
+                  <div data-cat="special" className={`market-section ${collapsed.rtg ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('rtg')}>
+                      <span className="market-section__name">⊗ Резултат + Голове 2.5</span>
+                      <span className="market-section__toggle">{collapsed.rtg ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.rtg && (
+                      <div className="exact-score-grid">
+                        {[
+                          { k: 'HomeOver25',  lbl: `${selectedMatch.homeTeamName} & над 2.5` },
+                          { k: 'HomeUnder25', lbl: `${selectedMatch.homeTeamName} & под 2.5` },
+                          { k: 'DrawOver25',  lbl: 'Равен & над 2.5' },
+                          { k: 'DrawUnder25', lbl: 'Равен & под 2.5' },
+                          { k: 'AwayOver25',  lbl: `${selectedMatch.awayTeamName} & над 2.5` },
+                          { k: 'AwayUnder25', lbl: `${selectedMatch.awayTeamName} & под 2.5` },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.rtg?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.ResultTotalGoals}:${k}:RTG`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.ResultTotalGoals, pick: k, selKey: 'RTG',
+                                  odds: o,
+                                  leg: { stringPick: k },
+                                  label: `Резултат + 2.5 голa — ${lbl}`,
+                                  chip: `${k.startsWith('Home') ? '1' : k.startsWith('Draw') ? 'X' : '2'}/${k.endsWith('Over25') ? 'O' : 'U'}2.5`,
+                                });
+                              }}>
+                              <div className="exact-score-tile__label">{lbl}</div>
+                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

@@ -825,6 +825,17 @@ function constraintsOf(p) {
         if (isOdd) c.hg1Min = Math.max(c.hg1Min, 1);
       }
       break;
+    case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      const side = raw.startsWith('Home') ? 'H'
+                 : raw.startsWith('Draw') ? 'D'
+                 : raw.startsWith('Away') ? 'A' : '';
+      if (side) c.ft = new Set([side]);
+      if (raw.endsWith('Over25'))  c.tMin = Math.max(c.tMin, 3);
+      if (raw.endsWith('Under25')) c.tMax = Math.min(c.tMax, 2);
+      c.rtgPick = raw;
+      break;
+    }
     case 'TeamHighestScoringHalf': {      // leg.pick=Home/Away + stringPick=half
       const side = (p.leg?.pick === 'Home' || /^Home/.test(p.pick || '')) ? 'H'
                  : (p.leg?.pick === 'Away' || /^Away/.test(p.pick || '')) ? 'A' : '';
@@ -1106,6 +1117,9 @@ function semanticConflict(a, b) {
   if (hwmg === '1stHalf' && hg1Max <= hg2Min) return true; // need hg1 > hg2
   if (hwmg === '2ndHalf' && hg2Max <= hg1Min) return true;
   if (hwmg === 'Tie' && (hg1Min > hg2Max || hg2Min > hg1Max)) return true;
+
+  // Two different Result/Total picks always clash.
+  if (ca.rtgPick && cb.rtgPick && ca.rtgPick !== cb.rtgPick) return true;
 
   // Team Highest Scoring Half — two picks for the SAME team but different
   // halves can't both win. Different teams (one Home pick + one Away pick)
