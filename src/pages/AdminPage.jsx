@@ -367,16 +367,14 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
         onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
         style={{ padding: '4px 10px' }}>−</button>
       <button className="admin-btn" type="button"
-        title={isAdmin ? 'Махни admin' : 'Направи admin'}
         onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
-        style={{ padding: '4px 8px', minWidth: 32 }}>
-        {isAdmin ? '★' : '☆'}
+        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        {isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
       </button>
       <button className="admin-btn admin-btn--danger" type="button"
-        title="Изтрий потребителя"
         onClick={() => onDelete(user.id, user.username)}
-        style={{ padding: '4px 8px', minWidth: 32 }}>
-        🗑️
+        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        Изтрий профил на {user.username}
       </button>
     </div>
   );
