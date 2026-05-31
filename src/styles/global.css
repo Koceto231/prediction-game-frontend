@@ -11544,6 +11544,19 @@ select:focus {
   min-width: 0;
 }
 
+/* Strip the browser-provided up/down spinner from number inputs across the
+   admin panel — the inputs are wide enough to type into and the arrows
+   visually fight the dark theme. */
+.admin-input[type="number"]::-webkit-outer-spin-button,
+.admin-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.admin-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .gvm-card__crest {
   width: 66px;
   height: 68px;
