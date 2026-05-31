@@ -281,7 +281,11 @@ function WalletManagement() {
     try {
       const r = await api.post('/admin/wallet/self-topup', { userId: 0, amount });
       setFeedback(`Балансът ти е сега ${r.data.balance}.`);
-      // refresh list so the new self balance shows
+      // Notify the rest of the app — the navbar / profile read this
+      // signal and update without a page refresh.
+      window.dispatchEvent(new CustomEvent('bpfl:wallet:refresh', {
+        detail: { balance: r.data.balance },
+      }));
       load();
     } catch (e) {
       setFeedback(e?.response?.data?.message || 'Self top-up се провали.');

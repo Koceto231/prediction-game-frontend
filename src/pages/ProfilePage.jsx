@@ -31,6 +31,25 @@ export default function ProfilePage() {
   const [betFilter, setBetFilter]   = useState('All'); // All | Won | Lost
   const [expandedId, setExpandedId] = useState(null);
 
+  // Wallet refresh signal — fired by the API client after any successful
+  // bet / admin balance write. Keeps the big balance number on the profile
+  // in sync without forcing a page reload.
+  useEffect(() => {
+    const onSignal = async (e) => {
+      const next = e?.detail?.balance;
+      if (next != null) {
+        setBalance(Number(next));
+        return;
+      }
+      try {
+        const r = await api.get('/Wallet');
+        setBalance(r.data.balance);
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('bpfl:wallet:refresh', onSignal);
+    return () => window.removeEventListener('bpfl:wallet:refresh', onSignal);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 

@@ -48,8 +48,31 @@ const processQueue = (error) => {
 // Auth endpoints that should never trigger a refresh retry
 const AUTH_PATHS = new Set(['/Auth/login', '/Auth/register', '/Auth/google', '/Auth/refresh', '/Auth/logout']);
 
+// URLs whose successful response should bump the wallet balance — placing
+// a bet debits, cashing out credits. Listing endpoints (GET /Bet) are
+// excluded so we don't ping the wallet on every page load.
+const WALLET_AFFECTING_PATHS = ['/Bet', '/Wallet/topup', '/admin/wallet'];
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    try {
+      const cfg     = response.config || {};
+      const url     = cfg.url || '';
+      const method  = (cfg.method || '').toLowerCase();
+      const writes  = method === 'post' || method === 'put' || method === 'delete';
+      if (writes && WALLET_AFFECTING_PATHS.some((p) => url.includes(p))) {
+        // Forward the new balance when the API ships it; otherwise the
+        // listener falls back to fetching fresh.
+        const next = response.data?.balance ?? response.data?.newBalance ?? null;
+        window.dispatchEvent(new CustomEvent('bpfl:wallet:refresh', {
+          detail: next != null ? { balance: next } : {},
+        }));
+      }
+    } catch {
+      // Never let analytics-style side effects break the response chain.
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const requestUrl      = originalRequest?.url || '';
