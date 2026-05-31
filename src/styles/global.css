@@ -11544,18 +11544,18 @@ select:focus {
 .gvm-card__crest {
   width: 66px;
   height: 68px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-soft, #4d4633);
-  border-radius: 50%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
 }
 .gvm-card__crest__img {
-  width: 80%;
-  height: 80%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 .gvm-card__crest__initials {
