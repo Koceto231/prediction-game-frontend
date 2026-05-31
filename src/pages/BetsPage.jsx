@@ -223,18 +223,42 @@ function ActiveBetCard({ bet, onCashedOut }) {
   const legs      = bet.accumulatorLegs ?? [];
   const [legsOpen, setLegsOpen] = useState(true); // open by default for accumulators
 
+  // Distinct fixtures referenced by this bet — single-match bets just show
+  // their home / away pair; multi-match accumulators dedupe the legs and
+  // render one badge per fixture.
+  const fixtures = (() => {
+    if (isAccum && legs.some(l => l.matchId)) {
+      const seen = new Map();
+      legs.forEach(l => {
+        if (!l.matchId || seen.has(l.matchId)) return;
+        seen.set(l.matchId, {
+          home: l.homeTeam, away: l.awayTeam,
+          homeLogo: l.homeTeamLogo, awayLogo: l.awayTeamLogo,
+        });
+      });
+      return [...seen.values()];
+    }
+    return [{
+      home: bet.homeTeam, away: bet.awayTeam,
+      homeLogo: bet.homeTeamLogo, awayLogo: bet.awayTeamLogo,
+    }];
+  })();
+
   return (
     <div className={`gvb-bet${live ? ' gvb-bet--live' : ''}`}>
       <div className="gvb-bet__body">
         <div className="gvb-bet__head">
           <div className="gvb-bet__head-left">
-            <div className="gvb-bet__crest-box">
-              <TeamCrest className="gvb-bet__crest" logoUrl={bet.homeTeamLogo} name={bet.homeTeam} />
+            <div className="gvb-bet__crest-box" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].homeLogo} name={fixtures[0].home} />
+              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].awayLogo} name={fixtures[0].away} />
             </div>
             <div className="gvb-bet__title-wrap">
               <p className="gvb-bet__fixture">
                 {isAccum
-                  ? `${legs.length}-leg accumulator`
+                  ? (fixtures.length === 1
+                      ? `${legs.length}-leg на ${fixtures[0].home} vs ${fixtures[0].away}`
+                      : `${legs.length}-leg от ${fixtures.length} мача`)
                   : `${bet.homeTeam} vs ${bet.awayTeam}`}
               </p>
               <p className="gvb-bet__meta">{formatLeagueAndTime(bet)}</p>
@@ -278,7 +302,25 @@ function ActiveBetCard({ bet, onCashedOut }) {
                 {legs.map((leg, i) => (
                   <div key={i} className="gvb-bet__leg">
                     <span className="gvb-bet__leg-no">{i + 1}</span>
-                    <span className="gvb-bet__leg-desc">{leg.description}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="gvb-bet__leg-desc">{leg.description}</div>
+                      {(leg.homeTeam || leg.awayTeam) && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)',
+                                      marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {leg.homeTeamLogo && (
+                            <img src={leg.homeTeamLogo} alt=""
+                              style={{ width: 14, height: 14, objectFit: 'contain' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          )}
+                          <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
+                          {leg.awayTeamLogo && (
+                            <img src={leg.awayTeamLogo} alt=""
+                              style={{ width: 14, height: 14, objectFit: 'contain' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <span className="gvb-bet__leg-odds">{Number(leg.odds).toFixed(2)}</span>
                   </div>
                 ))}
