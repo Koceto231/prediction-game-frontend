@@ -243,6 +243,20 @@ function WalletManagement() {
     }
   };
 
+  const setRole = async (userId, nextRole) => {
+    if (!window.confirm(nextRole === 'Admin'
+        ? 'Направи този потребител админ?'
+        : 'Махни admin правата на този потребител?')) return;
+    setFeedback('');
+    try {
+      const r = await api.post('/admin/wallet/set-role', { userId, role: nextRole });
+      setUsers(us => us.map(u => u.id === userId ? { ...u, role: r.data.role } : u));
+      setFeedback(nextRole === 'Admin' ? 'Потребителят вече е админ.' : 'Admin правата са премахнати.');
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Промяната на роля се провали.');
+    }
+  };
+
   const selfTopUp = async () => {
     const amount = Number(selfAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -298,7 +312,7 @@ function WalletManagement() {
       <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)',
                     borderRadius: 6 }}>
         {filtered.map(u => (
-          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} />
+          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} onSetRole={setRole} />
         ))}
         {filtered.length === 0 && (
           <p className="admin-hint" style={{ padding: 10 }}>Няма потребители за показване.</p>
@@ -308,8 +322,9 @@ function WalletManagement() {
   );
 }
 
-function UserBalanceRow({ user, onAdjust }) {
+function UserBalanceRow({ user, onAdjust, onSetRole }) {
   const [delta, setDelta] = useState('100');
+  const isAdmin = user.role === 'Admin';
 
   return (
     <div style={{
@@ -319,7 +334,7 @@ function UserBalanceRow({ user, onAdjust }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {user.username}
-          {user.role === 'Admin' && (
+          {isAdmin && (
             <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--accent)' }}>(admin)</span>
           )}
         </div>
@@ -337,6 +352,12 @@ function UserBalanceRow({ user, onAdjust }) {
       <button className="admin-btn admin-btn--danger" type="button"
         onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
         style={{ padding: '4px 10px' }}>−</button>
+      <button className="admin-btn" type="button"
+        title={isAdmin ? 'Махни admin' : 'Направи admin'}
+        onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
+        style={{ padding: '4px 8px', minWidth: 32 }}>
+        {isAdmin ? '★' : '☆'}
+      </button>
     </div>
   );
 }
