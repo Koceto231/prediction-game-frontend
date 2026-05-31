@@ -733,6 +733,11 @@ function constraintsOf(p) {
     hMin: 0, hMax: Infinity,
     aMin: 0, aMax: Infinity,
     tMin: 0, tMax: Infinity,
+    // Per-half goal totals (1H + 2H). Used to derive impossible FT
+    // combinations like "1H O1.5 + 2H O1.5 + ExactScore 1-0" (1H+2H ≥ 4
+    // contradicts FT total = 1).
+    hg1Min: 0, hg1Max: Infinity,
+    hg2Min: 0, hg2Max: Infinity,
     // Parity constraints — null = unconstrained, 'odd' | 'even' otherwise.
     hParity: null, aParity: null, tParity: null,
   };
@@ -801,15 +806,23 @@ function constraintsOf(p) {
       if (lineNum != null && ou === 'Over')  c.tMin = Math.floor(lineNum) + 1;
       if (lineNum != null && ou === 'Under') c.tMax = Math.ceil(lineNum) - 1;
       break;
+    case 'HalfTimeGoals':                 // 1H goals O/U (the half its own line)
+      if (lineNum != null && ou === 'Over')  c.hg1Min = Math.max(c.hg1Min, Math.floor(lineNum) + 1);
+      if (lineNum != null && ou === 'Under') c.hg1Max = Math.min(c.hg1Max, Math.ceil(lineNum)  - 1);
+      break;
+    case 'SecondHalfGoals':               // 2H goals O/U (same idea for 2H)
+      if (lineNum != null && ou === 'Over')  c.hg2Min = Math.max(c.hg2Min, Math.floor(lineNum) + 1);
+      if (lineNum != null && ou === 'Under') c.hg2Max = Math.min(c.hg2Max, Math.ceil(lineNum)  - 1);
+      break;
     case 'OddEven':                       // total goals parity; Odd ⇒ ≥1 (0 is even)
       if (p.pick === 'Odd' || yes(p.leg?.bTTSPick)) { c.tParity = 'odd'; c.tMin = Math.max(c.tMin, 1); }
       else                                          { c.tParity = 'even'; }
       break;
-    case 'OddEven1stHalf':                // 1H goals parity — clashed against 2H combo
+    case 'OddEven1stHalf':                // 1H goals parity
       {
         const isOdd = (p.pick === 'Odd' || yes(p.leg?.bTTSPick));
         c.hg1Parity = isOdd ? 'odd' : 'even';
-        if (isOdd) c.tMin = Math.max(c.tMin, 1); // 1H odd ⇒ ≥1 goal in 1H ⇒ ≥1 total
+        if (isOdd) c.hg1Min = Math.max(c.hg1Min, 1);
       }
       break;
     case 'ScoreBothHalves': {             // Pick=Home/Away, bTTSPick=Yes/No
@@ -824,11 +837,11 @@ function constraintsOf(p) {
       }
       break;
     }
-    case 'SecondHalfOddEven':             // 2H goals parity — same idea for 2H
+    case 'SecondHalfOddEven':             // 2H goals parity
       {
         const isOdd = (p.pick === 'Odd' || yes(p.leg?.bTTSPick));
         c.hg2Parity = isOdd ? 'odd' : 'even';
-        if (isOdd) c.tMin = Math.max(c.tMin, 1);
+        if (isOdd) c.hg2Min = Math.max(c.hg2Min, 1);
       }
       break;
     case 'TeamOddEven': {                 // per-team goals parity
@@ -855,7 +868,7 @@ function constraintsOf(p) {
       }
       break;
     }
-    case 'HalfTimeCorrectScore': {        // HT scoreline → narrows c.ht only
+    case 'HalfTimeCorrectScore': {        // HT scoreline → narrows c.ht + 1H totals
       const h = Number(p.scoreHome), a = Number(p.scoreAway);
       if (Number.isFinite(h) && Number.isFinite(a)) {
         c.ht = new Set([h > a ? 'H' : h < a ? 'A' : 'D']);
@@ -864,6 +877,9 @@ function constraintsOf(p) {
         c.hMin = Math.max(c.hMin, h);
         c.aMin = Math.max(c.aMin, a);
         c.tMin = Math.max(c.tMin, h + a);
+        // The 1H total is pinned exactly by the HT scoreline.
+        c.hg1Min = Math.max(c.hg1Min, h + a);
+        c.hg1Max = Math.min(c.hg1Max, h + a);
         // Track the HT score itself so two different HTCS picks conflict.
         c.htScore = `${h}-${a}`;
       }
@@ -889,16 +905,18 @@ function constraintsOf(p) {
     }
     case 'Btts1stHalf':                   // BTTS Yes/No restricted to 1H
       c.btts1h = yes(p.pick) || yes(p.leg?.bTTSPick);
-      if (c.btts1h) {                    // both teams scored in 1H ⇒ ≥1 each FT
-        c.hMin = Math.max(c.hMin, 1);
-        c.aMin = Math.max(c.aMin, 1);
+      if (c.btts1h) {                    // both teams scored in 1H ⇒ ≥1 each FT, ≥2 in 1H
+        c.hMin   = Math.max(c.hMin, 1);
+        c.aMin   = Math.max(c.aMin, 1);
+        c.hg1Min = Math.max(c.hg1Min, 2);
       }
       break;
     case 'Btts2ndHalf':                   // BTTS Yes/No restricted to 2H
       c.btts2h = yes(p.pick) || yes(p.leg?.bTTSPick);
-      if (c.btts2h) {                    // both teams scored in 2H ⇒ ≥1 each FT
-        c.hMin = Math.max(c.hMin, 1);
-        c.aMin = Math.max(c.aMin, 1);
+      if (c.btts2h) {                    // both teams scored in 2H ⇒ ≥1 each FT, ≥2 in 2H
+        c.hMin   = Math.max(c.hMin, 1);
+        c.aMin   = Math.max(c.aMin, 1);
+        c.hg2Min = Math.max(c.hg2Min, 2);
       }
       break;
     case 'BttsHalfByHalf': {              // pick: YesYes | YesNo | NoYes | NoNo
@@ -913,6 +931,8 @@ function constraintsOf(p) {
         c.aMin = Math.max(c.aMin, 1);
         c.tMin = Math.max(c.tMin, 2);
       }
+      if (c.btts1h) c.hg1Min = Math.max(c.hg1Min, 2);
+      if (c.btts2h) c.hg2Min = Math.max(c.hg2Min, 2);
       // YesYes ⇒ ≥2 goals each (one in each half).
       if (raw === 'YesYes') {
         c.hMin = Math.max(c.hMin, 2);
@@ -928,10 +948,11 @@ function constraintsOf(p) {
       if (side) c.ht = new Set([side]);
       if (raw.endsWith('Yes')) {
         c.btts1h = true;
-        // BTTS in 1H ⇒ both teams scored ⇒ ≥1 each FT.
-        c.hMin = Math.max(c.hMin, 1);
-        c.aMin = Math.max(c.aMin, 1);
-        c.tMin = Math.max(c.tMin, 2);
+        // BTTS in 1H ⇒ both teams scored ⇒ ≥1 each FT, ≥2 in 1H.
+        c.hMin   = Math.max(c.hMin, 1);
+        c.aMin   = Math.max(c.aMin, 1);
+        c.tMin   = Math.max(c.tMin, 2);
+        c.hg1Min = Math.max(c.hg1Min, 2);
       } else if (raw.endsWith('No')) {
         c.btts1h = false;
       }
@@ -998,8 +1019,14 @@ function semanticConflict(a, b) {
   const hMin = Math.max(ca.hMin, cb.hMin), hMax = Math.min(ca.hMax, cb.hMax);
   const aMin = Math.max(ca.aMin, cb.aMin), aMax = Math.min(ca.aMax, cb.aMax);
   if (hMin > hMax || aMin > aMax) return true;
-  const tMin = Math.max(ca.tMin, cb.tMin, hMin + aMin);
-  const tMax = Math.min(ca.tMax, cb.tMax, hMax + aMax);
+  // Per-half goal bounds also feed the FT total: total = 1H + 2H.
+  const hg1Min = Math.max(ca.hg1Min || 0, cb.hg1Min || 0);
+  const hg1Max = Math.min(ca.hg1Max ?? Infinity, cb.hg1Max ?? Infinity);
+  const hg2Min = Math.max(ca.hg2Min || 0, cb.hg2Min || 0);
+  const hg2Max = Math.min(ca.hg2Max ?? Infinity, cb.hg2Max ?? Infinity);
+  if (hg1Min > hg1Max || hg2Min > hg2Max) return true;
+  const tMin = Math.max(ca.tMin, cb.tMin, hMin + aMin, hg1Min + hg2Min);
+  const tMax = Math.min(ca.tMax, cb.tMax, hMax + aMax, hg1Max + hg2Max);
   if (tMin > tMax) return true;
 
   // Parity intersections — if both sides claim a parity, they must agree.
