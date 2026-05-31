@@ -11102,22 +11102,25 @@ select:focus {
 .gvmd-hero__shield {
   width: 92px;
   height: 92px;
-  background: var(--surface-container-low, #1c1b1b);
-  border: 2px solid var(--outline-variant, #4d4633);
-  border-radius: 50%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
 }
 .gvmd-hero__shield--home {
-  border-color: var(--accent);
-  box-shadow: 0 0 18px rgba(240, 197, 25, 0.30);
+  /* No accent ring on the home badge anymore — keep this rule so any
+     selector-specificity assumptions elsewhere still match, but make it
+     a no-op. */
+  border-color: transparent;
+  box-shadow: none;
 }
 .gvmd-hero__shield img {
-  width: 78%;
-  height: 78%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 .gvmd-hero__shield-fallback {
@@ -11276,7 +11279,7 @@ select:focus {
     margin-top: 6px;
   }
   .gvmd-hero__team { gap: 8px; }
-  .gvmd-hero__shield { width: 54px; height: 54px; border-width: 2px; }
+  .gvmd-hero__shield { width: 54px; height: 54px; }
   .gvmd-hero__shield-fallback { font-size: 0.9rem; }
   .gvmd-hero__teamname { font-size: 0.72rem; letter-spacing: 0.02em; }
   .gvmd-hero__center { gap: 2px; }
