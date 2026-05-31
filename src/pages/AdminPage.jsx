@@ -200,6 +200,147 @@ function GwRow({ gw, loading, onComplete, onEdit }) {
   );
 }
 
+/**
+ * Wallet management — lists every user with their balance and lets the
+ * admin credit or debit any account. A separate "Self top-up" lane is
+ * pinned to the top so the admin can give themselves an arbitrary amount
+ * with a single button click.
+ */
+function WalletManagement() {
+  const [users, setUsers]       = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [selfAmount, setSelfAmount] = useState('10000');
+  const [filter, setFilter]     = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/admin/wallet/users');
+      setUsers(r.data ?? []);
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Зареждането се провали.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const adjust = async (userId, rawAmount) => {
+    const amount = Number(rawAmount);
+    if (!Number.isFinite(amount) || amount === 0) {
+      setFeedback('Въведи валидна сума (≠ 0).');
+      return;
+    }
+    setFeedback('');
+    try {
+      const r = await api.post('/admin/wallet/adjust', { userId, amount });
+      setUsers(us => us.map(u => u.id === userId ? { ...u, balance: r.data.balance } : u));
+      setFeedback(`Балансът на потребителя е ${amount > 0 ? 'увеличен' : 'намален'} с ${Math.abs(amount)}.`);
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Корекцията се провали.');
+    }
+  };
+
+  const selfTopUp = async () => {
+    const amount = Number(selfAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setFeedback('Сумата за себе си трябва да е положителна.');
+      return;
+    }
+    setFeedback('');
+    try {
+      const r = await api.post('/admin/wallet/self-topup', { userId: 0, amount });
+      setFeedback(`Балансът ти е сега ${r.data.balance}.`);
+      // refresh list so the new self balance shows
+      load();
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Self top-up се провали.');
+    }
+  };
+
+  const filtered = users.filter(u =>
+    !filter.trim()
+      || u.username?.toLowerCase().includes(filter.toLowerCase())
+      || u.email?.toLowerCase().includes(filter.toLowerCase()));
+
+  return (
+    <div>
+      {/* Self top-up — pinned at the top so it's always one click away. */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12,
+                    padding: '10px 12px', background: 'rgba(240, 197, 25, 0.08)',
+                    border: '1px solid rgba(240, 197, 25, 0.3)', borderRadius: 8 }}>
+        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>На себе си</span>
+        <input className="admin-input" value={selfAmount}
+          onChange={e => setSelfAmount(e.target.value)}
+          style={{ width: 110 }} type="number" min="1" />
+        <button className="admin-btn admin-btn--accent" type="button" onClick={selfTopUp}>
+          Добави
+        </button>
+      </div>
+
+      {/* Filter + reload */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input className="admin-input" placeholder="Търси потребител…"
+          value={filter} onChange={e => setFilter(e.target.value)}
+          style={{ flex: 1 }} />
+        <button className="admin-btn" type="button" onClick={load} disabled={loading}>
+          {loading ? '…' : '↻'}
+        </button>
+      </div>
+
+      {feedback && (
+        <p className="admin-hint" style={{ color: 'var(--accent)' }}>{feedback}</p>
+      )}
+
+      {/* User list */}
+      <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)',
+                    borderRadius: 6 }}>
+        {filtered.map(u => (
+          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} />
+        ))}
+        {filtered.length === 0 && (
+          <p className="admin-hint" style={{ padding: 10 }}>Няма потребители за показване.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UserBalanceRow({ user, onAdjust }) {
+  const [delta, setDelta] = useState('100');
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+      borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {user.username}
+          {user.role === 'Admin' && (
+            <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--accent)' }}>(admin)</span>
+          )}
+        </div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{user.email}</div>
+      </div>
+      <div style={{ fontFamily: 'monospace', minWidth: 80, textAlign: 'right' }}>
+        {Number(user.balance).toFixed(2)}
+      </div>
+      <input className="admin-input" type="number" value={delta}
+        onChange={e => setDelta(e.target.value)}
+        style={{ width: 80 }} />
+      <button className="admin-btn admin-btn--accent" type="button"
+        onClick={() => onAdjust(user.id, Number(delta))}
+        style={{ padding: '4px 10px' }}>+</button>
+      <button className="admin-btn admin-btn--danger" type="button"
+        onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
+        style={{ padding: '4px 10px' }}>−</button>
+    </div>
+  );
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -262,6 +403,11 @@ export default function AdminPage() {
         </div>
 
         <div className="admin-grid">
+
+          {/* ── Wallet management ── */}
+          <AdminSection title="Управление на баланси">
+            <WalletManagement />
+          </AdminSection>
 
           {/* ── Matches via Sportmonks ── */}
           <AdminSection title="Import Matches (Sportmonks)">
