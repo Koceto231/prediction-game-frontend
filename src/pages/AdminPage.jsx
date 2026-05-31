@@ -257,6 +257,20 @@ function WalletManagement() {
     }
   };
 
+  const deleteUser = async (userId, username) => {
+    if (!window.confirm(
+      `Изтрий "${username}" завинаги? Залозите, прогнозите и fantasy данните се изтриват необратимо.`
+    )) return;
+    setFeedback('');
+    try {
+      await api.delete(`/admin/wallet/users/${userId}`);
+      setUsers(us => us.filter(u => u.id !== userId));
+      setFeedback('Потребителят е изтрит.');
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Изтриването се провали.');
+    }
+  };
+
   const selfTopUp = async () => {
     const amount = Number(selfAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -312,7 +326,7 @@ function WalletManagement() {
       <div style={{ maxHeight: 360, overflowY: 'auto', border: '1px solid var(--border)',
                     borderRadius: 6 }}>
         {filtered.map(u => (
-          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} onSetRole={setRole} />
+          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} onSetRole={setRole} onDelete={deleteUser} />
         ))}
         {filtered.length === 0 && (
           <p className="admin-hint" style={{ padding: 10 }}>Няма потребители за показване.</p>
@@ -322,7 +336,7 @@ function WalletManagement() {
   );
 }
 
-function UserBalanceRow({ user, onAdjust, onSetRole }) {
+function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
   const [delta, setDelta] = useState('100');
   const isAdmin = user.role === 'Admin';
 
@@ -357,6 +371,12 @@ function UserBalanceRow({ user, onAdjust, onSetRole }) {
         onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
         style={{ padding: '4px 8px', minWidth: 32 }}>
         {isAdmin ? '★' : '☆'}
+      </button>
+      <button className="admin-btn admin-btn--danger" type="button"
+        title="Изтрий потребителя"
+        onClick={() => onDelete(user.id, user.username)}
+        style={{ padding: '4px 8px', minWidth: 32 }}>
+        🗑️
       </button>
     </div>
   );
