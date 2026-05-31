@@ -1028,24 +1028,32 @@ export default function MatchesPage() {
                           aria-selected={exactKind === 'ft'}
                           className={`es-stepper__kind-btn${exactKind === 'ft' ? ' es-stepper__kind-btn--active' : ''}`}
                           onClick={() => setExactKind('ft')}
-                        >Краен резултат</button>
+                        >90 Минути</button>
                         <button
                           type="button"
                           role="tab"
                           aria-selected={exactKind === 'ht'}
                           className={`es-stepper__kind-btn${exactKind === 'ht' ? ' es-stepper__kind-btn--active' : ''}`}
                           onClick={() => setExactKind('ht')}
-                        >Полувреме</button>
+                        >1-во Полувреме</button>
                       </div>
                       <div className="es-stepper__teams">
                         {[
-                          { name: selectedMatch.homeTeamName, logo: selectedMatch.homeTeamLogo, val: h, step: stepH },
-                          { name: selectedMatch.awayTeamName, logo: selectedMatch.awayTeamLogo, val: a, step: stepA },
+                          { name: selectedMatch.homeTeamName, logo: selectedMatch.homeTeamLogo, val: h, step: stepH, side: 'home' },
+                          { name: selectedMatch.awayTeamName, logo: selectedMatch.awayTeamLogo, val: a, step: stepA, side: 'away' },
                         ].map((t, i) => (
-                          <div className="es-stepper__team" key={i}>
+                          <div className={`es-stepper__team es-stepper__team--${t.side}`} key={i}>
                             <div className="es-stepper__name">
-                              {t.logo && <img src={t.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                              {/* Home: logo on the left of the name. Away:
+                                  logo on the right, so the two teams mirror
+                                  outward like the badges in the hero. */}
+                              {t.side === 'home' && t.logo && (
+                                <img src={t.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              )}
                               <span>{t.name}</span>
+                              {t.side === 'away' && t.logo && (
+                                <img src={t.logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              )}
                             </div>
                             <div className="es-stepper__counter">
                               <button type="button" className="es-stepper__btn" onClick={() => t.step(-1)} aria-label="−">

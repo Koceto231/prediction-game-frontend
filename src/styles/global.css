@@ -8644,7 +8644,10 @@ select:focus {
   color: var(--text-main, #f3f1ec);
   text-align: center;
 }
-.es-stepper__name img { width: 22px; height: 22px; object-fit: contain; }
+.es-stepper__name img { width: 26px; height: 26px; object-fit: contain; }
+/* Home keeps the default left-aligned logo + name. Away mirrors so the
+   crest sits outside the name like in the bookmaker reference layout. */
+.es-stepper__team--away .es-stepper__name { flex-direction: row; }
 .es-stepper__counter {
   display: inline-flex;
   align-items: center;
