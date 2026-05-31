@@ -825,6 +825,14 @@ function constraintsOf(p) {
         if (isOdd) c.hg1Min = Math.max(c.hg1Min, 1);
       }
       break;
+    case 'TeamHighestScoringHalf': {      // leg.pick=Home/Away + stringPick=half
+      const side = (p.leg?.pick === 'Home' || /^Home/.test(p.pick || '')) ? 'H'
+                 : (p.leg?.pick === 'Away' || /^Away/.test(p.pick || '')) ? 'A' : '';
+      const half = p.leg?.stringPick
+                || (p.pick || '').replace(/^Home|^Away/, '');
+      if (side && half) c.thshPick = `${side}:${half}`;
+      break;
+    }
     case 'HalfWithMostGoals': {           // pick: 1stHalf | 2ndHalf | Tie
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       c.hwmgPick = raw;
@@ -1098,6 +1106,15 @@ function semanticConflict(a, b) {
   if (hwmg === '1stHalf' && hg1Max <= hg2Min) return true; // need hg1 > hg2
   if (hwmg === '2ndHalf' && hg2Max <= hg1Min) return true;
   if (hwmg === 'Tie' && (hg1Min > hg2Max || hg2Min > hg1Max)) return true;
+
+  // Team Highest Scoring Half — two picks for the SAME team but different
+  // halves can't both win. Different teams (one Home pick + one Away pick)
+  // are independent and allowed.
+  if (ca.thshPick && cb.thshPick) {
+    const [sa, ha] = ca.thshPick.split(':');
+    const [sb, hb] = cb.thshPick.split(':');
+    if (sa === sb && ha !== hb) return true;
+  }
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

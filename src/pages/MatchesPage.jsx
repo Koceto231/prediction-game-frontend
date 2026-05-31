@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -590,6 +590,10 @@ export default function MatchesPage() {
         Away: { true: m.scoreBothAwayYes ?? null, false: m.scoreBothAwayNo ?? null },
       },
       hwmg: { '1stHalf': m.hwMG1H ?? null, '2ndHalf': m.hwMG2H ?? null, Tie: m.hwMGTie ?? null },
+      thsh: {
+        Home: { '1stHalf': m.homeHsH1H ?? null, '2ndHalf': m.homeHsH2H ?? null, Tie: m.homeHsHTie ?? null },
+        Away: { '1stHalf': m.awayHsH1H ?? null, '2ndHalf': m.awayHsH2H ?? null, Tie: m.awayHsHTie ?? null },
+      },
       homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
       awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
       wbh: {
@@ -2081,6 +2085,84 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Team Highest Scoring Half — Home (Sportmonks market 120) */}
+                  <div data-cat="halves" className={`market-section ${collapsed.thshHome ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('thshHome')}>
+                      <span className="market-section__name">⊕ {selectedMatch.homeTeamName} — полувреме с повече голове</span>
+                      <span className="market-section__toggle">{collapsed.thshHome ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.thshHome && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { k: '1stHalf', lbl: '1-во' },
+                          { k: '2ndHalf', lbl: '2-ро' },
+                          { k: 'Tie',     lbl: 'Равни' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.thsh?.Home?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamHighestScoringHalf}:Home${k}:THSH`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.TeamHighestScoringHalf, pick: `Home${k}`, selKey: 'THSH',
+                                  odds: o,
+                                  leg: { pick: 'Home', stringPick: k },
+                                  label: `${selectedMatch.homeTeamName} — повече голове в ${lbl}`,
+                                  chip: `${selectedMatch.homeTeamName.slice(0,3)} ${lbl}`,
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Team Highest Scoring Half — Away (Sportmonks market 121) */}
+                  <div data-cat="halves" className={`market-section ${collapsed.thshAway ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('thshAway')}>
+                      <span className="market-section__name">⊕ {selectedMatch.awayTeamName} — полувреме с повече голове</span>
+                      <span className="market-section__toggle">{collapsed.thshAway ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.thshAway && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { k: '1stHalf', lbl: '1-во' },
+                          { k: '2ndHalf', lbl: '2-ро' },
+                          { k: 'Tie',     lbl: 'Равни' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.thsh?.Away?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamHighestScoringHalf}:Away${k}:THSH`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.TeamHighestScoringHalf, pick: `Away${k}`, selKey: 'THSH',
+                                  odds: o,
+                                  leg: { pick: 'Away', stringPick: k },
+                                  label: `${selectedMatch.awayTeamName} — повече голове в ${lbl}`,
+                                  chip: `${selectedMatch.awayTeamName.slice(0,3)} ${lbl}`,
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
