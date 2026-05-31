@@ -24,6 +24,9 @@ export default function MatchesPage() {
   // markets tab — the Gridiron Velocity tabs do the switching now and
   // there's no in-between mode picker.
   const [mode, setMode]                   = useState('market');
+  // Inside Exact Score: 'ft' (final) or 'ht' (half-time). Drives which
+  // BetType the stepper submits and which odds endpoint we poll.
+  const [exactKind, setExactKind]         = useState('ft');
   const [fields, setFields]               = useState(EMPTY);
   const [amount, setAmount]               = useState('');
   const [loading, setLoading]             = useState(false);
@@ -302,18 +305,20 @@ export default function MatchesPage() {
   // Cached per "h-a" score (cleared when the match changes) + debounced, so
   // rapid +/- stepping reads instantly from cache and fires at most one
   // request once the user pauses, instead of one round-trip per click.
+  // FT and HT scorelines are priced from different Sportmonks markets, so
+  // we keep them in separate caches keyed by "h-a". The cache key is also
+  // namespaced by `exactKind` so the same scoreline can hold both prices.
   const exactOddsCache = useRef(new Map());
+  const currentExactBetType = exactKind === 'ht'
+    ? BET_TYPE.HalfTimeCorrectScore
+    : BET_TYPE.ExactScore;
+
   useEffect(() => {
-    // NB: don't gate on hasBetOdds — that flag means "1X2 winner odds exist".
-    // Exact-score odds are priced independently. Also coerce empty → 0 so the
-    // chip matches the stepper, which shows 0 for an unset field (the parsed
-    // `home`/`away` are null on an empty input, which used to blank the chip
-    // at the default 0:0).
     if (!isExact || !selectedMatch) { setExactOdds(null); return; }
     const h = Math.max(0, Math.min(20, Number(homeScore) || 0));
     const a = Math.max(0, Math.min(20, Number(awayScore) || 0));
-    const key = `${h}-${a}`;
-    if (exactOddsCache.current.has(key)) {        // instant — no network
+    const key = `${exactKind}:${h}-${a}`;
+    if (exactOddsCache.current.has(key)) {
       setExactOdds(exactOddsCache.current.get(key));
       setExactOddsLoading(false);
       return;
@@ -321,38 +326,34 @@ export default function MatchesPage() {
     let cancelled = false;
     setExactOddsLoading(true);
     const t = setTimeout(() => {
-      fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a })
+      fetchOdds(selectedMatch.id, currentExactBetType, { scoreHome: h, scoreAway: a })
         .then(r => { if (!cancelled) { if (r) exactOddsCache.current.set(key, r); setExactOdds(r); } })
         .finally(() => { if (!cancelled) setExactOddsLoading(false); });
     }, 120);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [isExact, selectedMatch?.id, homeScore, awayScore]);
+  }, [isExact, selectedMatch?.id, homeScore, awayScore, exactKind, currentExactBetType]);
 
-  // Prefetch the common scorelines the moment the Exact Score tab opens, in
-  // parallel, into the same cache. By the time the user steps to any of them
-  // the price is already there → the CTA odds chip shows with no lag. One-off
-  // burst per match; the backend output-caches /Odds so it's cheap.
+  // Prefetch 0..4 × 0..4 for whichever kind (FT/HT) is currently active so
+  // stepping inside that range pulls from cache with no lag. Switching to
+  // the other kind triggers its own burst on first visit.
   useEffect(() => {
     if (!isExact || !selectedMatch) return;
-    // Every scoreline up to 4-4 (25 combinations) → instant chip while
-    // stepping anywhere in that range.
     const common = [];
     for (let hh = 0; hh <= 4; hh++) for (let aa = 0; aa <= 4; aa++) common.push([hh, aa]);
     let cancelled = false;
     Promise.all(common.map(async ([hh, aa]) => {
-      const k = `${hh}-${aa}`;
+      const k = `${exactKind}:${hh}-${aa}`;
       if (exactOddsCache.current.has(k)) return;
-      const r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: hh, scoreAway: aa });
+      const r = await fetchOdds(selectedMatch.id, currentExactBetType, { scoreHome: hh, scoreAway: aa });
       if (r) exactOddsCache.current.set(k, r);
     })).then(() => {
       if (cancelled) return;
-      // refresh the chip for the currently shown score (empty → 0)
-      const ck = `${Number(homeScore) || 0}-${Number(awayScore) || 0}`;
+      const ck = `${exactKind}:${Number(homeScore) || 0}-${Number(awayScore) || 0}`;
       if (exactOddsCache.current.has(ck)) setExactOdds(exactOddsCache.current.get(ck));
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExact, selectedMatch?.id]);
+  }, [isExact, selectedMatch?.id, exactKind]);
 
   // Live odds — all markets from real Sportmonks data (no API calls)
   useEffect(() => {
@@ -687,7 +688,7 @@ export default function MatchesPage() {
       let betPlaced = false;
       if (betAmt > 0 && hasBetOdds) {
         if (isExact && home !== null && away !== null) {
-          await api.post('/Bet', { matchId: selectedMatch.id, betType: BET_TYPE.ExactScore, scoreHome: home, scoreAway: away, amount: betAmt }, idemCfg);
+          await api.post('/Bet', { matchId: selectedMatch.id, betType: currentExactBetType, scoreHome: home, scoreAway: away, amount: betAmt }, idemCfg);
           betPlaced = true;
         } else if (isMarket) {
           // Build legs array — one entry per selected market
@@ -967,22 +968,20 @@ export default function MatchesPage() {
                   const stepA = (d) => setField('awayScore', String(Math.max(0, Math.min(20, a + d))));
                   const addExact = async () => {
                     try {
-                      const ck = `${h}-${a}`;
-                      // Reuse the odds the live effect already fetched/cached for
-                      // this score — avoids a second round-trip before the pick
-                      // lands in the slip. Only hit the network on a cache miss.
+                      const ck = `${exactKind}:${h}-${a}`;
                       let r = exactOddsCache.current.get(ck)
                         || (exactOdds?.odds != null ? exactOdds : null);
                       if (r?.odds == null) {
-                        r = await fetchOdds(selectedMatch.id, BET_TYPE.ExactScore, { scoreHome: h, scoreAway: a });
+                        r = await fetchOdds(selectedMatch.id, currentExactBetType, { scoreHome: h, scoreAway: a });
                         if (r) exactOddsCache.current.set(ck, r);
                       }
                       if (r?.odds != null) {
+                        const isHt = exactKind === 'ht';
                         window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
                           detail: {
                             matchId:     selectedMatch.id,
-                            betType:     'ExactScore',
-                            pick:        `${h}-${a}`,
+                            betType:     isHt ? 'HalfTimeCorrectScore' : 'ExactScore',
+                            pick:        isHt ? `HT ${h}-${a}` : `${h}-${a}`,
                             scoreHome:   h,
                             scoreAway:   a,
                             odds:        Number(r.odds),
@@ -995,6 +994,26 @@ export default function MatchesPage() {
                   };
                   return (
                     <div className="es-stepper">
+                      {/* FT/HT toggle — same stepper UI, just swaps the
+                          BetType + the pricing endpoint. The "HT" choice
+                          maps to Sportmonks market 30 (Half Time Correct
+                          Score); "FT" stays on market 57. */}
+                      <div className="es-stepper__kind" role="tablist" aria-label="Exact score type">
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={exactKind === 'ft'}
+                          className={`es-stepper__kind-btn${exactKind === 'ft' ? ' es-stepper__kind-btn--active' : ''}`}
+                          onClick={() => setExactKind('ft')}
+                        >Краен резултат</button>
+                        <button
+                          type="button"
+                          role="tab"
+                          aria-selected={exactKind === 'ht'}
+                          className={`es-stepper__kind-btn${exactKind === 'ht' ? ' es-stepper__kind-btn--active' : ''}`}
+                          onClick={() => setExactKind('ht')}
+                        >Полувреме</button>
+                      </div>
                       <div className="es-stepper__teams">
                         {[
                           { name: selectedMatch.homeTeamName, logo: selectedMatch.homeTeamLogo, val: h, step: stepH },
@@ -1018,7 +1037,7 @@ export default function MatchesPage() {
                         ))}
                       </div>
                       <button type="button" className="es-stepper__cta" onClick={addExact}>
-                        Добави {h}:{a}
+                        Добави {exactKind === 'ht' ? 'ПВ ' : ''}{h}:{a}
                         {exactOdds?.odds != null && <span className="es-stepper__cta-odds">{Number(exactOdds.odds).toFixed(2)}</span>}
                       </button>
                     </div>

@@ -302,6 +302,8 @@ export default function BetSlipPanel() {
         return `Голове ${p.pick === 'Over' ? 'над' : 'под'} ${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
       case 'ExactScore':
         return `Точен резултат — ${p.pick}`;
+      case 'HalfTimeCorrectScore':
+        return `Резултат на полувремето — ${p.scoreHome}-${p.scoreAway}`;
       default:
         return p.pick;
     }
@@ -314,6 +316,7 @@ export default function BetSlipPanel() {
       case 'BTTS':         return p.pick === 'Yes' ? 'ДА' : 'НЕ';
       case 'OverUnder':    return `${p.pick === 'Over' ? 'O' : 'U'}${(p.line || '').replace('Line','').replace(/(\d)(\d)/, '$1.$2')}`;
       case 'ExactScore':   return p.pick;     // e.g. "1-0"
+      case 'HalfTimeCorrectScore': return `ПВ ${p.scoreHome}-${p.scoreAway}`;
       default:             return pickShort(p.pick);
     }
   };
@@ -635,8 +638,9 @@ function toLegPayload(p) {
     case 'DoubleChance': return { ...base, dCPick: p.pick };
     case 'BTTS':         return { ...base, bTTSPick: p.pick === 'Yes' };
     case 'OverUnder':    return { ...base, oULine: p.line, oUPick: p.pick };
-    case 'ExactScore':   return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
-    default:             return { ...base, pick: p.pick };
+    case 'ExactScore':           return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
+    case 'HalfTimeCorrectScore': return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
+    default:                     return { ...base, pick: p.pick };
   }
 }
 
@@ -827,6 +831,20 @@ function constraintsOf(p) {
       }
       break;
     }
+    case 'HalfTimeCorrectScore': {        // HT scoreline → narrows c.ht only
+      const h = Number(p.scoreHome), a = Number(p.scoreAway);
+      if (Number.isFinite(h) && Number.isFinite(a)) {
+        c.ht = new Set([h > a ? 'H' : h < a ? 'A' : 'D']);
+        // FT goal bounds: FT goals must be at least the HT total (you can't
+        // un-score). This catches conflicts like "HT 3-0" + "Under 1.5 FT".
+        c.hMin = Math.max(c.hMin, h);
+        c.aMin = Math.max(c.aMin, a);
+        c.tMin = Math.max(c.tMin, h + a);
+        // Track the HT score itself so two different HTCS picks conflict.
+        c.htScore = `${h}-${a}`;
+      }
+      break;
+    }
     case 'TeamGoals':                     // per-team O/U → that team's goal bound
       if (lineNum != null) {
         if (ou === 'Over') {
@@ -868,6 +886,9 @@ function semanticConflict(a, b) {
   if (clashParity(ca.hParity, cb.hParity)) return true;
   if (clashParity(ca.aParity, cb.aParity)) return true;
   if (clashParity(ca.tParity, cb.tParity)) return true;
+
+  // Two different HT correct-score picks on the same match can never both win.
+  if (ca.htScore && cb.htScore && ca.htScore !== cb.htScore) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);
