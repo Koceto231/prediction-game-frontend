@@ -863,6 +863,41 @@ function constraintsOf(p) {
       c.etgPick = raw;
       break;
     }
+    case 'Btts1stHalf':                   // BTTS Yes/No restricted to 1H
+      c.btts1h = yes(p.pick) || yes(p.leg?.bTTSPick);
+      if (c.btts1h) {                    // both teams scored in 1H ⇒ ≥1 each FT
+        c.hMin = Math.max(c.hMin, 1);
+        c.aMin = Math.max(c.aMin, 1);
+      }
+      break;
+    case 'Btts2ndHalf':                   // BTTS Yes/No restricted to 2H
+      c.btts2h = yes(p.pick) || yes(p.leg?.bTTSPick);
+      if (c.btts2h) {                    // both teams scored in 2H ⇒ ≥1 each FT
+        c.hMin = Math.max(c.hMin, 1);
+        c.aMin = Math.max(c.aMin, 1);
+      }
+      break;
+    case 'BttsHalfByHalf': {              // pick: YesYes | YesNo | NoYes | NoNo
+      const raw = String(p.pick || p.leg?.stringPick || '').trim();
+      const a = raw.startsWith('Yes') ? 'Yes' : raw.startsWith('No') ? 'No' : '';
+      const b = raw.endsWith('Yes')   ? 'Yes' : raw.endsWith('No')   ? 'No' : '';
+      if (a) c.btts1h = a === 'Yes';
+      if (b) c.btts2h = b === 'Yes';
+      // Whenever EITHER half is Yes, both teams must score ≥1 in the match.
+      if (c.btts1h || c.btts2h) {
+        c.hMin = Math.max(c.hMin, 1);
+        c.aMin = Math.max(c.aMin, 1);
+        c.tMin = Math.max(c.tMin, 2);
+      }
+      // YesYes ⇒ ≥2 goals each (one in each half).
+      if (raw === 'YesYes') {
+        c.hMin = Math.max(c.hMin, 2);
+        c.aMin = Math.max(c.aMin, 2);
+        c.tMin = Math.max(c.tMin, 4);
+      }
+      c.bhhPick = raw;
+      break;
+    }
     case 'NumberOfGoals': {               // pick: Under2 | TwoOrThree | Over3
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       if (raw === 'Under2')     c.tMax = Math.min(c.tMax, 1);
@@ -947,6 +982,17 @@ function semanticConflict(a, b) {
 
   // Number of Goals buckets are disjoint, so two different picks clash.
   if (ca.nogPick && cb.nogPick && ca.nogPick !== cb.nogPick) return true;
+
+  // BTTS half-by-half constraints. The combo market sets btts1h and btts2h
+  // on the same constraint object; the standalone Btts1stHalf/Btts2ndHalf
+  // markets each set one of them. We clash whenever the two sides disagree
+  // on the same half.
+  const clashBool = (x, y) => x != null && y != null && x !== y;
+  if (clashBool(ca.btts1h, cb.btts1h)) return true;
+  if (clashBool(ca.btts2h, cb.btts2h)) return true;
+
+  // Two different BTTS-halves picks on the same match are mutually exclusive.
+  if (ca.bhhPick && cb.bhhPick && ca.bhhPick !== cb.bhhPick) return true;
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -599,6 +599,8 @@ export default function MatchesPage() {
       wm:        (() => { try { return m.winningMarginOddsJson ? JSON.parse(m.winningMarginOddsJson) : {}; } catch { return {}; } })(),
       // Number of Goals in Match (market 83) — { Under2, TwoOrThree, Over3 }.
       nog:       (() => { try { return m.numberOfGoalsOddsJson ? JSON.parse(m.numberOfGoalsOddsJson) : {}; } catch { return {}; } })(),
+      // BTTS 1H/2H combo (market 125) — { YesYes, YesNo, NoYes, NoNo }.
+      bhh:       (() => { try { return m.bttsHalfByHalfOddsJson ? JSON.parse(m.bttsHalfByHalfOddsJson) : {}; } catch { return {}; } })(),
     });
     setCornersPreOdds({
       8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
@@ -1344,6 +1346,46 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* BTTS 1H/2H combo (Sportmonks market 125) — 4 tiles */}
+                  <div data-cat="halves" className={`market-section ${collapsed.bhh ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('bhh')}>
+                      <span className="market-section__name">⊞ BTTS 1-во / 2-ро полувреме</span>
+                      <span className="market-section__toggle">{collapsed.bhh ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.bhh && (
+                      <div className="exact-score-grid">
+                        {[
+                          { k: 'YesYes', lbl: 'Да / Да' },
+                          { k: 'YesNo',  lbl: 'Да / Не' },
+                          { k: 'NoYes',  lbl: 'Не / Да' },
+                          { k: 'NoNo',   lbl: 'Не / Не' },
+                        ].map(({ k, lbl }) => {
+                          const o = preOdds.bhh?.[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.BttsHalfByHalf}:${k}:BHH`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                if (o == null) return;
+                                addToSlip({
+                                  betType: BET_TYPE.BttsHalfByHalf, pick: k, selKey: 'BHH',
+                                  odds: o,
+                                  leg: { stringPick: k },
+                                  label: `BTTS 1-во/2-ро полувреме — ${lbl}`,
+                                  chip: lbl.replace(/\s/g, ''),
+                                });
+                              }}>
+                              <div className="exact-score-tile__label">{lbl}</div>
+                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
