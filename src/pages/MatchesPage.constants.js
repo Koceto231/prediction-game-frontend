@@ -48,6 +48,7 @@ export const BET_TYPE = {
   HalfWithMostGoals:    'HalfWithMostGoals',
   TeamHighestScoringHalf: 'TeamHighestScoringHalf',
   ResultTotalGoals:     'ResultTotalGoals',
+  WinEitherHalf:        'WinEitherHalf',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */

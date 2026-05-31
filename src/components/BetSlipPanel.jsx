@@ -825,6 +825,13 @@ function constraintsOf(p) {
         if (isOdd) c.hg1Min = Math.max(c.hg1Min, 1);
       }
       break;
+    case 'WinEitherHalf': {               // leg.pick=Home/Away — team must score ≥1
+      const side = p.leg?.pick || p.pick;
+      if (side === 'Home') c.hMin = Math.max(c.hMin, 1);
+      else if (side === 'Away') c.aMin = Math.max(c.aMin, 1);
+      c.wehSide = side; // Home/Away track separately
+      break;
+    }
     case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       const side = raw.startsWith('Home') ? 'H'
