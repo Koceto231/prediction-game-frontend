@@ -956,19 +956,24 @@ export default function MatchesPage() {
               type="button"
               className={`gvmd-tab${marketCategory === 'main' && !isExact ? ' gvmd-tab--active' : ''}`}
               onClick={() => { setMode('market'); setMarketCategory('main'); setFields(EMPTY); }}
-            >Main</button>
+            >Основни</button>
             <button
               type="button"
               className={`gvmd-tab${isExact ? ' gvmd-tab--active' : ''}`}
               onClick={() => { setMode('exact'); }}
-            >Exact Score</button>
-            {['goals', 'halves', 'corners', 'special'].map(cat => (
+            >Точен резултат</button>
+            {[
+              { key: 'goals',    label: 'Голове' },
+              { key: 'halves',   label: 'Полувремена' },
+              { key: 'corners',  label: 'Корнери' },
+              { key: 'special',  label: 'Специални' },
+            ].map(({ key, label }) => (
               <button
-                key={cat}
+                key={key}
                 type="button"
-                className={`gvmd-tab${marketCategory === cat && !isExact ? ' gvmd-tab--active' : ''}`}
-                onClick={() => { setMode('market'); setMarketCategory(cat); setFields(EMPTY); }}
-              >{cat.charAt(0).toUpperCase() + cat.slice(1)}</button>
+                className={`gvmd-tab${marketCategory === key && !isExact ? ' gvmd-tab--active' : ''}`}
+                onClick={() => { setMode('market'); setMarketCategory(key); setFields(EMPTY); }}
+              >{label}</button>
             ))}
           </div>
 
@@ -1089,7 +1094,7 @@ export default function MatchesPage() {
                   {/* Match Result */}
                   <div data-cat="main" className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.winner && toggleSection('winner')} style={dis.winner ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">Match Result</span>
+                      <span className="market-section__name">Краен резултат (1Х2)</span>
                       {dis.winner && <LiveLock reason={`${groupAPicked} already picked`} />}
                       <span className="market-section__toggle">{!dis.winner && (collapsed.winner ? '▼' : '▲')}</span>
                     </div>
@@ -1120,7 +1125,7 @@ export default function MatchesPage() {
                   {/* Double Chance */}
                   <div data-cat="main" className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dc && toggleSection('dc')} style={dis.dc ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">Double Chance</span>
+                      <span className="market-section__name">Двоен шанс</span>
                       {dis.dc && <LiveLock reason={`${groupAPicked} already picked`} />}
                       <span className="market-section__toggle">{!dis.dc && (collapsed.dc ? '▼' : '▲')}</span>
                     </div>
@@ -1158,7 +1163,7 @@ export default function MatchesPage() {
                   {/* Double Chance — 1st Half */}
                   <div data-cat="halves" className={`market-section ${collapsed.dc1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('dc1h')}>
-                      <span className="market-section__name">◐ Double Chance — 1st Half</span>
+                      <span className="market-section__name">◐ Двоен шанс — 1-во полувреме</span>
                       {dc1hPick && <span className="market-section__badge">{dc1hPick === 'HomeOrDraw' ? '1X' : dc1hPick === 'HomeOrAway' ? '12' : 'X2'}</span>}
                       <span className="market-section__toggle">{collapsed.dc1h ? '▼' : '▲'}</span>
                     </div>
@@ -1201,7 +1206,7 @@ export default function MatchesPage() {
                   {/* Goals O/U */}
                   <div data-cat="goals" className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('goals')}>
-                      <span className="market-section__name">Goals — Over / Under</span>
+                      <span className="market-section__name">Голове — Над / Под</span>
                       {ouPicks.size > 0 && <span className="market-section__badge">{ouPicks.size}</span>}
                       <span className="market-section__toggle">{collapsed.goals ? '▼' : '▲'}</span>
                     </div>
@@ -1236,7 +1241,7 @@ export default function MatchesPage() {
                   {/* BTTS */}
                   <div data-cat="main" className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts')}>
-                      <span className="market-section__name">Both Teams to Score</span>
+                      <span className="market-section__name">И двата отбора бележат</span>
                       {btts && <span className="market-section__badge">{btts === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.btts ? '▼' : '▲'}</span>
                     </div>
@@ -1266,7 +1271,7 @@ export default function MatchesPage() {
                   {/* Corners */}
                   <div data-cat="corners" className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('corners')}>
-                      <span className="market-section__name">⌐ Corners — Over / Under</span>
+                      <span className="market-section__name">⌐ Корнери — Над / Под</span>
                       {cornersLine && cornersOU && <span className="market-section__badge">{cornersOU} {cornersLine}</span>}
                       <span className="market-section__toggle">{collapsed.corners ? '▼' : '▲'}</span>
                     </div>
@@ -1304,7 +1309,7 @@ export default function MatchesPage() {
                   {/* Yellow Cards */}
                   <div data-cat="special" className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('yellows')}>
-                      <span className="market-section__name">▬ Yellow Cards — Over / Under</span>
+                      <span className="market-section__name">▬ Жълти картони — Над / Под</span>
                       {yellowsLine && yellowsOU && <span className="market-section__badge">{yellowsOU} {yellowsLine}</span>}
                       <span className="market-section__toggle">{collapsed.yellows ? '▼' : '▲'}</span>
                     </div>
@@ -1342,7 +1347,7 @@ export default function MatchesPage() {
                   {/* Odd / Even Goals */}
                   <div data-cat="goals" className={`market-section ${collapsed.oddEven ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oddEven')}>
-                      <span className="market-section__name">≈ Odd / Even Goals</span>
+                      <span className="market-section__name">≈ Голове — Нечетен / Четен</span>
                       {oddEvenPick && <span className="market-section__badge">{oddEvenPick === 'true' ? 'Odd' : 'Even'}</span>}
                       <span className="market-section__toggle">{collapsed.oddEven ? '▼' : '▲'}</span>
                     </div>
@@ -1457,7 +1462,7 @@ export default function MatchesPage() {
                   {/* Number of Goals in Match (Sportmonks market 83) — 3 buckets */}
                   <div data-cat="goals" className={`market-section ${collapsed.nog ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('nog')}>
-                      <span className="market-section__name">⊜ Number of Goals</span>
+                      <span className="market-section__name">⊜ Брой голове</span>
                       <span className="market-section__toggle">{collapsed.nog ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.nog && (
@@ -1496,7 +1501,7 @@ export default function MatchesPage() {
                   {/* Exact Total Goals (Sportmonks market 93) — 0..7+ tile grid */}
                   <div data-cat="goals" className={`market-section ${collapsed.etg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('etg')}>
-                      <span className="market-section__name">Σ Exact Total Goals</span>
+                      <span className="market-section__name">Σ Точен брой голове</span>
                       <span className="market-section__toggle">{collapsed.etg ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.etg && (
@@ -1531,7 +1536,7 @@ export default function MatchesPage() {
                   {/* Winning Margin (Sportmonks market 126) — special tab */}
                   <div data-cat="special" className={`market-section ${collapsed.wm ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('wm')}>
-                      <span className="market-section__name">▭ Winning Margin</span>
+                      <span className="market-section__name">▭ Печалба с разлика</span>
                       <span className="market-section__toggle">{collapsed.wm ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.wm && (
@@ -1575,7 +1580,7 @@ export default function MatchesPage() {
                   {/* Draw No Bet */}
                   <div data-cat="main" className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}${dis.dnb ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dnb && toggleSection('dnb')} style={dis.dnb ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">⊖ Draw No Bet</span>
+                      <span className="market-section__name">⊖ Без равен</span>
                       {dis.dnb ? <LiveLock reason={`${groupAPicked} already picked`} /> : dnbPick && <span className="market-section__badge">{dnbPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName}</span>}
                       <span className="market-section__toggle">{!dis.dnb && (collapsed.dnb ? '▼' : '▲')}</span>
                     </div>
@@ -1611,7 +1616,7 @@ export default function MatchesPage() {
                   {/* Win to Nil */}
                   <div data-cat="special" className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wtn && toggleSection('wtn')} style={dis.wtn ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">⊘ Win to Nil</span>
+                      <span className="market-section__name">⊘ Печели на нула</span>
                       {dis.wtn ? <LiveLock reason={`${groupAPicked} already picked`} /> : wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{!dis.wtn && (collapsed.wtn ? '▼' : '▲')}</span>
                     </div>
@@ -1654,7 +1659,7 @@ export default function MatchesPage() {
                   {/* Handicap */}
                   <div data-cat="special" className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.hcp && toggleSection('hcp')} style={dis.hcp ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">± Handicap {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
+                      <span className="market-section__name">± Хандикап {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
                       {dis.hcp ? <LiveLock reason={`${groupAPicked} already picked`} /> : hcpPick && <span className="market-section__badge">{hcpPick}</span>}
                       <span className="market-section__toggle">{!dis.hcp && (collapsed.hcp ? '▼' : '▲')}</span>
                     </div>
@@ -1691,7 +1696,7 @@ export default function MatchesPage() {
                   {/* Home Team Goals O/U */}
                   <div data-cat="goals" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
-                      <span className="market-section__name">△ {selectedMatch.homeTeamName} Goals</span>
+                      <span className="market-section__name">△ Голове на {selectedMatch.homeTeamName}</span>
                       {hGoalsLine && hGoalsOU && <span className="market-section__badge">{hGoalsOU} {hGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.homeGoals ? '▼' : '▲'}</span>
                     </div>
@@ -1729,7 +1734,7 @@ export default function MatchesPage() {
                   {/* Away Team Goals O/U */}
                   <div data-cat="goals" className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
-                      <span className="market-section__name">▽ {selectedMatch.awayTeamName} Goals</span>
+                      <span className="market-section__name">▽ Голове на {selectedMatch.awayTeamName}</span>
                       {aGoalsLine && aGoalsOU && <span className="market-section__badge">{aGoalsOU} {aGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.awayGoals ? '▼' : '▲'}</span>
                     </div>
@@ -1767,7 +1772,7 @@ export default function MatchesPage() {
                   {/* Half Time Result */}
                   <div data-cat="halves" className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}${dis.ht ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.ht && toggleSection('ht')} style={dis.ht ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">◑ Half Time Result</span>
+                      <span className="market-section__name">◑ Резултат на полувремето</span>
                       {dis.ht ? <LiveLock reason={`${groupBPicked} already picked`} /> : htPick && <span className="market-section__badge">{htPick === 'Home' ? selectedMatch.homeTeamName : htPick === 'Away' ? selectedMatch.awayTeamName : 'Draw'}</span>}
                       <span className="market-section__toggle">{!dis.ht && (collapsed.ht ? '▼' : '▲')}</span>
                     </div>
@@ -1804,7 +1809,7 @@ export default function MatchesPage() {
                   {/* Clean Sheet */}
                   <div data-cat="special" className={`market-section ${collapsed.cs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('cs')}>
-                      <span className="market-section__name">○ Clean Sheet</span>
+                      <span className="market-section__name">○ Суха мрежа</span>
                       {csPick && csYN && <span className="market-section__badge">{csPick === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {csYN === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.cs ? '▼' : '▲'}</span>
                     </div>
@@ -1847,7 +1852,7 @@ export default function MatchesPage() {
                   {/* First Goal */}
                   <div data-cat="goals" className={`market-section ${collapsed.fg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('fg')}>
-                      <span className="market-section__name">◎ First Goal</span>
+                      <span className="market-section__name">◎ Първи гол</span>
                       {fgPick && <span className="market-section__badge">{fgPick === 'Home' ? selectedMatch.homeTeamName : fgPick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
                       <span className="market-section__toggle">{collapsed.fg ? '▼' : '▲'}</span>
                     </div>
@@ -1884,7 +1889,7 @@ export default function MatchesPage() {
                   {/* BTTS 1st Half */}
                   <div data-cat="halves" className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts1h')}>
-                      <span className="market-section__name">◐ BTTS — 1st Half</span>
+                      <span className="market-section__name">◐ И двата бележат — 1-во полувреме</span>
                       {btts1hPick && <span className="market-section__badge">{btts1hPick === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.btts1h ? '▼' : '▲'}</span>
                     </div>
@@ -1917,7 +1922,7 @@ export default function MatchesPage() {
                   {/* BTTS 2nd Half */}
                   <div data-cat="halves" className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
-                      <span className="market-section__name">◑ BTTS — 2nd Half</span>
+                      <span className="market-section__name">◑ И двата бележат — 2-ро полувреме</span>
                       {btts2hPick && <span className="market-section__badge">{btts2hPick === 'true' ? 'Yes' : 'No'}</span>}
                       <span className="market-section__toggle">{collapsed.btts2h ? '▼' : '▲'}</span>
                     </div>
@@ -1950,7 +1955,7 @@ export default function MatchesPage() {
                   {/* 1st Half Goals O/U */}
                   <div data-cat="halves" className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htGoals')}>
-                      <span className="market-section__name">◐ 1st Half Goals — Over / Under</span>
+                      <span className="market-section__name">◐ Голове 1-во полувреме — Над / Под</span>
                       {htGoalsLine && htGoalsOU && <span className="market-section__badge">{htGoalsOU} {htGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.htGoals ? '▼' : '▲'}</span>
                     </div>
@@ -1988,7 +1993,7 @@ export default function MatchesPage() {
                   {/* 2nd Half Goals O/U */}
                   <div data-cat="halves" className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('shGoals')}>
-                      <span className="market-section__name">◑ 2nd Half Goals — Over / Under</span>
+                      <span className="market-section__name">◑ Голове 2-ро полувреме — Над / Под</span>
                       {shGoalsLine && shGoalsOU && <span className="market-section__badge">{shGoalsOU} {shGoalsLine}</span>}
                       <span className="market-section__toggle">{collapsed.shGoals ? '▼' : '▲'}</span>
                     </div>
@@ -2026,7 +2031,7 @@ export default function MatchesPage() {
                   {/* Team Odd / Even Goals */}
                   <div data-cat="goals" className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamOE')}>
-                      <span className="market-section__name">≈ Team Goals — Odd / Even</span>
+                      <span className="market-section__name">≈ Голове на отбор — Нечетен / Четен</span>
                       {(homeOEPick || awayOEPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{collapsed.teamOE ? '▼' : '▲'}</span>
                     </div>
@@ -2069,7 +2074,7 @@ export default function MatchesPage() {
                   {/* Odd / Even Goals — 1st Half */}
                   <div data-cat="halves" className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe1h')}>
-                      <span className="market-section__name">≈ Odd / Even Goals — 1st Half</span>
+                      <span className="market-section__name">≈ Голове — Нечетен / Четен — 1-во полувреме</span>
                       {oe1hPick && <span className="market-section__badge">{oe1hPick === 'true' ? 'Odd' : 'Even'}</span>}
                       <span className="market-section__toggle">{collapsed.oe1h ? '▼' : '▲'}</span>
                     </div>
@@ -2340,7 +2345,7 @@ export default function MatchesPage() {
                   {/* Odd / Even Goals — 2nd Half (Sportmonks market 124) */}
                   <div data-cat="halves" className={`market-section ${collapsed.oe2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe2h')}>
-                      <span className="market-section__name">≈ Odd / Even Goals — 2nd Half</span>
+                      <span className="market-section__name">≈ Голове — Нечетен / Четен — 2-ро полувреме</span>
                       <span className="market-section__toggle">{collapsed.oe2h ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.oe2h && (
@@ -2377,7 +2382,7 @@ export default function MatchesPage() {
                   {/* Team to Score */}
                   <div data-cat="special" className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
-                      <span className="market-section__name">→ Team to Score</span>
+                      <span className="market-section__name">→ Отбор отбелязва</span>
                       {(homeTsPick || awayTsPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{collapsed.teamTs ? '▼' : '▲'}</span>
                     </div>
@@ -2420,7 +2425,7 @@ export default function MatchesPage() {
                   {/* Win Both Halves */}
                   <div data-cat="halves" className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}${dis.wbh ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wbh && toggleSection('wbh')} style={dis.wbh ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">◆ Win Both Halves</span>
+                      <span className="market-section__name">◆ Печели и двете полувремена</span>
                       {dis.wbh ? <LiveLock reason={`${groupAPicked} already picked`} /> : (wbhHomePick || wbhAwayPick) && <span className="market-section__badge">selected</span>}
                       <span className="market-section__toggle">{!dis.wbh && (collapsed.wbh ? '▼' : '▲')}</span>
                     </div>
@@ -2464,7 +2469,7 @@ export default function MatchesPage() {
                   {/* Last Team to Score */}
                   <div data-cat="main" className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('lastScore')}>
-                      <span className="market-section__name">◇ Last Team to Score</span>
+                      <span className="market-section__name">◇ Последен гол на</span>
                       {lastScorePick && <span className="market-section__badge">{lastScorePick === 'Home' ? selectedMatch.homeTeamName : lastScorePick === 'Away' ? selectedMatch.awayTeamName : 'No Goal'}</span>}
                       <span className="market-section__toggle">{collapsed.lastScore ? '▼' : '▲'}</span>
                     </div>
@@ -2501,7 +2506,7 @@ export default function MatchesPage() {
                   {/* HT / FT */}
                   <div data-cat="main" className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${dis.htft ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.htft && toggleSection('htft')} style={dis.htft ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">↕ Half Time / Full Time</span>
+                      <span className="market-section__name">↕ Полувреме / Краен резултат</span>
                       {dis.htft ? <LiveLock reason={`${groupAPicked || groupBPicked} already picked`} /> : htftPick && <span className="market-section__badge">{htftPick}</span>}
                       <span className="market-section__toggle">{!dis.htft && (collapsed.htft ? '▼' : '▲')}</span>
                     </div>
@@ -2547,7 +2552,7 @@ export default function MatchesPage() {
                   {/* Goalscorer */}
                   <div data-cat="goals" className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('scorer')}>
-                      <span className="market-section__name">◉ Goalscorer</span>
+                      <span className="market-section__name">◉ Голмайстор</span>
                       {scorerPicks.size > 0 && <span className="market-section__badge">{scorerPicks.size}</span>}
                       <span className="market-section__toggle">{collapsed.scorer ? '▼' : '▲'}</span>
                     </div>
