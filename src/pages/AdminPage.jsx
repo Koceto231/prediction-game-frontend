@@ -344,6 +344,7 @@ function WalletManagement() {
 
 function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
   const [delta, setDelta] = useState('100');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const isAdmin = user.role === 'Admin';
 
   return (
@@ -352,7 +353,7 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
       // inputs and buttons line up no matter how long the username is.
       display: 'grid',
       gridTemplateColumns:
-        'minmax(160px, 1fr) 80px 90px 32px 32px 240px 240px',
+        'minmax(160px, 1fr) 80px 90px 32px 32px 200px 240px 240px',
       alignItems: 'center', gap: 8, padding: '8px 10px',
       borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
     }}>
@@ -381,6 +382,12 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
         onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
         style={{ padding: '4px 0' }}>−</button>
       <button className="admin-btn" type="button"
+        onClick={() => setHistoryOpen(true)}
+        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
+                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        История на {user.username}
+      </button>
+      <button className="admin-btn" type="button"
         onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
         style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
                  overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -392,6 +399,150 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
                  overflow: 'hidden', textOverflow: 'ellipsis' }}>
         Изтрий профил на {user.username}
       </button>
+
+      {historyOpen && (
+        <UserBetHistoryModal user={user} onClose={() => setHistoryOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+/** Modal that loads /admin/wallet/users/{id}/bets and renders the list. */
+function UserBetHistoryModal({ user, onClose }) {
+  const [data, setData]       = useState(null);
+  const [error, setError]     = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/admin/wallet/users/${user.id}/bets`)
+      .then(r => { if (!cancelled) { setData(r.data); setLoading(false); } })
+      .catch(e => {
+        if (cancelled) return;
+        setError(e?.response?.data?.message || 'Зареждането се провали.');
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  const fmtMoney = (n) => `€${Number(n ?? 0).toFixed(2)}`;
+  const fmtDate  = (d) => d ? new Date(d).toLocaleString('bg-BG', {
+    dateStyle: 'short', timeStyle: 'short',
+  }) : '—';
+
+  const statusLabel = (s) => {
+    switch (s) {
+      case 'Pending':   return 'Очаква';
+      case 'Won':       return 'Спечелен';
+      case 'Lost':      return 'Загубен';
+      case 'Void':      return 'Анулиран';
+      case 'CashedOut': return 'Изтеглен';
+      default:          return s;
+    }
+  };
+  const statusColor = (s) => {
+    if (s === 'Won' || s === 'CashedOut') return '#27c76f';
+    if (s === 'Lost')    return '#e74c3c';
+    return 'var(--text-muted)';
+  };
+
+  return (
+    <div onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+               display: 'flex', alignItems: 'center', justifyContent: 'center',
+               zIndex: 1000, padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'var(--surface, #161616)', borderRadius: 12,
+        maxWidth: 900, width: '100%', maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: '1px solid var(--border, #2a2a2a)' }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '1rem' }}>
+              История на залозите — {user.username}
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+              {user.email}
+            </div>
+          </div>
+          <button type="button" className="admin-btn" onClick={onClose}
+            style={{ padding: '4px 10px' }}>×</button>
+        </div>
+
+        {data?.stats && (
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8,
+            padding: '12px 18px', borderBottom: '1px solid var(--border, #2a2a2a)',
+            fontSize: '0.82rem',
+          }}>
+            <Stat label="Залози" value={data.stats.totalBets} />
+            <Stat label="Заложено общо" value={fmtMoney(data.stats.totalStaked)} />
+            <Stat label="Спечелено общо" value={fmtMoney(data.stats.totalWon)} color="#27c76f" />
+            <Stat label="Очаква" value={fmtMoney(data.stats.pendingStaked)} />
+            <Stat label="Нетна печалба"
+              value={fmtMoney(data.stats.netProfit)}
+              color={data.stats.netProfit >= 0 ? '#27c76f' : '#e74c3c'} />
+          </div>
+        )}
+
+        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 18px' }}>
+          {loading && <p className="admin-hint">Зарежда…</p>}
+          {error   && <p className="admin-hint" style={{ color: '#e74c3c' }}>{error}</p>}
+          {!loading && !error && data?.bets?.length === 0 && (
+            <p className="admin-hint">Този потребител няма залози.</p>
+          )}
+          {!loading && data?.bets?.map(b => (
+            <div key={b.id} style={{
+              padding: '10px 0', borderBottom: '1px solid var(--border, #2a2a2a)',
+              display: 'grid', gridTemplateColumns: '1fr auto', gap: 8,
+              alignItems: 'center', fontSize: '0.86rem',
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700 }}>
+                  {b.betType === 'Accumulator' ? `Acca · ${b.homeTeam} vs ${b.awayTeam}` : `${b.homeTeam} vs ${b.awayTeam}`}
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                  {b.leagueCode} · {fmtDate(b.matchDate)}
+                </div>
+                <div style={{ marginTop: 4, fontSize: '0.82rem' }}>
+                  {b.betType} → {' '}
+                  {b.pick || b.stringPick || (b.scoreHome != null
+                    ? `${b.scoreHome}-${b.scoreAway}` : '—')}
+                  {' '} @ {Number(b.oddsAtBetTime).toFixed(2)}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', minWidth: 130 }}>
+                <div style={{ fontWeight: 700 }}>
+                  Залог: {fmtMoney(b.amount)}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {b.status === 'Pending'
+                    ? `Възм. ${fmtMoney(b.potentialPayout)}`
+                    : `Изплатено ${fmtMoney(b.actualPayout)}`}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: statusColor(b.status),
+                              fontWeight: 700 }}>
+                  {statusLabel(b.status)}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {fmtDate(b.createdAt)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, color }) {
+  return (
+    <div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
+      <div style={{ fontWeight: 800, color: color || 'var(--text)' }}>{value}</div>
     </div>
   );
 }
