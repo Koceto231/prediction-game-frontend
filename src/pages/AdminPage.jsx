@@ -358,16 +358,8 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete, onShowHistory, hi
   const isAdmin = user.role === 'Admin';
 
   return (
-    <div style={{
-      // Grid keeps every column the same width across all rows, so the
-      // inputs and buttons line up no matter how long the username is.
-      display: 'grid',
-      gridTemplateColumns:
-        'minmax(140px, 1fr) 70px 80px 28px 28px 110px 140px 90px',
-      alignItems: 'center', gap: 8, padding: '8px 10px',
-      borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
-    }}>
-      <div style={{ minWidth: 0 }}>
+    <div className="admin-user-row">
+      <div className="admin-user-row__identity" style={{ minWidth: 0 }}>
         <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {user.username}
           {isAdmin && (
@@ -832,7 +824,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="page-grid">
+    <div className="admin-page">
       <section className="shell-card panel">
         <div className="section-head">
           <div>

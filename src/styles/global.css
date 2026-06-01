@@ -5079,11 +5079,54 @@ button:focus-visible {
 }
 
 /* ── ADMIN PANEL ────────────────────────────────────────────────── */
+/* Admin page wrapper — full width on desktop instead of the default
+   2-column page-grid which left the panel squeezed into ~50% of the
+   viewport. Also drops padding on phones so every pixel goes to content. */
+.admin-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@media (max-width: 800px) {
+  .admin-page { padding: 10px; gap: 10px; }
+}
+
 .admin-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 8px;
+}
+
+/* Wallet management — user rows. The fixed-width grid columns were
+   right for desktop but pushed buttons off the screen on phones. Use
+   a flex layout below 800px so each row wraps to two lines: identity +
+   amount on top, action buttons underneath. */
+.admin-user-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 70px 80px 28px 28px 110px 140px 90px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border, #2a2a2a);
+  font-size: 0.82rem;
+}
+@media (max-width: 800px) {
+  .admin-user-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+  }
+  .admin-user-row > * { flex: 0 0 auto; }
+  .admin-user-row > .admin-user-row__identity { flex: 1 1 100%; }
+  .admin-user-row .admin-input { flex: 0 1 90px; }
 }
 
 .admin-section {
