@@ -212,6 +212,7 @@ function WalletManagement() {
   const [feedback, setFeedback] = useState('');
   const [selfAmount, setSelfAmount] = useState('10000');
   const [filter, setFilter]     = useState('');
+  const [historyUser, setHistoryUser] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -332,19 +333,28 @@ function WalletManagement() {
       <div style={{ maxHeight: 360, overflowY: 'auto', overflowX: 'auto',
                     border: '1px solid var(--border)', borderRadius: 6 }}>
         {filtered.map(u => (
-          <UserBalanceRow key={u.id} user={u} onAdjust={adjust} onSetRole={setRole} onDelete={deleteUser} />
+          <UserBalanceRow key={u.id} user={u}
+            onAdjust={adjust} onSetRole={setRole} onDelete={deleteUser}
+            onShowHistory={() => setHistoryUser(h => h?.id === u.id ? null : u)}
+            historyActive={historyUser?.id === u.id} />
         ))}
         {filtered.length === 0 && (
           <p className="admin-hint" style={{ padding: 10 }}>Няма потребители за показване.</p>
         )}
       </div>
+
+      {/* Inline bet-history panel — opens right below the list instead of
+          a centred modal so the admin sees both the users and the
+          selected user's history without leaving the page flow. */}
+      {historyUser && (
+        <UserBetHistoryPanel user={historyUser} onClose={() => setHistoryUser(null)} />
+      )}
     </div>
   );
 }
 
-function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
+function UserBalanceRow({ user, onAdjust, onSetRole, onDelete, onShowHistory, historyActive }) {
   const [delta, setDelta] = useState('100');
-  const [historyOpen, setHistoryOpen] = useState(false);
   const isAdmin = user.role === 'Admin';
 
   return (
@@ -383,8 +393,10 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
         style={{ padding: '4px 0' }}>−</button>
       <button className="admin-btn" type="button"
         title={`Виж залозите на ${user.username}`}
-        onClick={() => setHistoryOpen(true)}
-        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        onClick={onShowHistory}
+        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem',
+                 background: historyActive ? 'var(--accent)' : undefined,
+                 color: historyActive ? '#0a0a0a' : undefined }}>
         📊 История
       </button>
       <button className="admin-btn" type="button"
@@ -399,16 +411,13 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
         style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
         🗑 Изтрий
       </button>
-
-      {historyOpen && (
-        <UserBetHistoryModal user={user} onClose={() => setHistoryOpen(false)} />
-      )}
     </div>
   );
 }
 
-/** Modal that loads /admin/wallet/users/{id}/bets and renders the list. */
-function UserBetHistoryModal({ user, onClose }) {
+/** Inline panel that loads /admin/wallet/users/{id}/bets — renders right
+    below the user list so the admin sees both side by side, no modal. */
+function UserBetHistoryPanel({ user, onClose }) {
   const [data, setData]       = useState(null);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(true);
@@ -447,16 +456,15 @@ function UserBetHistoryModal({ user, onClose }) {
   };
 
   return (
-    <div onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-               display: 'flex', alignItems: 'center', justifyContent: 'center',
-               zIndex: 1000, padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: 'var(--surface, #161616)', borderRadius: 12,
-        maxWidth: 900, width: '100%', maxHeight: '90vh',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      }}>
-        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center',
+    <div style={{
+      marginTop: 16,
+      background: 'var(--surface, #161616)',
+      border: '1px solid var(--accent)', borderRadius: 6,
+      display: 'flex', flexDirection: 'column',
+      maxHeight: 500, overflow: 'hidden',
+    }}>
+      <div>
+        <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center',
                       justifyContent: 'space-between',
                       borderBottom: '1px solid var(--border, #2a2a2a)' }}>
           <div>
