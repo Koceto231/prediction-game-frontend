@@ -10,7 +10,7 @@ import { useWallet } from '../context/WalletContext';
  *   onCashedOut  — optional callback (betId, result) → caller updates local state
  *   compact      — boolean, if true renders a smaller variant for the live page
  */
-export default function CashOutBadge({ bet, onCashedOut, compact = false }) {
+export default function CashOutBadge({ bet, onCashedOut, compact = false, lock = null }) {
   const [quote, setQuote]     = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,16 +82,20 @@ export default function CashOutBadge({ bet, onCashedOut, compact = false }) {
     } finally { setLoading(false); }
   };
 
+  const locked = !!lock;
   return (
     <>
       <button
         type="button"
-        className={`cashout-badge ${colorClass}${compact ? ' cashout-badge--compact' : ''}`}
-        onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
+        className={`cashout-badge ${colorClass}${compact ? ' cashout-badge--compact' : ''}${locked ? ' cashout-badge--locked' : ''}`}
+        onClick={(e) => { e.stopPropagation(); if (!locked) setConfirm(true); }}
+        disabled={locked}
+        title={locked ? lock.reason : ''}
+        style={locked ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
       >
-        <span className="cashout-badge__label">💰 Cash Out</span>
-        <span className="cashout-badge__value">€{value.toFixed(2)}</span>
-        {profit !== 0 && (
+        <span className="cashout-badge__label">{locked ? `🔒 ${lock.reason}` : '💰 Cash Out'}</span>
+        {!locked && <span className="cashout-badge__value">€{value.toFixed(2)}</span>}
+        {!locked && profit !== 0 && (
           <span className="cashout-badge__delta">
             {profit > 0 ? '+' : ''}{profit.toFixed(2)} €
           </span>

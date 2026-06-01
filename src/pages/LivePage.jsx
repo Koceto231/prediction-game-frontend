@@ -629,13 +629,18 @@ function LiveStatsAside({ match }) {
   );
 }
 
-// ── Bet Slip sidebar — stitch "Streamlined Live Dashboard" right rail ──
+// ── Bet Slip sidebar — same card body as My Bets, Cash Out instead of
+//    "Потенциална печалба". Cash Out locks during goal / VAR / dangerous
+//    attack windows via useOddsSuspension, mirroring how new bets are
+//    suspended on the rest of the page.
 function BetSlipAside({ match, activeBets = [], onCashedOut }) {
   const count = activeBets.length;
+  const lock  = useOddsSuspension(match);
+
   return (
     <aside className="gv-betslip">
       <div className="gv-betslip__head">
-        <h3 className="gv-betslip__title">BET SLIP</h3>
+        <h3 className="gv-betslip__title">МОИ ЗАЛОЗИ</h3>
         {count > 0 && <span className="gv-betslip__count">{count}</span>}
       </div>
 
@@ -643,34 +648,80 @@ function BetSlipAside({ match, activeBets = [], onCashedOut }) {
         {count === 0 ? (
           <div className="gv-betslip__empty">
             <div className="gv-betslip__empty-icon">🎯</div>
-            <div className="gv-betslip__empty-text">No bets on this match yet</div>
+            <div className="gv-betslip__empty-text">Все още нямаш залози на този мач</div>
             <div className="gv-betslip__empty-hint">
-              Tap any odd in the markets section below to place a bet.
+              Натисни който и да е коефициент в маркетите по-долу за залог.
             </div>
           </div>
         ) : (
-          <>
-            {activeBets.map(bet => (
-              <div key={bet.id} className="gv-betslip__pick">
-                <div className="gv-betslip__pick-top">
-                  <span className="gv-betslip__pick-label">{bet.betDescription}</span>
-                </div>
-                <div className="gv-betslip__pick-row">
-                  <span className="gv-betslip__pick-stake">€{Number(bet.amount).toFixed(2)} @ {Number(bet.oddsAtBetTime).toFixed(2)}</span>
-                  <span className="gv-betslip__pick-odds">€{Number(bet.potentialPayout).toFixed(2)}</span>
-                </div>
-                <div className="gv-betslip__pick-cashout">
-                  <CashOutBadge bet={bet} onCashedOut={onCashedOut} compact />
-                </div>
-              </div>
-            ))}
-            <div className="gv-betslip__footer">
-              <span className="gv-betslip__secure">🔒 SECURE TRANSACTION</span>
-            </div>
-          </>
+          activeBets.map(bet => (
+            <LiveBetCard key={bet.id} bet={bet} onCashedOut={onCashedOut} lock={lock} />
+          ))
         )}
       </div>
     </aside>
+  );
+}
+
+// Single live-bet card — mirrors the My Bets layout but swaps the
+// "Потенциална печалба" cell for a Cash Out button.
+function LiveBetCard({ bet, onCashedOut, lock }) {
+  const [legsOpen, setLegsOpen] = useState(true);
+  const isAccum = bet.betType === 'Accumulator';
+  const legs    = bet.accumulatorLegs ?? [];
+
+  const renderedLegs = isAccum ? legs : [{
+    description: bet.betDescription,
+    odds:        Number(bet.oddsAtBetTime),
+    homeTeam:    bet.homeTeam,
+    awayTeam:    bet.awayTeam,
+    homeTeamLogo: bet.homeTeamLogo,
+    awayTeamLogo: bet.awayTeamLogo,
+  }];
+
+  return (
+    <div className="gvb-bet" style={{ marginBottom: 12 }}>
+      <div className="gvb-bet__body" style={{ padding: 14 }}>
+        <div className="gvb-bet__legs">
+          <button
+            type="button"
+            className="gvb-bet__legs-toggle"
+            onClick={() => setLegsOpen(o => !o)}
+            style={{ fontSize: '0.88rem', padding: '10px 13px' }}
+          >
+            <span>{legsOpen ? '▾' : '▸'} Избори ({renderedLegs.length})</span>
+            <span className="gvb-bet__legs-sum">Общо {Number(bet.oddsAtBetTime).toFixed(2)}</span>
+          </button>
+          {legsOpen && (
+            <div className="gvb-bet__legs-list">
+              {renderedLegs.map((leg, i) => (
+                <div key={i} className="gvb-bet__leg" style={{ padding: '10px 13px' }}>
+                  <span className="gvb-bet__leg-no">{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="gvb-bet__leg-desc" style={{ fontSize: '0.94rem' }}>
+                      {leg.description}
+                    </div>
+                  </div>
+                  <span className="gvb-bet__leg-odds" style={{ fontSize: '0.96rem' }}>
+                    {Number(leg.odds).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="gvb-bet__stats" style={{ gridTemplateColumns: '1fr 1fr', fontSize: '0.9rem' }}>
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label" style={{ fontSize: '0.74rem' }}>ЗАЛОГ</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1rem' }}>€{Number(bet.amount).toFixed(2)}</span>
+          </div>
+          <div className="gvb-bet__stat" style={{ alignItems: 'flex-end' }}>
+            <CashOutBadge bet={bet} onCashedOut={onCashedOut} compact lock={lock} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
