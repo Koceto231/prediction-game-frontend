@@ -502,46 +502,115 @@ function UserBetHistoryPanel({ user, onClose }) {
             <p className="admin-hint">Този потребител няма залози.</p>
           )}
           {!loading && data?.bets?.map(b => (
-            <div key={b.id} style={{
-              padding: '10px 0', borderBottom: '1px solid var(--border, #2a2a2a)',
-              display: 'grid', gridTemplateColumns: '1fr auto', gap: 8,
-              alignItems: 'center', fontSize: '0.86rem',
-            }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>
-                  {b.betType === 'Accumulator' ? `Acca · ${b.homeTeam} vs ${b.awayTeam}` : `${b.homeTeam} vs ${b.awayTeam}`}
-                </div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                  {b.leagueCode} · {fmtDate(b.matchDate)}
-                </div>
-                <div style={{ marginTop: 4, fontSize: '0.82rem' }}>
-                  {b.betType} → {' '}
-                  {b.pick || b.stringPick || (b.scoreHome != null
-                    ? `${b.scoreHome}-${b.scoreAway}` : '—')}
-                  {' '} @ {Number(b.oddsAtBetTime).toFixed(2)}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', minWidth: 130 }}>
-                <div style={{ fontWeight: 700 }}>
-                  Залог: {fmtMoney(b.amount)}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {b.status === 'Pending'
-                    ? `Възм. ${fmtMoney(b.potentialPayout)}`
-                    : `Изплатено ${fmtMoney(b.actualPayout)}`}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: statusColor(b.status),
-                              fontWeight: 700 }}>
-                  {statusLabel(b.status)}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {fmtDate(b.createdAt)}
-                </div>
-              </div>
-            </div>
+            <BetHistoryRow key={b.id} bet={b}
+              fmtMoney={fmtMoney} fmtDate={fmtDate}
+              statusLabel={statusLabel} statusColor={statusColor} />
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** One row in the bet-history list. Accumulators show a chevron + "Колонка"
+    badge; clicking expands the embedded leg list parsed from
+    accumulatorLegsJson. */
+function BetHistoryRow({ bet, fmtMoney, fmtDate, statusLabel, statusColor }) {
+  const [open, setOpen] = useState(false);
+  const isAccum = bet.betType === 'Accumulator';
+  const legs = (() => {
+    if (!isAccum || !bet.accumulatorLegsJson) return [];
+    try { return JSON.parse(bet.accumulatorLegsJson) || []; }
+    catch { return []; }
+  })();
+
+  return (
+    <div style={{
+      padding: '10px 0', borderBottom: '1px solid var(--border, #2a2a2a)',
+      fontSize: '0.86rem',
+    }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8,
+                    alignItems: 'center' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+            {isAccum && (
+              <button type="button" onClick={() => setOpen(o => !o)}
+                style={{ background: 'none', border: 'none', color: 'var(--accent)',
+                         cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}>
+                {open ? '▾' : '▸'}
+              </button>
+            )}
+            {isAccum && (
+              <span style={{ background: 'var(--accent)', color: '#0a0a0a',
+                             padding: '1px 6px', borderRadius: 4,
+                             fontSize: '0.68rem', fontWeight: 800 }}>
+                КОЛОНКА · {legs.length || '—'}
+              </span>
+            )}
+            <span>{bet.homeTeam} vs {bet.awayTeam}</span>
+          </div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+            {bet.leagueCode} · {fmtDate(bet.matchDate)}
+          </div>
+          {!isAccum && (
+            <div style={{ marginTop: 4, fontSize: '0.82rem' }}>
+              {bet.betType} → {' '}
+              {bet.pick || bet.stringPick || (bet.scoreHome != null
+                ? `${bet.scoreHome}-${bet.scoreAway}` : '—')}
+              {' '} @ {Number(bet.oddsAtBetTime).toFixed(2)}
+            </div>
+          )}
+          {isAccum && (
+            <div style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Общ коефициент @ {Number(bet.oddsAtBetTime).toFixed(2)}
+            </div>
+          )}
+        </div>
+        <div style={{ textAlign: 'right', minWidth: 130 }}>
+          <div style={{ fontWeight: 700 }}>Залог: {fmtMoney(bet.amount)}</div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            {bet.status === 'Pending'
+              ? `Възм. ${fmtMoney(bet.potentialPayout)}`
+              : `Изплатено ${fmtMoney(bet.actualPayout)}`}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: statusColor(bet.status), fontWeight: 700 }}>
+            {statusLabel(bet.status)}
+          </div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            {fmtDate(bet.createdAt)}
+          </div>
+        </div>
+      </div>
+
+      {isAccum && open && legs.length > 0 && (
+        <div style={{
+          marginTop: 8, padding: '8px 10px',
+          background: 'rgba(255,255,255,0.03)', borderRadius: 6,
+          fontSize: '0.82rem',
+        }}>
+          {legs.map((l, i) => (
+            <div key={i} style={{
+              display: 'grid', gridTemplateColumns: '24px 1fr auto', gap: 8,
+              padding: '6px 0',
+              borderBottom: i < legs.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
+              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{i + 1}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600 }}>{l.description || '—'}</div>
+                {(l.homeTeam || l.awayTeam) && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {l.homeTeam ?? '—'} vs {l.awayTeam ?? '—'}
+                  </div>
+                )}
+              </div>
+              <span style={{ color: 'var(--accent)', fontWeight: 700,
+                             fontFamily: 'monospace' }}>
+                {l.odds != null ? Number(l.odds).toFixed(2) : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
