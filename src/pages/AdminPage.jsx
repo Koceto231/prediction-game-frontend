@@ -936,97 +936,6 @@ export default function AdminPage() {
           </AdminSection>
 
           {/* ── Fantasy: Advance Gameweek ── */}
-          <AdminSection title="Fantasy — Advance Gameweek">
-            <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'advance-gw'}
-                onClick={() => run('advance-gw', () => api.post('/Fantasy/admin/gameweek/advance'))}>
-                {loading === 'advance-gw' ? 'Creating…' : '⏭ Auto-Create Next GW'}
-              </button>
-            </div>
-            <p className="admin-hint">Търси предстоящи мачове в DB и им създава GW прозорец. Пускай след Import Matches.</p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
-              <div className="admin-row">
-                <label className="admin-label">GW номер</label>
-                <input className="admin-input" type="number" min="1" placeholder="auto"
-                  value={gwNumber} onChange={e => setGwNumber(e.target.value)} />
-              </div>
-              <div className="admin-row">
-                <label className="admin-label">Deadline (дата+час)</label>
-                <input className="admin-input" type="datetime-local"
-                  value={gwDeadline} onChange={e => setGwDeadline(e.target.value)} />
-              </div>
-            </div>
-            <div className="admin-actions">
-              <button className="admin-btn" type="button" disabled={loading === 'force-gw'}
-                onClick={() => {
-                  const params = new URLSearchParams({ anchorDate: gwAnchorDate });
-                  if (gwNumber) params.set('gwNumber', gwNumber);
-                  if (gwDeadline) params.set('deadline', new Date(gwDeadline).toISOString());
-                  run('force-gw', () => api.post(`/Fantasy/admin/gameweek/force?${params}`));
-                }}>
-                {loading === 'force-gw' ? 'Creating…' : '📅 Force Create GW'}
-              </button>
-            </div>
-            <p className="admin-hint">GW номер и Deadline са незадължителни. Ако зададеш Deadline, датите се изчисляват около него (±3/4 дни).</p>
-          </AdminSection>
-
-          {/* ── Fantasy: Gameweek Status + Edit ── */}
-          <AdminSection title="Fantasy — Gameweek Status">
-            {gameweeks.length === 0 ? (
-              <p className="admin-hint">No gameweeks found.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[...gameweeks].reverse().slice(0, 8).map(gw => (
-                  <GwRow key={gw.id} gw={gw} loading={loading}
-                    onComplete={() => run(`complete-${gw.id}`, async () => {
-                      const r = await api.post(`/Fantasy/admin/gameweek/${gw.id}/complete`);
-                      setGameweeks(prev => prev.map(g => g.id === gw.id ? { ...g, isCompleted: true, isLocked: true } : g));
-                      return r;
-                    })}
-                    onEdit={(num, dl) => run(`edit-${gw.id}`, async () => {
-                      const params = new URLSearchParams();
-                      if (num) params.set('gwNumber', num);
-                      if (dl)  params.set('deadline', new Date(dl).toISOString());
-                      const r = await api.patch(`/Fantasy/admin/gameweek/${gw.id}?${params}`);
-                      setGameweeks(prev => prev.map(g => g.id === gw.id
-                        ? { ...g, gameWeek: num ? Number(num) : g.gameWeek, deadline: dl ? new Date(dl).toISOString() : g.deadline }
-                        : g));
-                      return r;
-                    })}
-                  />
-                ))}
-              </div>
-            )}
-            <p className="admin-hint" style={{ marginTop: 8 }}>✓ Complete = lock forever. Edit = fix GW number or deadline.</p>
-          </AdminSection>
-
-          {/* ── Recalculate Prices ── */}
-          <AdminSection title="Recalculate Player Prices">
-            <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'recalc-prices'}
-                onClick={() => run('recalc-prices', () => api.post('/Fantasy/admin/recalc-prices'))}>
-                {loading === 'recalc-prices' ? 'Calculating…' : 'Recalculate Prices'}
-              </button>
-            </div>
-            <p className="admin-hint">Изчислява цените на играчите по сила на отбора (от историята на мачовете). Пускай след Import History.</p>
-          </AdminSection>
-
-          {/* ── News: Generate images ── */}
-          <AdminSection title="News — Generate Cover Images">
-            <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'backfill-images'}
-                onClick={() => run('backfill-images', () => api.post('/News/backfill-images'))}>
-                {loading === 'backfill-images' ? 'Generating…' : '🖼 Generate Missing Images'}
-              </button>
-              <button className="admin-btn" type="button" disabled={loading === 'backfill-force'}
-                onClick={() => run('backfill-force', () => api.post('/News/backfill-images?force=true'))}>
-                {loading === 'backfill-force' ? 'Regenerating…' : '🔄 Regenerate All Images'}
-              </button>
-            </div>
-            <p className="admin-hint">Generate Missing — само статии без снимка. Regenerate All — презаписва всички (Stability AI → Cloudinary).</p>
-          </AdminSection>
-
           {/* ── Re-resolve Bet ── */}
           <AdminSection title="Re-resolve Bet">
             <div className="admin-row">
@@ -1059,14 +968,6 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Синква голмайсторите от Sportmonks за всички приключили мачове. Работи в background — провери Results страницата след ~2 мин.</p>
-          </AdminSection>
-
-          {/* ── Venue / Stadium Images ── */}
-          <AdminSection title="Venue / Stadium Images">
-            <p className="admin-hint" style={{ marginTop: 0 }}>
-              Търси стадион по име в Sportmonks и виж снимката, която ще се покаже в match detail-а.
-            </p>
-            <VenueLookup />
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
