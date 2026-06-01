@@ -84,7 +84,7 @@ function QuickBetPanel({ match, onBetPlaced }) {
               <input type="text" inputMode="numeric" placeholder="0" value={amount}
                 onChange={e => setAmount(e.target.value.replace(/\D/g, ''))}
                 className="bet-slip__stake-input" onKeyDown={e => e.key === 'Enter' && place()} autoFocus />
-              <span className="bet-slip__stake-coin">€</span>
+              <span className="bet-slip__stake-coin">🪙</span>
             </div>
             <div className="bet-slip__quick-adds">
               {[5, 20, 50].map(n => (
@@ -94,8 +94,8 @@ function QuickBetPanel({ match, onBetPlaced }) {
             </div>
           </div>
           <button type="button" className="bet-slip__cta" disabled={stakeNum <= 0 || loading} onClick={place}>
-            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum : ''} €`}</span>
-            {potential && <span className="bet-slip__cta-sub">Potential win: {Number(potential).toFixed(2)} €</span>}
+            <span>{loading ? 'Залагане...' : `Заложи ${stakeNum > 0 ? stakeNum : ''} монети`}</span>
+            {potential && <span className="bet-slip__cta-sub">Потенциална печалба: {Number(potential).toFixed(2)} монети</span>}
           </button>
         </div>
       )}
@@ -714,7 +714,7 @@ function LiveBetCard({ bet, onCashedOut, lock }) {
         <div className="gvb-bet__stats" style={{ gridTemplateColumns: '1fr 1fr', fontSize: '0.9rem' }}>
           <div className="gvb-bet__stat">
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.74rem' }}>ЗАЛОГ</span>
-            <span className="gvb-bet__stat-val" style={{ fontSize: '1rem' }}>€{Number(bet.amount).toFixed(2)}</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1rem' }}>{Number(bet.amount).toFixed(2)} монети</span>
           </div>
           <div className="gvb-bet__stat" style={{ alignItems: 'flex-end' }}>
             <CashOutBadge bet={bet} onCashedOut={onCashedOut} compact lock={lock} />
@@ -741,7 +741,7 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
             onChange={e => setAmount(e.target.value.replace(/\D/g, ''))}
             className="bet-slip__stake-input"
             onKeyDown={e => e.key === 'Enter' && !disabled && onPlace()} />
-          <span className="bet-slip__stake-coin">€</span>
+          <span className="bet-slip__stake-coin">🪙</span>
         </div>
         <div className="bet-slip__quick-adds">
           {[5, 20, 50].map(n => (
@@ -751,9 +751,9 @@ function BetSlipStake({ amount, setAmount, potential, onPlace, loading, disabled
         </div>
       </div>
       <button type="button" className="bet-slip__cta" disabled={disabled || stakeNum <= 0 || loading} onClick={onPlace}>
-        <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum : ''} €`}</span>
+        <span>{loading ? 'Залагане...' : `Заложи ${stakeNum > 0 ? stakeNum : ''} монети`}</span>
         {potential != null && potential > 0 && (
-          <span className="bet-slip__cta-sub">Potential win: {Number(potential).toFixed(2)} €</span>
+          <span className="bet-slip__cta-sub">Потенциална печалба: {Number(potential).toFixed(2)} монети</span>
         )}
       </button>
     </div>

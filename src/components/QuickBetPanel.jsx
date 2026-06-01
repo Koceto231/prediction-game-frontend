@@ -100,7 +100,7 @@ export default function QuickBetPanel({ match, onBetPlaced }) {
                 onKeyDown={(e) => e.key === 'Enter' && place()}
                 autoFocus
               />
-              <span className="bet-slip__stake-coin">€</span>
+              <span className="bet-slip__stake-coin">🪙</span>
             </div>
             <div className="bet-slip__quick-adds">
               {[5, 20, 50].map((n) => (
@@ -120,10 +120,10 @@ export default function QuickBetPanel({ match, onBetPlaced }) {
             disabled={stakeNum <= 0 || loading}
             onClick={place}
           >
-            <span>{loading ? 'Placing...' : `Place bet ${stakeNum > 0 ? stakeNum : ''} €`}</span>
+            <span>{loading ? 'Залагане...' : `Заложи ${stakeNum > 0 ? stakeNum : ''} монети`}</span>
             {potential && (
               <span className="bet-slip__cta-sub">
-                Potential win: {Number(potential).toFixed(2)} €
+                Потенциална печалба: {Number(potential).toFixed(2)} монети
               </span>
             )}
           </button>

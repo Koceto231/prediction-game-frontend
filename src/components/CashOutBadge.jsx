@@ -94,10 +94,10 @@ export default function CashOutBadge({ bet, onCashedOut, compact = false, lock =
         style={locked ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
       >
         <span className="cashout-badge__label">{locked ? `🔒 ${lock.reason}` : '💰 Cash Out'}</span>
-        {!locked && <span className="cashout-badge__value">€{value.toFixed(2)}</span>}
+        {!locked && <span className="cashout-badge__value">{value.toFixed(2)} монети</span>}
         {!locked && profit !== 0 && (
           <span className="cashout-badge__delta">
-            {profit > 0 ? '+' : ''}{profit.toFixed(2)} €
+            {profit > 0 ? '+' : ''}{profit.toFixed(2)} монети
           </span>
         )}
       </button>
@@ -117,7 +117,7 @@ export default function CashOutBadge({ bet, onCashedOut, compact = false, lock =
               </div>
               <div className="cashout-modal__row">
                 <span>Stake</span>
-                <strong>€{stake.toFixed(2)}</strong>
+                <strong>{stake.toFixed(2)} монети</strong>
               </div>
               <div className="cashout-modal__row">
                 <span>Original Odds</span>
@@ -125,13 +125,13 @@ export default function CashOutBadge({ bet, onCashedOut, compact = false, lock =
               </div>
               <div className="cashout-modal__row">
                 <span>Potential Payout</span>
-                <strong>€{Number(bet.potentialPayout).toFixed(2)}</strong>
+                <strong>{Number(bet.potentialPayout).toFixed(2)} монети</strong>
               </div>
               <div className={`cashout-modal__big ${colorClass}`}>
                 <span>Cash out for</span>
-                <strong>€{value.toFixed(2)}</strong>
+                <strong>{value.toFixed(2)} монети</strong>
                 <span className={`cashout-modal__delta ${colorClass}`}>
-                  {profit >= 0 ? `+€${profit.toFixed(2)} profit` : `−€${Math.abs(profit).toFixed(2)} loss recovered`}
+                  {profit >= 0 ? `+${profit.toFixed(2)} монети печалба` : `−${Math.abs(profit).toFixed(2)} монети възстановени`}
                 </span>
               </div>
               {error && <div className="alert alert-error" style={{ marginTop: 8 }}>{error}</div>}

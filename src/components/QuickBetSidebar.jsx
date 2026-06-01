@@ -123,12 +123,12 @@ export default function QuickBetSidebar() {
               value={stake}
               onChange={e => setStake(Math.max(1, Number(e.target.value.replace(/\D/g, '')) || 1))}
             />
-            <span>€</span>
+            <span>🪙</span>
           </div>
           <div className="quickbet-panel__quick-adds">
             {[5, 10, 20, 50].map(v => (
               <button type="button" key={v} className="quickbet-panel__quick-add"
-                      onClick={() => setStake(v)}>{v}€</button>
+                      onClick={() => setStake(v)}>{v}</button>
             ))}
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function QuickBetSidebar() {
                 {lastBet.odds != null && (
                   <span className="quickbet-panel__last-odds">@ {Number(lastBet.odds).toFixed(2)}</span>
                 )}
-                <span className="quickbet-panel__last-stake">{lastBet.stake} €</span>
+                <span className="quickbet-panel__last-stake">{lastBet.stake} монети</span>
               </div>
             </div>
           ) : (

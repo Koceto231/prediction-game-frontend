@@ -427,7 +427,7 @@ function UserBetHistoryPanel({ user, onClose }) {
     return () => { cancelled = true; };
   }, [user.id]);
 
-  const fmtMoney = (n) => `€${Number(n ?? 0).toFixed(2)}`;
+  const fmtMoney = (n) => `${Number(n ?? 0).toFixed(2)} монети`;
   const fmtDate  = (d) => d ? new Date(d).toLocaleString('bg-BG', {
     dateStyle: 'short', timeStyle: 'short',
   }) : '—';

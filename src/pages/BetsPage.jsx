@@ -212,7 +212,7 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
         className={`gvb-cashout-btn ${variant === 'live' ? 'gvb-cashout-btn--gold' : 'gvb-cashout-btn--ghost'}`}
         onClick={() => setConfirm(true)}
       >
-        Изтегли €{value.toFixed(2)}
+        Изтегли {value.toFixed(2)} монети
       </button>
 
       {confirm && (
@@ -225,14 +225,14 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
             </div>
             <div className="cashout-modal__body">
               <div className="cashout-modal__row"><span>Залог</span><strong>{bet.betDescription}</strong></div>
-              <div className="cashout-modal__row"><span>Заложена сума</span><strong>€{stake.toFixed(2)}</strong></div>
+              <div className="cashout-modal__row"><span>Заложена сума</span><strong>{stake.toFixed(2)} монети</strong></div>
               <div className="cashout-modal__row"><span>Първоначален коефициент</span><strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
-              <div className="cashout-modal__row"><span>Възможна печалба</span><strong>€{Number(bet.potentialPayout).toFixed(2)}</strong></div>
+              <div className="cashout-modal__row"><span>Възможна печалба</span><strong>{Number(bet.potentialPayout).toFixed(2)} монети</strong></div>
               <div className={`cashout-modal__big ${isLoss ? 'cashout-badge--loss' : 'cashout-badge--profit'}`}>
                 <span>Изтегли за</span>
-                <strong>€{value.toFixed(2)}</strong>
+                <strong>{value.toFixed(2)} монети</strong>
                 <span className={`cashout-modal__delta ${isLoss ? 'cashout-badge--loss' : 'cashout-badge--profit'}`}>
-                  {profit >= 0 ? `+€${profit.toFixed(2)} печалба` : `−€${Math.abs(profit).toFixed(2)} възстановени`}
+                  {profit >= 0 ? `+${profit.toFixed(2)} монети печалба` : `−${Math.abs(profit).toFixed(2)} монети възстановени`}
                 </span>
               </div>
               {error && <div className="alert alert-error" style={{ marginTop: 8 }}>{error}</div>}
@@ -380,14 +380,14 @@ function ActiveBetCard({ bet, onCashedOut }) {
         <div className="gvb-bet__stats" style={{ fontSize: '0.92rem' }}>
           <div className="gvb-bet__stat">
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ЗАЛОГ</span>
-            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.amount).toFixed(2)}</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>{Number(bet.amount).toFixed(2)} монети</span>
           </div>
           {/* Label switches between "Потенциална печалба" (un-settled) and
                 "Печалба" (settled) so it's obvious whether the number is a
                 promise or a payout. Settlement is all-or-nothing for
                 accumulators on the backend — losing one leg makes
                 actualPayout 0 — so a partly-correct acc naturally shows
-                €0.00 here without any partial-credit logic. */}
+                0 монети here without any partial-credit logic. */}
           {(() => {
             const settled = bet.status && bet.status !== 'Pending';
             const value   = settled
@@ -399,7 +399,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
                   {settled ? 'ПЕЧАЛБА' : 'ПОТЕНЦИАЛНА ПЕЧАЛБА'}
                 </span>
                 <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
-                  €{value.toFixed(2)}
+                  {value.toFixed(2)} монети
                 </span>
               </div>
             );
@@ -438,7 +438,7 @@ function SettledBetRow({ bet }) {
       <div className="gvb-settled__top">
         <span className="gvb-settled__date">{dateLabel} • {resultLabel}</span>
         <span className={`gvb-settled__amount${won ? ' gvb-settled__amount--win' : ' gvb-settled__amount--loss'}`}>
-          {won ? `+€${Math.max(0, profit).toFixed(2)}` : `−€${Number(stake).toFixed(2)}`}
+          {won ? `+${Math.max(0, profit).toFixed(2)} монети` : `−${Number(stake).toFixed(2)} монети`}
         </span>
       </div>
       <p className="gvb-settled__fixture">{bet.homeTeam} vs {bet.awayTeam}</p>
@@ -502,7 +502,7 @@ export default function BetsPage() {
           <div className="gvb-stat">
             <div className="gvb-stat__bg-icon">💼</div>
             <p className="gvb-stat__label">TOTAL EXPOSURE</p>
-            <p className="gvb-stat__value">€{totalExposure.toFixed(2)}</p>
+            <p className="gvb-stat__value">{totalExposure.toFixed(2)} монети</p>
             <p className="gvb-stat__hint">
               <span className="gvb-stat__hint-icon">ℹ</span> Active stakes across all markets
             </p>
@@ -511,7 +511,7 @@ export default function BetsPage() {
             <div className="gvb-stat__bg-icon">📈</div>
             <p className="gvb-stat__label">PROJECTED PROFIT</p>
             <p className="gvb-stat__value gvb-stat__value--accent">
-              {projectedProfit >= 0 ? '+' : ''}€{projectedProfit.toFixed(2)}
+              {projectedProfit >= 0 ? '+' : ''}{projectedProfit.toFixed(2)} монети
             </p>
             <p className="gvb-stat__hint">
               <span className="gvb-stat__hint-icon">⚡</span> Calculated at current odds

@@ -102,7 +102,7 @@ export default function Navbar() {
         <div className="navbar-right">
           {balance !== null && (
             <div className="wallet-badge">
-              <span className="wallet-icon">€</span>
+              <span className="wallet-icon">🪙</span>
               <span className="wallet-amount">{Number(balance).toLocaleString()}</span>
             </div>
           )}
@@ -130,7 +130,7 @@ export default function Navbar() {
       {/* ── Mobile balance bar ── */}
       {balance !== null && (
         <div className="mobile-balance-bar">
-          € {Number(balance).toLocaleString()}
+          🪙 {Number(balance).toLocaleString()} монети
         </div>
       )}
 

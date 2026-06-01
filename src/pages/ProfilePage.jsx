@@ -131,13 +131,13 @@ export default function ProfilePage() {
       {/* Wallet */}
       <div className="shell-card profile-wallet-card">
         <div className="profile-wallet-left">
-          <span className="wallet-icon-big">€</span>
+          <span className="wallet-icon-big">🪙</span>
           <div>
             <h3>Demo Wallet</h3>
           </div>
         </div>
         <div className="profile-wallet-right">
-          <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} coins</span>
+          <span className="wallet-balance-big">{balance !== null ? Number(balance).toLocaleString() : '—'} монети</span>
           {/* Self top-up is admin-only now — managed from the Admin panel. */}
         </div>
       </div>
@@ -203,11 +203,11 @@ export default function ProfilePage() {
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Staked</span>
-              <strong>{Number(totalStaked).toLocaleString()} €</strong>
+              <strong>{Number(totalStaked).toLocaleString()} монети</strong>
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Won</span>
-              <strong style={{ color: 'var(--accent)' }}>{Number(totalWon).toFixed(2)} €</strong>
+              <strong style={{ color: 'var(--accent)' }}>{Number(totalWon).toFixed(2)} монети</strong>
             </div>
           </div>
         )}
@@ -271,11 +271,11 @@ export default function ProfilePage() {
                 <div className="bet-card__details">
                   <div className="bet-card__pick">Pick: <strong>{bet.betDescription}</strong></div>
                   <div>Odds: <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
-                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()} €</strong></div>
+                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()} монети</strong></div>
                   <div>
                     {isWon
-                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toFixed(2)} €</strong></>
-                      : <>Potential: <strong>{Number(bet.potentialPayout).toFixed(2)} €</strong></>
+                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toFixed(2)} монети</strong></>
+                      : <>Potential: <strong>{Number(bet.potentialPayout).toFixed(2)} монети</strong></>
                     }
                   </div>
                 </div>

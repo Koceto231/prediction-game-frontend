@@ -116,7 +116,7 @@ export default function QuickStakeModal({ open, match, pick, odds, onClose, onPl
               onKeyDown={(e) => { if (e.key === 'Enter') handlePlace(); }}
               autoFocus
             />
-            <span>€</span>
+            <span>🪙</span>
           </div>
           <div className="gvb-stake-modal__chips">
             {[5, 10, 20, 50, 100].map(v => (
@@ -133,7 +133,7 @@ export default function QuickStakeModal({ open, match, pick, odds, onClose, onPl
         <div className="gvb-stake-modal__summary">
           <div className="gvb-stake-modal__summary-row">
             <span>Stake</span>
-            <strong>€{stakeNum.toFixed(2)}</strong>
+            <strong>{stakeNum.toFixed(2)} монети</strong>
           </div>
           <div className="gvb-stake-modal__summary-row">
             <span>Odds</span>
@@ -141,13 +141,13 @@ export default function QuickStakeModal({ open, match, pick, odds, onClose, onPl
           </div>
           <div className="gvb-stake-modal__summary-row gvb-stake-modal__summary-row--big">
             <span>Potential Win</span>
-            <strong className="gvb-stake-modal__potential">€{potential.toFixed(2)}</strong>
+            <strong className="gvb-stake-modal__potential">{potential.toFixed(2)} монети</strong>
           </div>
         </div>
 
         {balance != null && (
           <div className={`gvb-stake-modal__balance${overBalance ? ' gvb-stake-modal__balance--over' : ''}`}>
-            Wallet: €{Number(balance).toFixed(2)}
+            Wallet: {Number(balance).toFixed(2)} монети
             {overBalance && <span> — insufficient funds</span>}
           </div>
         )}
@@ -168,7 +168,7 @@ export default function QuickStakeModal({ open, match, pick, odds, onClose, onPl
             onClick={handlePlace}
             disabled={loading || stakeNum <= 0 || overBalance}
           >
-            {loading ? 'Placing…' : `Place Bet €${stakeNum.toFixed(2)}`}
+            {loading ? 'Залагане…' : `Заложи ${stakeNum.toFixed(2)} монети`}
           </button>
         </div>
       </div>

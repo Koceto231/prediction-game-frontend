@@ -455,7 +455,7 @@ export default function BetSlipPanel() {
                     }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handlePlaceAll(); }}
                   />
-                  <span>€</span>
+                  <span>🪙</span>
                 </div>
                 <div className="gvb-slip-panel__chips">
                   {[5, 10, 20, 50, 100].map(v => (
@@ -469,14 +469,14 @@ export default function BetSlipPanel() {
 
               <div className="gvb-slip-panel__summary">
                 <div className="gvb-slip-panel__summary-row">
-                  <span>Залог за тази колонка</span><strong>€{s.stakeNum.toFixed(2)}</strong>
+                  <span>Залог за тази колонка</span><strong>{s.stakeNum.toFixed(2)} монети</strong>
                 </div>
                 <div className="gvb-slip-panel__summary-row">
                   <span>Коефициент</span><strong>{s.combined.toFixed(2)}</strong>
                 </div>
                 <div className="gvb-slip-panel__summary-row gvb-slip-panel__summary-row--big">
                   <span>Възможна печалба</span>
-                  <strong className="gvb-slip-panel__potential">€{s.potential.toFixed(2)}</strong>
+                  <strong className="gvb-slip-panel__potential">{s.potential.toFixed(2)} монети</strong>
                 </div>
               </div>
             </>
@@ -488,13 +488,13 @@ export default function BetSlipPanel() {
             {columns.filter(c => c.picks.length > 0).length > 1 && (
               <div className="gvb-slip-panel__totals">
                 <span>Общо ({placeableCount} колонки):</span>
-                <strong>€{totalStake.toFixed(2)} → €{totalPotential.toFixed(2)}</strong>
+                <strong>{totalStake.toFixed(2)} → {totalPotential.toFixed(2)} монети</strong>
               </div>
             )}
 
             {balance != null && (
               <div className={`gvb-slip-panel__balance${overBalance ? ' gvb-slip-panel__balance--over' : ''}`}>
-                Баланс: €{Number(balance).toFixed(2)}
+                Баланс: {Number(balance).toFixed(2)} монети
                 {overBalance && <span> — недостатъчни средства</span>}
               </div>
             )}
@@ -518,8 +518,8 @@ export default function BetSlipPanel() {
                 {loading
                   ? 'Залагане…'
                   : placeableCount > 1
-                    ? `Заложи всички (€${totalStake.toFixed(2)})`
-                    : `Заложи €${totalStake.toFixed(2)}`}
+                    ? `Заложи всички (${totalStake.toFixed(2)} монети)`
+                    : `Заложи ${totalStake.toFixed(2)} монети`}
               </button>
             </div>
           </>
