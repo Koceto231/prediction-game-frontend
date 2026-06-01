@@ -353,7 +353,7 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
       // inputs and buttons line up no matter how long the username is.
       display: 'grid',
       gridTemplateColumns:
-        'minmax(160px, 1fr) 80px 90px 32px 32px 200px 240px 240px',
+        'minmax(140px, 1fr) 70px 80px 28px 28px 110px 140px 90px',
       alignItems: 'center', gap: 8, padding: '8px 10px',
       borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
     }}>
@@ -382,22 +382,22 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete }) {
         onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
         style={{ padding: '4px 0' }}>−</button>
       <button className="admin-btn" type="button"
+        title={`Виж залозите на ${user.username}`}
         onClick={() => setHistoryOpen(true)}
-        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
-                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        История на {user.username}
+        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        📊 История
       </button>
       <button className="admin-btn" type="button"
+        title={isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
         onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
-        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
-                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
+        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        {isAdmin ? '★ Махни admin' : '☆ Направи admin'}
       </button>
       <button className="admin-btn admin-btn--danger" type="button"
+        title={`Изтрий профила на ${user.username}`}
         onClick={() => onDelete(user.id, user.username)}
-        style={{ padding: '4px 10px', whiteSpace: 'nowrap', fontSize: '0.74rem',
-                 overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        Изтрий профил на {user.username}
+        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+        🗑 Изтрий
       </button>
 
       {historyOpen && (
