@@ -301,24 +301,24 @@ function WalletManagement() {
   return (
     <div>
       {/* Self top-up — pinned at the top so it's always one click away. */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12,
-                    padding: '10px 12px', background: 'rgba(240, 197, 25, 0.08)',
-                    border: '1px solid rgba(240, 197, 25, 0.3)', borderRadius: 8 }}>
-        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>На себе си</span>
-        <input className="admin-input" value={selfAmount}
+      <div className="admin-self-topup">
+        <span className="admin-self-topup__label">На себе си</span>
+        <input className="admin-input admin-self-topup__amount" value={selfAmount}
           onChange={e => setSelfAmount(e.target.value)}
-          style={{ width: 110 }} type="number" min="1" />
-        <button className="admin-btn admin-btn--accent" type="button" onClick={selfTopUp}>
+          type="number" min="1" />
+        <button className="admin-btn admin-btn--accent admin-self-topup__btn"
+          type="button" onClick={selfTopUp}>
           Добави
         </button>
       </div>
 
       {/* Filter + reload */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <input className="admin-input" placeholder="Търси потребител…"
-          value={filter} onChange={e => setFilter(e.target.value)}
-          style={{ flex: 1 }} />
-        <button className="admin-btn" type="button" onClick={load} disabled={loading}>
+      <div className="admin-filter-bar">
+        <input className="admin-input admin-filter-bar__input"
+          placeholder="Търси потребител…"
+          value={filter} onChange={e => setFilter(e.target.value)} />
+        <button className="admin-btn admin-filter-bar__reload" type="button"
+          title="Презареди списъка" onClick={load} disabled={loading}>
           {loading ? '…' : '↻'}
         </button>
       </div>
@@ -720,44 +720,55 @@ function InvitationsManagement() {
     return <span style={{ color: 'var(--accent)' }}>чака</span>;
   };
 
+  const fmtCreated = (d) => new Date(d).toLocaleString('bg-BG', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+  const fmtExpires = (d) => new Date(d).toLocaleDateString('bg-BG', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <input className="admin-input" placeholder="email@example.com"
+      {/* Send-invite form — email input full-width on mobile, two
+          buttons share a row below. */}
+      <div className="admin-invite-send">
+        <input className="admin-input admin-invite-send__email"
+          placeholder="email@example.com"
           value={email} onChange={e => setEmail(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && send()}
-          style={{ flex: 1 }} />
-        <button className="admin-btn admin-btn--accent" type="button" onClick={send}>
-          Изпрати покана
-        </button>
-        <button className="admin-btn" type="button" onClick={load} disabled={loading}>
-          {loading ? '…' : '↻'}
-        </button>
+          onKeyDown={e => e.key === 'Enter' && send()} />
+        <div className="admin-invite-send__buttons">
+          <button className="admin-btn admin-btn--accent admin-invite-send__primary"
+            type="button" onClick={send}>
+            Изпрати покана
+          </button>
+          <button className="admin-btn admin-invite-send__reload" type="button"
+            title="Презареди списъка" onClick={load} disabled={loading}>
+            {loading ? '…' : '↻'}
+          </button>
+        </div>
       </div>
 
       {feedback && (
         <p className="admin-hint" style={{ color: 'var(--accent)' }}>{feedback}</p>
       )}
 
-      <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid var(--border)',
-                    borderRadius: 6 }}>
+      <div className="admin-invite-list">
         {invites.map(i => (
-          <div key={i.id} style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-            borderBottom: '1px solid var(--border)', fontSize: '0.82rem',
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {i.email}
+          <div key={i.id} className="admin-invite-row">
+            <div className="admin-invite-row__main">
+              <div className="admin-invite-row__email-line">
+                <span className="admin-invite-row__email">{i.email}</span>
+                <span className="admin-invite-row__status">{statusBadge(i.status)}</span>
               </div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
-                създадена {new Date(i.createdAt).toLocaleString()} · изтича {new Date(i.expiresAt).toLocaleDateString()}
+              <div className="admin-invite-row__meta">
+                <span>📅 {fmtCreated(i.createdAt)}</span>
+                <span>⏳ изтича {fmtExpires(i.expiresAt)}</span>
               </div>
             </div>
-            <div style={{ minWidth: 90, textAlign: 'right' }}>{statusBadge(i.status)}</div>
-            <button className="admin-btn admin-btn--danger" type="button"
-              onClick={() => revoke(i.id)}
-              style={{ padding: '2px 8px', fontSize: '0.72rem' }}>🗑️</button>
+            <button className="admin-btn admin-btn--danger admin-invite-row__revoke"
+              type="button" title="Премахни поканата"
+              onClick={() => revoke(i.id)}>🗑️</button>
           </div>
         ))}
         {invites.length === 0 && (
@@ -792,9 +803,8 @@ export default function AdminPage() {
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
 
-  useEffect(() => {
-    api.get('/Fantasy/admin/gameweeks').then(r => setGameweeks(r.data ?? [])).catch(() => {});
-  }, []);
+  // Gameweeks endpoint removed along with the Fantasy feature.
+  useEffect(() => { setGameweeks([]); }, []);
 
   const toStr = (val) => {
     if (val == null) return '';

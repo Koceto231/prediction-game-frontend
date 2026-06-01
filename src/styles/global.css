@@ -5208,6 +5208,163 @@ button:focus-visible {
   color: #0a0a0a !important;
 }
 
+/* Invitations management — send form + invite cards. Cards stack
+   internally on every width so they're tidy on phones; no horizontal
+   scroll, no overlapping labels. */
+.admin-invite-send {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-invite-send__email {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.admin-invite-send__buttons {
+  display: flex;
+  gap: 8px;
+  flex: 0 1 auto;
+}
+.admin-invite-send__primary {
+  width: auto !important;
+  padding: 8px 16px !important;
+  white-space: nowrap;
+}
+.admin-invite-send__reload {
+  width: 40px !important;
+  padding: 8px 0 !important;
+  text-align: center;
+}
+@media (max-width: 540px) {
+  .admin-invite-send__email { flex: 1 1 100%; }
+  .admin-invite-send__buttons { flex: 1 1 100%; }
+  .admin-invite-send__primary { flex: 1 1 auto; }
+}
+
+.admin-invite-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border, #2a2a2a);
+  border-radius: 8px;
+}
+.admin-invite-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border, #2a2a2a);
+  font-size: 0.85rem;
+}
+.admin-invite-row:last-child { border-bottom: none; }
+.admin-invite-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.admin-invite-row__email-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.admin-invite-row__email {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.admin-invite-row__status {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.admin-invite-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+.admin-invite-row__revoke {
+  width: 36px !important;
+  height: 36px;
+  padding: 0 !important;
+  font-size: 0.9rem;
+  flex: 0 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Self top-up bar (pinned at top of wallet management) */
+.admin-self-topup {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(240, 197, 25, 0.08);
+  border: 1px solid rgba(240, 197, 25, 0.3);
+  border-radius: 8px;
+}
+.admin-self-topup__label {
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.admin-self-topup__amount {
+  width: 100% !important;
+}
+.admin-self-topup__btn {
+  width: auto !important;
+  padding: 8px 16px !important;
+  white-space: nowrap;
+}
+
+/* User-list filter row */
+.admin-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.admin-filter-bar__input { flex: 1; }
+.admin-filter-bar__reload {
+  width: 40px !important;
+  padding: 8px 0 !important;
+  text-align: center;
+}
+
+/* Phone — стак label-а над input-а в admin-row, плюс leave the
+   Self-Top-Up bar to wrap onto 2 lines if needed. */
+@media (max-width: 540px) {
+  .admin-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .admin-label {
+    width: auto;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .admin-section {
+    padding: 14px 12px;
+  }
+  .admin-section__title {
+    font-size: 11px;
+  }
+}
+
 .admin-section {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 16px;
