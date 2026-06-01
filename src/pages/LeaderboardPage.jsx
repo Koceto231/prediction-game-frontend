@@ -11,6 +11,12 @@ const rankClass = (rank) => {
   return '';
 };
 
+const fmtPct = (n) => {
+  const v = Number(n ?? 0);
+  return `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
+};
+const fmtMoney = (n) => `€${Number(n ?? 0).toFixed(2)}`;
+
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState([]);
@@ -28,7 +34,7 @@ export default function LeaderboardPage() {
         if (!cancelled) setRows(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         if (!cancelled) {
-          setError(err?.response?.data?.message || 'Failed to load leaderboard.');
+          setError(err?.response?.data?.message || 'Зареждането на класирането се провали.');
           setRows([]);
         }
       } finally {
@@ -44,29 +50,31 @@ export default function LeaderboardPage() {
     <div className="shell-card panel">
       <div className="section-head">
         <div>
-          <h2>Leaderboard</h2>
-          <p>Current ranking by total points.</p>
+          <h2>Класиране</h2>
+          <p>Подредени по процент печалба от заложените средства.</p>
         </div>
       </div>
 
-      {loading && <div className="empty-box">Loading leaderboard...</div>}
+      {loading && <div className="empty-box">Зарежда…</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && !error && rows.length === 0 && (
-        <div className="empty-box">No predictions yet.</div>
+        <div className="empty-box">Все още няма приключили залози.</div>
       )}
 
       {!loading && !error && rows.length > 0 && (
         <div className="leaderboard-table">
           <div className="leaderboard-row leaderboard-head">
             <span>#</span>
-            <span>Player</span>
-            <span>Points</span>
+            <span>Играч</span>
+            <span>Печалба %</span>
           </div>
 
           {rows.map((row, index) => {
-            const rank = index + 1;
-            const isMe = user && row.username === user.username;
+            const rank   = index + 1;
+            const isMe   = user && row.username === user.username;
+            const pctVal = Number(row.profitPercent ?? 0);
+            const pctClr = pctVal > 0 ? '#27c76f' : pctVal < 0 ? '#e74c3c' : 'var(--text-muted)';
 
             return (
               <div
@@ -80,14 +88,16 @@ export default function LeaderboardPage() {
                 <div className="leaderboard-user">
                   <div className="leaderboard-name">
                     {row.username}
-                    {isMe && <span className="leaderboard-you-badge">You</span>}
+                    {isMe && <span className="leaderboard-you-badge">Аз</span>}
                   </div>
-                  <div className="leaderboard-mobile-stats">
-                    <span>{row.totalPoints} pts</span>
+                  <div className="leaderboard-mobile-stats" style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                    {row.settledBets} залога · {fmtMoney(row.totalStaked)} заложено · {fmtMoney(row.netProfit)} {pctVal >= 0 ? 'печалба' : 'загуба'}
                   </div>
                 </div>
 
-                <div className="leaderboard-points">{row.totalPoints}</div>
+                <div className="leaderboard-points" style={{ color: pctClr, fontWeight: 800 }}>
+                  {fmtPct(pctVal)}
+                </div>
               </div>
             );
           })}
