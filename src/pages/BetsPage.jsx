@@ -382,21 +382,22 @@ function ActiveBetCard({ bet, onCashedOut }) {
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ЗАЛОГ</span>
             <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.amount).toFixed(2)}</span>
           </div>
-          {/* Show profit ONLY when:
-                · the bet is a single — there's just one pick, the payout is
-                  the same whether it ultimately wins or loses; or
-                · the accumulator has actually settled as Won / CashedOut —
-                  i.e. every leg landed. Pending or partly-lost accumulators
-                  hide the column because the "potential" number is
-                  misleading until everything is in. */}
-          {(!isAccum || bet.status === 'Won' || bet.status === 'CashedOut') && (
-            <div className="gvb-bet__stat">
-              <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
-              <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
-                €{Number(bet.actualPayout ?? bet.potentialPayout).toFixed(2)}
-              </span>
-            </div>
-          )}
+          {/* ПЕЧАЛБА is always visible. Settlement is all-or-nothing for
+                accumulators on the backend — losing even one leg makes
+                actualPayout 0, so a partly-correct accumulator naturally
+                shows €0.00 here without any extra frontend logic. */}
+          <div className="gvb-bet__stat">
+            <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
+              {(() => {
+                const settled = bet.status && bet.status !== 'Pending';
+                const value   = settled
+                  ? Number(bet.actualPayout ?? 0)
+                  : Number(bet.potentialPayout ?? 0);
+                return `€${value.toFixed(2)}`;
+              })()}
+            </span>
+          </div>
         </div>
 
         {live && (
