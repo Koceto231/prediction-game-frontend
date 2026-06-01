@@ -916,18 +916,6 @@ export default function AdminPage() {
             <p className="admin-hint">Pulls real Sportmonks 1X2 odds for all upcoming matches in the 60-day window. Safe to re-run.</p>
           </AdminSection>
 
-          {/* ── Players via Sportmonks ── */}
-          <AdminSection title="Sync Players (Sportmonks)">
-            <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sm-players'}
-                onClick={() => run('sm-players', () => api.post('/admin/sync/sync-players/sportmonks'))}>
-                {loading === 'sm-players' ? 'Syncing…' : 'Sync Players from Sportmonks'}
-              </button>
-            </div>
-            <p className="admin-hint">Синква играчите за всички отбори. Пускай след Import Matches.</p>
-          </AdminSection>
-
-          {/* ── Fantasy: Advance Gameweek ── */}
           {/* ── Re-resolve Bet ── */}
           <AdminSection title="Re-resolve Bet">
             <div className="admin-row">
@@ -943,23 +931,6 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Resets a wrongly-settled bet to Pending and re-scores it with the current final match score. Find the Bet ID in My Bets → History tab.</p>
-          </AdminSection>
-
-          {/* ── Bulk stats sync ── */}
-          <AdminSection title="Sync Goal Scorers (Bulk)">
-            <div className="admin-actions">
-              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'bulk-stats-7'}
-                onClick={() => run('bulk-stats-7', () => api.post('/admin/sync/matches/sync-stats-bulk?daysBack=7'))}>
-                {loading === 'bulk-stats-7' ? 'Starting…' : '⚡ Sync Stats — последните 7 дни'}
-              </button>
-            </div>
-            <div className="admin-actions" style={{ marginTop: 8 }}>
-              <button className="admin-btn" type="button" disabled={loading === 'bulk-stats-30'}
-                onClick={() => run('bulk-stats-30', () => api.post('/admin/sync/matches/sync-stats-bulk?daysBack=30'))}>
-                {loading === 'bulk-stats-30' ? 'Starting…' : '⚡ Sync Stats — последните 30 дни'}
-              </button>
-            </div>
-            <p className="admin-hint">Синква голмайсторите от Sportmonks за всички приключили мачове. Работи в background — провери Results страницата след ~2 мин.</p>
           </AdminSection>
 
           {/* ── Real Odds (Sportmonks) ── */}
