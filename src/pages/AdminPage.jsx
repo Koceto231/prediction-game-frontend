@@ -421,6 +421,7 @@ function UserBetHistoryPanel({ user, onClose }) {
   const [data, setData]       = useState(null);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod]   = useState('all'); // '24h' | '7d' | '30d' | 'all'
 
   useEffect(() => {
     let cancelled = false;
@@ -455,13 +456,34 @@ function UserBetHistoryPanel({ user, onClose }) {
     return 'var(--text-muted)';
   };
 
+  // Time-period filter — cutoff in ms from now.
+  const cutoffMs = (() => {
+    const DAY = 24 * 60 * 60 * 1000;
+    if (period === '24h') return Date.now() - DAY;
+    if (period === '7d')  return Date.now() - 7 * DAY;
+    if (period === '30d') return Date.now() - 30 * DAY;
+    return 0; // all-time
+  })();
+  const filteredBets = (data?.bets ?? []).filter(b => {
+    if (!cutoffMs) return true;
+    return new Date(b.createdAt).getTime() >= cutoffMs;
+  });
+  // Re-aggregate stats over the filtered window so the strip matches
+  // what's actually shown below it.
+  const filteredStats = filteredBets.reduce((acc, b) => ({
+    totalBets:     acc.totalBets + 1,
+    totalStaked:   acc.totalStaked + Number(b.amount),
+    totalWon:      acc.totalWon + ((b.status === 'Won' || b.status === 'CashedOut') ? Number(b.actualPayout ?? 0) : 0),
+    pendingStaked: acc.pendingStaked + (b.status === 'Pending' ? Number(b.amount) : 0),
+  }), { totalBets: 0, totalStaked: 0, totalWon: 0, pendingStaked: 0 });
+  filteredStats.netProfit = filteredStats.totalWon - filteredStats.totalStaked + filteredStats.pendingStaked;
+
   return (
     <div style={{
       marginTop: 16,
       background: 'var(--surface, #161616)',
       border: '1px solid var(--accent)', borderRadius: 6,
-      display: 'flex', flexDirection: 'column',
-      maxHeight: 500, overflow: 'hidden',
+      overflow: 'hidden',
     }}>
       <div>
         <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center',
@@ -485,23 +507,55 @@ function UserBetHistoryPanel({ user, onClose }) {
             padding: '12px 18px', borderBottom: '1px solid var(--border, #2a2a2a)',
             fontSize: '0.82rem',
           }}>
-            <Stat label="Залози" value={data.stats.totalBets} />
-            <Stat label="Заложено общо" value={fmtMoney(data.stats.totalStaked)} />
-            <Stat label="Спечелено общо" value={fmtMoney(data.stats.totalWon)} color="#27c76f" />
-            <Stat label="Очаква" value={fmtMoney(data.stats.pendingStaked)} />
+            <Stat label="Залози" value={filteredStats.totalBets} />
+            <Stat label="Заложено общо" value={fmtMoney(filteredStats.totalStaked)} />
+            <Stat label="Спечелено общо" value={fmtMoney(filteredStats.totalWon)} color="#27c76f" />
+            <Stat label="Очаква" value={fmtMoney(filteredStats.pendingStaked)} />
             <Stat label="Нетна печалба"
-              value={fmtMoney(data.stats.netProfit)}
-              color={data.stats.netProfit >= 0 ? '#27c76f' : '#e74c3c'} />
+              value={fmtMoney(filteredStats.netProfit)}
+              color={filteredStats.netProfit >= 0 ? '#27c76f' : '#e74c3c'} />
           </div>
         )}
 
-        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 18px' }}>
+        {/* Time-period filter pill row */}
+        <div style={{ display: 'flex', gap: 6, padding: '10px 14px',
+                      borderBottom: '1px solid var(--border, #2a2a2a)',
+                      flexWrap: 'wrap' }}>
+          {[
+            { key: '24h', label: '24 часа' },
+            { key: '7d',  label: '7 дни'   },
+            { key: '30d', label: 'Месец'   },
+            { key: 'all', label: 'Всичко'  },
+          ].map(({ key, label }) => {
+            const active = period === key;
+            return (
+              <button key={key} type="button"
+                onClick={() => setPeriod(key)}
+                style={{
+                  padding: '4px 12px', fontSize: '0.74rem',
+                  border: '1px solid var(--border, #2a2a2a)',
+                  borderRadius: 14,
+                  background: active ? 'var(--accent)' : 'transparent',
+                  color: active ? '#0a0a0a' : 'var(--text-muted)',
+                  fontWeight: 700, cursor: 'pointer',
+                }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ overflowY: 'auto', maxHeight: 340, padding: '10px 18px' }}>
           {loading && <p className="admin-hint">Зарежда…</p>}
           {error   && <p className="admin-hint" style={{ color: '#e74c3c' }}>{error}</p>}
-          {!loading && !error && data?.bets?.length === 0 && (
-            <p className="admin-hint">Този потребител няма залози.</p>
+          {!loading && !error && filteredBets.length === 0 && (
+            <p className="admin-hint">
+              {data?.bets?.length === 0
+                ? 'Този потребител няма залози.'
+                : 'Няма залози в избрания период.'}
+            </p>
           )}
-          {!loading && data?.bets?.map(b => (
+          {!loading && filteredBets.map(b => (
             <BetHistoryRow key={b.id} bet={b}
               fmtMoney={fmtMoney} fmtDate={fmtDate}
               statusLabel={statusLabel} statusColor={statusColor} />
