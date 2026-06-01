@@ -37,6 +37,47 @@ const LEAGUE_LABEL = {
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────
+// Frontend safety-net translation for descriptions that were written
+// before the backend was localised. New bets already ship Bulgarian text.
+function translatePickDesc(desc, bet) {
+  if (!desc) return desc;
+  const t = String(desc).trim();
+  const homeName = bet?.homeTeam || 'Домакин';
+  const awayName = bet?.awayTeam || 'Гост';
+
+  const map = {
+    'Home':                 `${homeName} печели`,
+    'Away':                 `${awayName} печели`,
+    'Draw':                 'Равен',
+    'BTTS Yes':             'И двата отбора бележат — Да',
+    'BTTS No':              'И двата отбора бележат — Не',
+    'Over 0.5':             'Голове над 0.5',
+    'Over 1.5':             'Голове над 1.5',
+    'Over 2.5':             'Голове над 2.5',
+    'Over 3.5':             'Голове над 3.5',
+    'Under 0.5':            'Голове под 0.5',
+    'Under 1.5':            'Голове под 1.5',
+    'Under 2.5':            'Голове под 2.5',
+    'Under 3.5':            'Голове под 3.5',
+    'Odd Goals':            'Нечетен брой голове',
+    'Even Goals':           'Четен брой голове',
+    'Half Time — Home':     `Резултат на полувремето — ${homeName}`,
+    'Half Time — Draw':     'Резултат на полувремето — Равен',
+    'Half Time — Away':     `Резултат на полувремето — ${awayName}`,
+    'BTTS 1st Half Yes':    'И двата отбора бележат 1-во полувреме — Да',
+    'BTTS 1st Half No':     'И двата отбора бележат 1-во полувреме — Не',
+    'BTTS 2nd Half Yes':    'И двата отбора бележат 2-ро полувреме — Да',
+    'BTTS 2nd Half No':     'И двата отбора бележат 2-ро полувреме — Не',
+    'No Goal':              'Без гол',
+    'Pending Start':        'Чака начало',
+  };
+  if (map[t]) return map[t];
+  // Quick replacements for common substrings on multi-word descriptions
+  return t
+    .replace(/^Over\s+([\d.]+)$/i,  (_, n) => `Голове над ${n}`)
+    .replace(/^Under\s+([\d.]+)$/i, (_, n) => `Голове под ${n}`);
+}
+
 function formatPick(bet) {
   if (bet.betType === 'Accumulator') {
     const n = bet.accumulatorLegs?.length ?? 0;
@@ -254,16 +295,45 @@ function ActiveBetCard({ bet, onCashedOut }) {
     awayTeamLogo: bet.awayTeamLogo,
   }];
 
+  // Show the dual-crest header when the entire bet sits on one fixture —
+  // both for plain single bets and for single-match accumulators where
+  // every leg references the same matchId.
+  const showSingleFixtureHeader = fixtures.length === 1
+    && (fixtures[0].home || fixtures[0].away);
+
   return (
     <div className={`gvb-bet${live ? ' gvb-bet--live' : ''}`}>
       <div className="gvb-bet__body">
 
-        {/* Picks block on top — same shape for single + accumulator. */}
+        {showSingleFixtureHeader && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '4px 4px 12px', marginBottom: 8,
+            borderBottom: '1px solid var(--border, #2a2a2a)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].homeLogo} name={fixtures[0].home} />
+              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].awayLogo} name={fixtures[0].away} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: '1rem',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {fixtures[0].home} vs {fixtures[0].away}
+              </div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                {formatLeagueAndTime(bet)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Picks block — same shape for single + accumulator. */}
         <div className="gvb-bet__legs">
           <button
             type="button"
             className="gvb-bet__legs-toggle"
             onClick={() => setLegsOpen(o => !o)}
+            style={{ fontSize: '0.92rem' }}
           >
             <span>{legsOpen ? '▾' : '▸'} Избори ({renderedLegs.length})</span>
             <span className="gvb-bet__legs-sum">Общо {Number(bet.oddsAtBetTime).toFixed(2)}</span>
@@ -271,28 +341,34 @@ function ActiveBetCard({ bet, onCashedOut }) {
           {legsOpen && (
             <div className="gvb-bet__legs-list">
               {renderedLegs.map((leg, i) => (
-                <div key={i} className="gvb-bet__leg">
+                <div key={i} className="gvb-bet__leg" style={{ padding: '10px 4px' }}>
                   <span className="gvb-bet__leg-no">{i + 1}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="gvb-bet__leg-desc">{leg.description}</div>
-                    {(leg.homeTeam || leg.awayTeam) && (
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)',
-                                    marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div className="gvb-bet__leg-desc" style={{ fontSize: '0.98rem' }}>
+                      {translatePickDesc(leg.description, { homeTeam: leg.homeTeam ?? bet.homeTeam, awayTeam: leg.awayTeam ?? bet.awayTeam })}
+                    </div>
+                    {/* Per-leg fixture row hidden when the whole bet is on one
+                        match (the dual-crest header already says it). */}
+                    {!showSingleFixtureHeader && (leg.homeTeam || leg.awayTeam) && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)',
+                                    marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                         {leg.homeTeamLogo && (
                           <img src={leg.homeTeamLogo} alt=""
-                            style={{ width: 14, height: 14, objectFit: 'contain' }}
+                            style={{ width: 16, height: 16, objectFit: 'contain' }}
                             onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                         )}
                         <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
                         {leg.awayTeamLogo && (
                           <img src={leg.awayTeamLogo} alt=""
-                            style={{ width: 14, height: 14, objectFit: 'contain' }}
+                            style={{ width: 16, height: 16, objectFit: 'contain' }}
                             onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                         )}
                       </div>
                     )}
                   </div>
-                  <span className="gvb-bet__leg-odds">{Number(leg.odds).toFixed(2)}</span>
+                  <span className="gvb-bet__leg-odds" style={{ fontSize: '1rem' }}>
+                    {Number(leg.odds).toFixed(2)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -301,14 +377,14 @@ function ActiveBetCard({ bet, onCashedOut }) {
 
         {/* Bottom stats — only STAKE + RETURN, the combined odds live in
             the legs header so they don't need a second slot. */}
-        <div className="gvb-bet__stats">
+        <div className="gvb-bet__stats" style={{ fontSize: '0.92rem' }}>
           <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">ЗАЛОГ</span>
-            <span className="gvb-bet__stat-val">€{Number(bet.amount).toFixed(2)}</span>
+            <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ЗАЛОГ</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.amount).toFixed(2)}</span>
           </div>
           <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">ПЕЧАЛБА</span>
-            <span className="gvb-bet__stat-val">€{Number(bet.potentialPayout).toFixed(2)}</span>
+            <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
+            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.potentialPayout).toFixed(2)}</span>
           </div>
         </div>
 
