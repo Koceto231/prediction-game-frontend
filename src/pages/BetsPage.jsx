@@ -382,22 +382,28 @@ function ActiveBetCard({ bet, onCashedOut }) {
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ЗАЛОГ</span>
             <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.amount).toFixed(2)}</span>
           </div>
-          {/* ПЕЧАЛБА is always visible. Settlement is all-or-nothing for
-                accumulators on the backend — losing even one leg makes
-                actualPayout 0, so a partly-correct accumulator naturally
-                shows €0.00 here without any extra frontend logic. */}
-          <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
-            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
-              {(() => {
-                const settled = bet.status && bet.status !== 'Pending';
-                const value   = settled
-                  ? Number(bet.actualPayout ?? 0)
-                  : Number(bet.potentialPayout ?? 0);
-                return `€${value.toFixed(2)}`;
-              })()}
-            </span>
-          </div>
+          {/* Label switches between "Потенциална печалба" (un-settled) and
+                "Печалба" (settled) so it's obvious whether the number is a
+                promise or a payout. Settlement is all-or-nothing for
+                accumulators on the backend — losing one leg makes
+                actualPayout 0 — so a partly-correct acc naturally shows
+                €0.00 here without any partial-credit logic. */}
+          {(() => {
+            const settled = bet.status && bet.status !== 'Pending';
+            const value   = settled
+              ? Number(bet.actualPayout ?? 0)
+              : Number(bet.potentialPayout ?? 0);
+            return (
+              <div className="gvb-bet__stat">
+                <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>
+                  {settled ? 'ПЕЧАЛБА' : 'ПОТЕНЦИАЛНА ПЕЧАЛБА'}
+                </span>
+                <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
+                  €{value.toFixed(2)}
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {live && (
