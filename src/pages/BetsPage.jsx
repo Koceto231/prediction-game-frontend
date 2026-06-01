@@ -333,7 +333,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
             type="button"
             className="gvb-bet__legs-toggle"
             onClick={() => setLegsOpen(o => !o)}
-            style={{ fontSize: '0.92rem' }}
+            style={{ fontSize: '0.92rem', padding: '10px 13px' }}
           >
             <span>{legsOpen ? '▾' : '▸'} Избори ({renderedLegs.length})</span>
             <span className="gvb-bet__legs-sum">Общо {Number(bet.oddsAtBetTime).toFixed(2)}</span>
@@ -341,7 +341,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
           {legsOpen && (
             <div className="gvb-bet__legs-list">
               {renderedLegs.map((leg, i) => (
-                <div key={i} className="gvb-bet__leg" style={{ padding: '10px 4px' }}>
+                <div key={i} className="gvb-bet__leg" style={{ padding: '10px 13px' }}>
                   <span className="gvb-bet__leg-no">{i + 1}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="gvb-bet__leg-desc" style={{ fontSize: '0.98rem' }}>

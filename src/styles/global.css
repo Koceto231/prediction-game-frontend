@@ -10808,7 +10808,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 13px;
   background: none;
   border: none;
   color: var(--text-main);
@@ -10836,7 +10836,7 @@ select:focus {
   grid-template-columns: 24px 1fr auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 10px 13px;
   font-size: 0.84rem;
 }
 .gvb-bet__leg + .gvb-bet__leg {
