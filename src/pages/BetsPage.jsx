@@ -40,20 +40,16 @@ const LEAGUE_LABEL = {
 function formatPick(bet) {
   if (bet.betType === 'Accumulator') {
     const n = bet.accumulatorLegs?.length ?? 0;
-    return `${n}-leg accumulator`;
+    return `${n} избора`;
   }
   if (bet.betType === 'Winner') {
     const desc = String(bet.betDescription ?? '');
-    // Backend may serialise the pick as a literal "Home" / "Away" / "Draw",
-    // OR as the team name itself, OR as something like "Lokomotiv Plovdiv Win".
-    // Match against the actual team names on the bet so we don't fall back to
-    // "Draw" just because the description has no English keyword.
-    if (bet.homeTeam && desc.toLowerCase().includes(bet.homeTeam.toLowerCase())) return `${bet.homeTeam} Win`;
-    if (bet.awayTeam && desc.toLowerCase().includes(bet.awayTeam.toLowerCase())) return `${bet.awayTeam} Win`;
-    if (/\bhome\b/i.test(desc)) return `${bet.homeTeam} Win`;
-    if (/\baway\b/i.test(desc)) return `${bet.awayTeam} Win`;
-    if (/\bdraw\b/i.test(desc)) return 'Draw';
-    return desc || 'Winner';
+    if (bet.homeTeam && desc.toLowerCase().includes(bet.homeTeam.toLowerCase())) return `${bet.homeTeam} печели`;
+    if (bet.awayTeam && desc.toLowerCase().includes(bet.awayTeam.toLowerCase())) return `${bet.awayTeam} печели`;
+    if (/\bhome\b/i.test(desc)) return `${bet.homeTeam} печели`;
+    if (/\baway\b/i.test(desc)) return `${bet.awayTeam} печели`;
+    if (/\bdraw\b/i.test(desc)) return 'Равен';
+    return desc || 'Победител';
   }
   return bet.betDescription;
 }
@@ -157,10 +153,10 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
   };
 
   if (!quote) {
-    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled>Loading…</button>;
+    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled>Зарежда…</button>;
   }
   if (!quote.eligible) {
-    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled title={quote.reason || ''}>Unavailable</button>;
+    return <button type="button" className="gvb-cashout-btn gvb-cashout-btn--muted" disabled title={quote.reason || ''}>Недостъпно</button>;
   }
 
   const value  = Number(quote.value);
@@ -175,37 +171,37 @@ function CashOutCta({ bet, onCashedOut, variant = 'live' }) {
         className={`gvb-cashout-btn ${variant === 'live' ? 'gvb-cashout-btn--gold' : 'gvb-cashout-btn--ghost'}`}
         onClick={() => setConfirm(true)}
       >
-        Cash Out €{value.toFixed(2)}
+        Изтегли €{value.toFixed(2)}
       </button>
 
       {confirm && (
         <div className="cashout-modal-overlay" onClick={() => !loading && setConfirm(false)}>
           <div className="cashout-modal" onClick={e => e.stopPropagation()}>
             <div className="cashout-modal__header">
-              <h3>Confirm Cash Out</h3>
+              <h3>Потвърди изтегляне</h3>
               <button type="button" className="cashout-modal__close"
                 onClick={() => !loading && setConfirm(false)}>×</button>
             </div>
             <div className="cashout-modal__body">
-              <div className="cashout-modal__row"><span>Pick</span><strong>{bet.betDescription}</strong></div>
-              <div className="cashout-modal__row"><span>Stake</span><strong>€{stake.toFixed(2)}</strong></div>
-              <div className="cashout-modal__row"><span>Original Odds</span><strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
-              <div className="cashout-modal__row"><span>Potential Payout</span><strong>€{Number(bet.potentialPayout).toFixed(2)}</strong></div>
+              <div className="cashout-modal__row"><span>Залог</span><strong>{bet.betDescription}</strong></div>
+              <div className="cashout-modal__row"><span>Заложена сума</span><strong>€{stake.toFixed(2)}</strong></div>
+              <div className="cashout-modal__row"><span>Първоначален коефициент</span><strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
+              <div className="cashout-modal__row"><span>Възможна печалба</span><strong>€{Number(bet.potentialPayout).toFixed(2)}</strong></div>
               <div className={`cashout-modal__big ${isLoss ? 'cashout-badge--loss' : 'cashout-badge--profit'}`}>
-                <span>Cash out for</span>
+                <span>Изтегли за</span>
                 <strong>€{value.toFixed(2)}</strong>
                 <span className={`cashout-modal__delta ${isLoss ? 'cashout-badge--loss' : 'cashout-badge--profit'}`}>
-                  {profit >= 0 ? `+€${profit.toFixed(2)} profit` : `−€${Math.abs(profit).toFixed(2)} loss recovered`}
+                  {profit >= 0 ? `+€${profit.toFixed(2)} печалба` : `−€${Math.abs(profit).toFixed(2)} възстановени`}
                 </span>
               </div>
               {error && <div className="alert alert-error" style={{ marginTop: 8 }}>{error}</div>}
             </div>
             <div className="cashout-modal__footer">
               <button type="button" className="cashout-modal__btn cashout-modal__btn--secondary"
-                disabled={loading} onClick={() => setConfirm(false)}>Cancel</button>
+                disabled={loading} onClick={() => setConfirm(false)}>Отказ</button>
               <button type="button" className="cashout-modal__btn cashout-modal__btn--primary"
                 disabled={loading} onClick={handleConfirm}>
-                {loading ? 'Processing…' : 'Confirm'}
+                {loading ? 'Обработва…' : 'Потвърди'}
               </button>
             </div>
           </div>
@@ -247,88 +243,78 @@ function ActiveBetCard({ bet, onCashedOut }) {
     }];
   })();
 
+  // Build the picks list — for single bets we synthesise a single-leg
+  // entry so the same component renders both shapes the same way.
+  const renderedLegs = isAccum ? legs : [{
+    description: formatPick(bet),
+    odds:        Number(bet.oddsAtBetTime),
+    homeTeam:    bet.homeTeam,
+    awayTeam:    bet.awayTeam,
+    homeTeamLogo: bet.homeTeamLogo,
+    awayTeamLogo: bet.awayTeamLogo,
+  }];
+
   return (
     <div className={`gvb-bet${live ? ' gvb-bet--live' : ''}`}>
       <div className="gvb-bet__body">
-        <div className="gvb-bet__head">
-          <div className="gvb-bet__head-left">
-            <div className="gvb-bet__crest-box" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].homeLogo} name={fixtures[0].home} />
-              <TeamCrest className="gvb-bet__crest" logoUrl={fixtures[0].awayLogo} name={fixtures[0].away} />
+
+        {/* Picks block on top — same shape for single + accumulator. */}
+        <div className="gvb-bet__legs">
+          <button
+            type="button"
+            className="gvb-bet__legs-toggle"
+            onClick={() => setLegsOpen(o => !o)}
+          >
+            <span>{legsOpen ? '▾' : '▸'} Избори ({renderedLegs.length})</span>
+            <span className="gvb-bet__legs-sum">Общо {Number(bet.oddsAtBetTime).toFixed(2)}</span>
+          </button>
+          {legsOpen && (
+            <div className="gvb-bet__legs-list">
+              {renderedLegs.map((leg, i) => (
+                <div key={i} className="gvb-bet__leg">
+                  <span className="gvb-bet__leg-no">{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="gvb-bet__leg-desc">{leg.description}</div>
+                    {(leg.homeTeam || leg.awayTeam) && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)',
+                                    marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {leg.homeTeamLogo && (
+                          <img src={leg.homeTeamLogo} alt=""
+                            style={{ width: 14, height: 14, objectFit: 'contain' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        )}
+                        <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
+                        {leg.awayTeamLogo && (
+                          <img src={leg.awayTeamLogo} alt=""
+                            style={{ width: 14, height: 14, objectFit: 'contain' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <span className="gvb-bet__leg-odds">{Number(leg.odds).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
-            <div className="gvb-bet__title-wrap">
-              <p className="gvb-bet__fixture">
-                {isAccum
-                  ? (fixtures.length === 1
-                      ? `${legs.length}-leg на ${fixtures[0].home} vs ${fixtures[0].away}`
-                      : `${legs.length}-leg от ${fixtures.length} мача`)
-                  : `${bet.homeTeam} vs ${bet.awayTeam}`}
-              </p>
-              <p className="gvb-bet__meta">{formatLeagueAndTime(bet)}</p>
-            </div>
-          </div>
-          {live && <span className="gvb-bet__live-pill">LIVE</span>}
+          )}
         </div>
 
+        {/* Bottom stats — only STAKE + RETURN, the combined odds live in
+            the legs header so they don't need a second slot. */}
         <div className="gvb-bet__stats">
           <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">SELECTION</span>
-            <span className="gvb-bet__stat-val">{formatPick(bet)}</span>
-          </div>
-          <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">{isAccum ? 'COMBINED ODDS' : 'ODDS'}</span>
-            <span className="gvb-bet__stat-val gvb-bet__stat-val--accent">{Number(bet.oddsAtBetTime).toFixed(2)}</span>
-          </div>
-          <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">STAKE</span>
+            <span className="gvb-bet__stat-label">ЗАЛОГ</span>
             <span className="gvb-bet__stat-val">€{Number(bet.amount).toFixed(2)}</span>
           </div>
           <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label">RETURN</span>
+            <span className="gvb-bet__stat-label">ПЕЧАЛБА</span>
             <span className="gvb-bet__stat-val">€{Number(bet.potentialPayout).toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Accumulator legs — collapsible list showing each pick */}
-        {isAccum && legs.length > 0 && (
-          <div className="gvb-bet__legs">
-            <button
-              type="button"
-              className="gvb-bet__legs-toggle"
-              onClick={() => setLegsOpen(o => !o)}
-            >
-              <span>{legsOpen ? '▾' : '▸'} Picks ({legs.length})</span>
-              <span className="gvb-bet__legs-sum">Combined {Number(bet.oddsAtBetTime).toFixed(2)}</span>
-            </button>
-            {legsOpen && (
-              <div className="gvb-bet__legs-list">
-                {legs.map((leg, i) => (
-                  <div key={i} className="gvb-bet__leg">
-                    <span className="gvb-bet__leg-no">{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="gvb-bet__leg-desc">{leg.description}</div>
-                      {(leg.homeTeam || leg.awayTeam) && (
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)',
-                                      marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {leg.homeTeamLogo && (
-                            <img src={leg.homeTeamLogo} alt=""
-                              style={{ width: 14, height: 14, objectFit: 'contain' }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                          )}
-                          <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
-                          {leg.awayTeamLogo && (
-                            <img src={leg.awayTeamLogo} alt=""
-                              style={{ width: 14, height: 14, objectFit: 'contain' }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <span className="gvb-bet__leg-odds">{Number(leg.odds).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+        {live && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+            <span className="gvb-bet__live-pill">НА ЖИВО</span>
           </div>
         )}
       </div>
@@ -336,7 +322,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
       <div className="gvb-bet__foot">
         <div className="gvb-bet__placed">
           <span className="gvb-bet__placed-icon">{live ? '⏱' : '📅'}</span>
-          <span>{live ? `Bet placed ${placedAgo}` : 'Pending Start'}</span>
+          <span>{live ? `Залогът е поставен преди ${placedAgo}` : 'Чака начало'}</span>
         </div>
         <CashOutCta bet={bet} onCashedOut={onCashedOut} variant={live ? 'live' : 'pending'} />
       </div>
