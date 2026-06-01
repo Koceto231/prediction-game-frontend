@@ -5103,30 +5103,109 @@ button:focus-visible {
   margin-top: 8px;
 }
 
-/* Wallet management — user rows. The fixed-width grid columns were
-   right for desktop but pushed buttons off the screen on phones. Use
-   a flex layout below 800px so each row wraps to two lines: identity +
-   amount on top, action buttons underneath. */
+/* Wallet management — user rows. A 3-block stacked card: identity +
+   balance on top, the adjust trio (input + −/+) in the middle, and
+   the 3 action buttons in a row below. Same vertical layout on every
+   width — only proportions change. Looks tidy on phones, doesn't
+   waste space on desktop. */
 .admin-user-row {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) 70px 80px 28px 28px 110px 140px 90px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--border, #2a2a2a);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
 }
-@media (max-width: 800px) {
-  .admin-user-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    padding: 10px;
-  }
-  .admin-user-row > * { flex: 0 0 auto; }
-  .admin-user-row > .admin-user-row__identity { flex: 1 1 100%; }
-  .admin-user-row .admin-input { flex: 0 1 90px; }
+.admin-user-row__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.admin-user-row__identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.admin-user-row__name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-user-row__admin-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 4px;
+  background: rgba(240, 197, 25, 0.15);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.admin-user-row__email {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.admin-user-row__balance {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: right;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.admin-user-row__balance-unit {
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.admin-user-row__adjust {
+  display: grid;
+  grid-template-columns: 1fr 40px 40px;
+  gap: 6px;
+}
+.admin-user-row__delta {
+  width: 100% !important;
+  text-align: center;
+}
+.admin-user-row__icon-btn {
+  width: 100% !important;
+  padding: 6px 0 !important;
+  font-weight: 800;
+  font-size: 1rem;
+  text-align: center;
+}
+.admin-user-row__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.admin-user-row__action {
+  width: 100% !important;
+  padding: 6px 6px !important;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-user-row__action--active {
+  background: var(--accent) !important;
+  color: #0a0a0a !important;
 }
 
 .admin-section {

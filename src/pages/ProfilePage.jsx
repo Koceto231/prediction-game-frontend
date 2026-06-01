@@ -182,7 +182,7 @@ export default function ProfilePage() {
         <div className="section-head">
           <div>
             <h2>Bet History</h2>
-            <p>All your completed bets.</p>
+            <p>All your completed bets · всички суми в монети 🪙</p>
           </div>
         </div>
 
@@ -203,11 +203,11 @@ export default function ProfilePage() {
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Staked</span>
-              <strong>{Number(totalStaked).toLocaleString()} монети</strong>
+              <strong>{Number(totalStaked).toLocaleString()}</strong>
             </div>
             <div className="shell-card profile-stat-card">
               <span>Total Won</span>
-              <strong style={{ color: 'var(--accent)' }}>{Number(totalWon).toFixed(2)} монети</strong>
+              <strong style={{ color: 'var(--accent)' }}>{Number(totalWon).toFixed(2)}</strong>
             </div>
           </div>
         )}
@@ -271,11 +271,11 @@ export default function ProfilePage() {
                 <div className="bet-card__details">
                   <div className="bet-card__pick">Pick: <strong>{bet.betDescription}</strong></div>
                   <div>Odds: <strong>{Number(bet.oddsAtBetTime).toFixed(2)}</strong></div>
-                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()} монети</strong></div>
+                  <div>Stake: <strong>{Number(bet.amount).toLocaleString()}</strong></div>
                   <div>
                     {isWon
-                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toFixed(2)} монети</strong></>
-                      : <>Potential: <strong>{Number(bet.potentialPayout).toFixed(2)} монети</strong></>
+                      ? <>Payout: <strong className="text-won">{Number(bet.actualPayout).toFixed(2)}</strong></>
+                      : <>Potential: <strong>{Number(bet.potentialPayout).toFixed(2)}</strong></>
                     }
                   </div>
                 </div>

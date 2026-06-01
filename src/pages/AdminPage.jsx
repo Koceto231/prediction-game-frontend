@@ -359,50 +359,42 @@ function UserBalanceRow({ user, onAdjust, onSetRole, onDelete, onShowHistory, hi
 
   return (
     <div className="admin-user-row">
-      <div className="admin-user-row__identity" style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {user.username}
-          {isAdmin && (
-            <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--accent)' }}>(admin)</span>
-          )}
+      <div className="admin-user-row__head">
+        <div className="admin-user-row__identity">
+          <div className="admin-user-row__name">
+            {user.username}
+            {isAdmin && <span className="admin-user-row__admin-tag">admin</span>}
+          </div>
+          <div className="admin-user-row__email">{user.email}</div>
         </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {user.email}
+        <div className="admin-user-row__balance">
+          {Number(user.balance).toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="admin-user-row__balance-unit">монети</span>
         </div>
       </div>
-      <div style={{ fontFamily: 'monospace', textAlign: 'right' }}>
-        {Number(user.balance).toFixed(2)}
+
+      <div className="admin-user-row__adjust">
+        <input className="admin-input admin-user-row__delta" type="number" value={delta}
+          onChange={e => setDelta(e.target.value)} />
+        <button className="admin-btn admin-btn--accent admin-user-row__icon-btn" type="button"
+          title="Добави" onClick={() => onAdjust(user.id, Number(delta))}>+</button>
+        <button className="admin-btn admin-btn--danger admin-user-row__icon-btn" type="button"
+          title="Извади" onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}>−</button>
       </div>
-      <input className="admin-input" type="number" value={delta}
-        onChange={e => setDelta(e.target.value)}
-        style={{ width: '100%' }} />
-      <button className="admin-btn admin-btn--accent" type="button"
-        onClick={() => onAdjust(user.id, Number(delta))}
-        style={{ padding: '4px 0' }}>+</button>
-      <button className="admin-btn admin-btn--danger" type="button"
-        onClick={() => onAdjust(user.id, -Math.abs(Number(delta)))}
-        style={{ padding: '4px 0' }}>−</button>
-      <button className="admin-btn" type="button"
-        title={`Виж залозите на ${user.username}`}
-        onClick={onShowHistory}
-        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem',
-                 background: historyActive ? 'var(--accent)' : undefined,
-                 color: historyActive ? '#0a0a0a' : undefined }}>
-        📊 История
-      </button>
-      <button className="admin-btn" type="button"
-        title={isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
-        onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}
-        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
-        {isAdmin ? '★ Махни admin' : '☆ Направи admin'}
-      </button>
-      <button className="admin-btn admin-btn--danger" type="button"
-        title={`Изтрий профила на ${user.username}`}
-        onClick={() => onDelete(user.id, user.username)}
-        style={{ padding: '4px 8px', whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
-        🗑 Изтрий
-      </button>
+
+      <div className="admin-user-row__actions">
+        <button className={`admin-btn admin-user-row__action${historyActive ? ' admin-user-row__action--active' : ''}`}
+          type="button" title={`Виж залозите на ${user.username}`}
+          onClick={onShowHistory}>📊 История</button>
+        <button className="admin-btn admin-user-row__action" type="button"
+          title={isAdmin ? `Махни admin от ${user.username}` : `Направи ${user.username} admin`}
+          onClick={() => onSetRole(user.id, isAdmin ? 'User' : 'Admin')}>
+          {isAdmin ? '★ Махни' : '☆ Admin'}
+        </button>
+        <button className="admin-btn admin-btn--danger admin-user-row__action" type="button"
+          title={`Изтрий профила на ${user.username}`}
+          onClick={() => onDelete(user.id, user.username)}>🗑 Изтрий</button>
+      </div>
     </div>
   );
 }
@@ -427,7 +419,11 @@ function UserBetHistoryPanel({ user, onClose }) {
     return () => { cancelled = true; };
   }, [user.id]);
 
-  const fmtMoney = (n) => `${Number(n ?? 0).toFixed(2)} монети`;
+  // Numbers only — the panel already labels itself "в монети" so we
+  // don't repeat the unit on every line. Use bg-BG locale so 4449 → 4 449.
+  const fmtNum = (n) => Number(n ?? 0).toLocaleString('bg-BG', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
   const fmtDate  = (d) => d ? new Date(d).toLocaleString('bg-BG', {
     dateStyle: 'short', timeStyle: 'short',
   }) : '—';
@@ -486,7 +482,7 @@ function UserBetHistoryPanel({ user, onClose }) {
               История на залозите — {user.username}
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-              {user.email}
+              {user.email} · всички суми в монети 🪙
             </div>
           </div>
           <button type="button" className="admin-btn" onClick={onClose}
@@ -500,11 +496,11 @@ function UserBetHistoryPanel({ user, onClose }) {
             fontSize: '0.82rem',
           }}>
             <Stat label="Залози" value={filteredStats.totalBets} />
-            <Stat label="Заложено общо" value={fmtMoney(filteredStats.totalStaked)} />
-            <Stat label="Спечелено общо" value={fmtMoney(filteredStats.totalWon)} color="#27c76f" />
-            <Stat label="Очаква" value={fmtMoney(filteredStats.pendingStaked)} />
+            <Stat label="Заложено общо" value={fmtNum(filteredStats.totalStaked)} />
+            <Stat label="Спечелено общо" value={fmtNum(filteredStats.totalWon)} color="#27c76f" />
+            <Stat label="Очаква" value={fmtNum(filteredStats.pendingStaked)} />
             <Stat label="Нетна печалба"
-              value={fmtMoney(filteredStats.netProfit)}
+              value={fmtNum(filteredStats.netProfit)}
               color={filteredStats.netProfit >= 0 ? '#27c76f' : '#e74c3c'} />
           </div>
         )}
@@ -549,7 +545,7 @@ function UserBetHistoryPanel({ user, onClose }) {
           )}
           {!loading && filteredBets.map(b => (
             <BetHistoryRow key={b.id} bet={b}
-              fmtMoney={fmtMoney} fmtDate={fmtDate}
+              fmtNum={fmtNum} fmtDate={fmtDate}
               statusLabel={statusLabel} statusColor={statusColor} />
           ))}
         </div>
@@ -561,7 +557,7 @@ function UserBetHistoryPanel({ user, onClose }) {
 /** One row in the bet-history list. Accumulators show a chevron + "Колонка"
     badge; clicking expands the embedded leg list parsed from
     accumulatorLegsJson. */
-function BetHistoryRow({ bet, fmtMoney, fmtDate, statusLabel, statusColor }) {
+function BetHistoryRow({ bet, fmtNum, fmtDate, statusLabel, statusColor }) {
   const [open, setOpen] = useState(false);
   const isAccum = bet.betType === 'Accumulator';
   const legs = (() => {
@@ -613,11 +609,11 @@ function BetHistoryRow({ bet, fmtMoney, fmtDate, statusLabel, statusColor }) {
           )}
         </div>
         <div style={{ textAlign: 'right', minWidth: 130 }}>
-          <div style={{ fontWeight: 700 }}>Залог: {fmtMoney(bet.amount)}</div>
+          <div style={{ fontWeight: 700 }}>Залог: {fmtNum(bet.amount)}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             {bet.status === 'Pending'
-              ? `Възм. ${fmtMoney(bet.potentialPayout)}`
-              : `Изплатено ${fmtMoney(bet.actualPayout)}`}
+              ? `Възм. ${fmtNum(bet.potentialPayout)}`
+              : `Изплатено ${fmtNum(bet.actualPayout)}`}
           </div>
           <div style={{ fontSize: '0.78rem', color: statusColor(bet.status), fontWeight: 700 }}>
             {statusLabel(bet.status)}
