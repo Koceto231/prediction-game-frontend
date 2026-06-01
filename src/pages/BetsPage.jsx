@@ -382,10 +382,21 @@ function ActiveBetCard({ bet, onCashedOut }) {
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ЗАЛОГ</span>
             <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.amount).toFixed(2)}</span>
           </div>
-          <div className="gvb-bet__stat">
-            <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
-            <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>€{Number(bet.potentialPayout).toFixed(2)}</span>
-          </div>
+          {/* Show profit ONLY when:
+                · the bet is a single — there's just one pick, the payout is
+                  the same whether it ultimately wins or loses; or
+                · the accumulator has actually settled as Won / CashedOut —
+                  i.e. every leg landed. Pending or partly-lost accumulators
+                  hide the column because the "potential" number is
+                  misleading until everything is in. */}
+          {(!isAccum || bet.status === 'Won' || bet.status === 'CashedOut') && (
+            <div className="gvb-bet__stat">
+              <span className="gvb-bet__stat-label" style={{ fontSize: '0.78rem' }}>ПЕЧАЛБА</span>
+              <span className="gvb-bet__stat-val" style={{ fontSize: '1.05rem' }}>
+                €{Number(bet.actualPayout ?? bet.potentialPayout).toFixed(2)}
+              </span>
+            </div>
+          )}
         </div>
 
         {live && (
