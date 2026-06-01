@@ -10768,8 +10768,6 @@ select:focus {
   gap: 14px;
   padding: 16px;
   background: var(--surface-container, #201f1f);
-  border: 1px solid rgba(77, 70, 51, 0.3);
-  border-radius: 8px;
 }
 
 .gvb-bet__stat {
@@ -10799,8 +10797,6 @@ select:focus {
 .gvb-bet__legs {
   margin-top: 14px;
   background: var(--surface-2, #1c1b1b);
-  border: 1px solid var(--border-soft, #4d4633);
-  border-radius: 8px;
   overflow: hidden;
 }
 .gvb-bet__legs-toggle {
