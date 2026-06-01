@@ -23,15 +23,12 @@ const PRIMARY_TABS = [
   { to: '/matches',     Icon: Zap,           label: 'Matches'  },
   { to: '/live',        Icon: Radio,          label: 'Live'     },
   { to: '/bets',        Icon: ClipboardList,  label: 'My Bets'  },
-  { to: '/fantasy',     Icon: Crown,          label: 'Fantasy'  },
-  { to: '/leaderboard', Icon: Trophy,         label: 'Board'    },
 ];
 
 const MORE_ITEMS = [
   { to: '/leagues',   Icon: Globe,        label: 'Leagues'   },
   { to: '/standings', Icon: BarChart2,    label: 'Standings' },
   { to: '/results',   Icon: CheckCircle,  label: 'Results'   },
-  { to: '/news',      Icon: Newspaper,    label: 'News'      },
 ];
 
 export default function Navbar() {
@@ -96,12 +93,9 @@ export default function Navbar() {
           <NavLink to="/matches">Matches</NavLink>
           <NavLink to="/live">Live{liveCount > 0 ? ` — ${liveCount}` : ''}</NavLink>
           <NavLink to="/bets">My Bets</NavLink>
-          <NavLink to="/leaderboard">Board</NavLink>
           <NavLink to="/leagues">Leagues</NavLink>
-          <NavLink to="/fantasy">Fantasy</NavLink>
           <NavLink to="/standings">Standings</NavLink>
           <NavLink to="/results">Results</NavLink>
-          <NavLink to="/news">News</NavLink>
           {isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 

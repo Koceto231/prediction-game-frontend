@@ -16,7 +16,6 @@ import OddsTicker from './components/OddsTicker';
 import BetSlipPanel from './components/BetSlipPanel';
 import { useAuth } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
-import LeaderboardPage from './pages/LeaderboardPage';
 import LoginPage from './pages/LoginPage';
 import MatchesPage from './pages/MatchesPage';
 import LivePage from './pages/LivePage';
@@ -28,10 +27,6 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import BetsPage from './pages/BetsPage';
-import FantasyPage from './pages/FantasyPage';
-import FantasyDraftPage from './pages/FantasyDraftPage';
-import FantasyLeaderboardPage from './pages/FantasyLeaderboardPage';
-import NewsPage from './pages/NewsPage';
 import StandingsPage from './pages/StandingsPage';
 import ResultsPage from './pages/ResultsPage';
 
@@ -66,15 +61,10 @@ function AppLayout() {
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/live" element={<LivePage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/leagues" element={<LeaguesPage />} />
             <Route path="/leagues/:leagueId" element={<LeaguePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/bets" element={<BetsPage />} />
-            <Route path="/fantasy" element={<FantasyPage />} />
-            <Route path="/fantasy/draft" element={<FantasyDraftPage />} />
-            <Route path="/fantasy/leaderboard" element={<FantasyLeaderboardPage />} />
-            <Route path="/news" element={<NewsPage />} />
             <Route path="/standings" element={<StandingsPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route
