@@ -317,7 +317,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: '1rem',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            wordBreak: 'break-word' }}>
                 {fixtures[0].home} vs {fixtures[0].away}
               </div>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>

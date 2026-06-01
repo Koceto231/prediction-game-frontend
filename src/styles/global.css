@@ -10855,9 +10855,13 @@ select:focus {
 .gvb-bet__leg-desc {
   color: var(--text-main);
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wrap long descriptions instead of clipping them — Safari on
+     iOS was hiding the tail of Bulgarian picks like "Полувреме Mexico
+     + И двата бележат 1-во полувреме — Да". word-break lets the line
+     break mid-word as a last resort on very narrow viewports. */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 .gvb-bet__leg-odds {
