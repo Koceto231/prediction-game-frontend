@@ -3143,13 +3143,12 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--accent-soft);
-  border: 1px solid var(--border-accent);
   border-radius: 20px;
-  padding: 5px 14px;
+  padding: 8px 14px;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--accent);
+  line-height: 1.1;
   white-space: nowrap;
 }
 
@@ -6470,22 +6469,10 @@ select:focus {
   margin-left: auto;
 }
 
-.wallet-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 16px;
-  height: 100%;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.04em;
-}
-
-.wallet-icon {
-  opacity: 0.7;
-}
+/* Dead navbar-strip definition removed — was overriding the canonical
+   pill rules above with padding:0 + height:100%, which is what caused
+   the balance text to clip against the rounded edges. The pill styling
+   now lives only in the single .wallet-badge block higher up. */
 
 .nav-avatar-wrap {
   position: relative;
