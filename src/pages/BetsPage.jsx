@@ -497,29 +497,23 @@ export default function BetsPage() {
 
       {/* Betting Overview heading + 3 stat cards */}
       <section className="gvb-overview">
-        <h1 className="gvb-overview__title">Betting Overview</h1>
+        <h1 className="gvb-overview__title">Преглед на залозите</h1>
         <div className="gvb-overview__grid">
           <div className="gvb-stat">
             <div className="gvb-stat__bg-icon">💼</div>
-            <p className="gvb-stat__label">TOTAL EXPOSURE</p>
+            <p className="gvb-stat__label">ОБЩА ЕКСПОЗИЦИЯ</p>
             <p className="gvb-stat__value">{totalExposure.toFixed(2)} монети</p>
-            <p className="gvb-stat__hint">
-              <span className="gvb-stat__hint-icon">ℹ</span> Active stakes across all markets
-            </p>
           </div>
           <div className="gvb-stat">
             <div className="gvb-stat__bg-icon">📈</div>
-            <p className="gvb-stat__label">PROJECTED PROFIT</p>
+            <p className="gvb-stat__label">ПРОГНОЗНА ПЕЧАЛБА</p>
             <p className="gvb-stat__value gvb-stat__value--accent">
               {projectedProfit >= 0 ? '+' : ''}{projectedProfit.toFixed(2)} монети
-            </p>
-            <p className="gvb-stat__hint">
-              <span className="gvb-stat__hint-icon">⚡</span> Calculated at current odds
             </p>
           </div>
           <div className="gvb-stat">
             <div className="gvb-stat__bg-icon">📊</div>
-            <p className="gvb-stat__label">WIN RATE (LAST 30D)</p>
+            <p className="gvb-stat__label">% ПЕЧЕЛИВШИ (ПОСЛ. 30 ДНИ)</p>
             <p className="gvb-stat__value">{wr.toFixed(1)}%</p>
             <div className="gvb-stat__bar">
               <div className="gvb-stat__bar-fill" style={{ width: `${Math.max(0, Math.min(100, wr))}%` }} />
