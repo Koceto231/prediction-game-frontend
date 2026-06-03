@@ -11352,13 +11352,11 @@ select:focus {
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 999px;
-  font-family: inherit;
-  font-size: 1.55rem;
-  font-weight: 700;
-  line-height: 1;
+  line-height: 0;            /* SVG icon — kill font baseline shifts entirely */
   cursor: pointer;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
+.gvmd-hero__back > svg { display: block; }
 .gvmd-hero__back:hover {
   background: var(--accent);
   color: #0e0e0e;
@@ -11552,9 +11550,9 @@ select:focus {
   .gvmd-hero__back {
     width: 42px;
     height: 26px;
-    font-size: 1.12rem;
     padding: 0;
   }
+  .gvmd-hero__back > svg { width: 16px; height: 16px; }
   .gvmd-hero__row {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 10px;

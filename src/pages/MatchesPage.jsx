@@ -903,7 +903,14 @@ export default function MatchesPage() {
               onClick={() => { setSelectedMatch(null); resetPanel(); }}
               aria-label="All matches"
               title="All matches"
-            >←</button>
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                   stroke="currentColor" strokeWidth="2.5"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
 
             <div className="gvmd-hero__row">
               {/* HOME shield + name */}
