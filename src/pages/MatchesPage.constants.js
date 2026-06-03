@@ -49,6 +49,11 @@ export const BET_TYPE = {
   TeamHighestScoringHalf: 'TeamHighestScoringHalf',
   ResultTotalGoals:     'ResultTotalGoals',
   WinEitherHalf:        'WinEitherHalf',
+  // ── WC knockout ────────────────────────────────────────────────
+  ToQualify:            'ToQualify',
+  ExtraTime:            'ExtraTime',
+  Penalties:            'Penalties',
+  MethodOfVictory:      'MethodOfVictory',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */

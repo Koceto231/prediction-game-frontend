@@ -832,6 +832,23 @@ function constraintsOf(p) {
       c.wehSide = side; // Home/Away track separately
       break;
     }
+    // ── WC knockout markets ─────────────────────────────────────
+    case 'ToQualify': {                   // leg.pick=Home/Away
+      c.qualifyPick = p.leg?.pick || p.pick; // Home/Away
+      break;
+    }
+    case 'ExtraTime': {                   // bTTSPick=Yes/No
+      c.etPick = yes(p.leg?.bTTSPick) ? 'Yes' : 'No';
+      break;
+    }
+    case 'Penalties': {                   // bTTSPick=Yes/No
+      c.penPick = yes(p.leg?.bTTSPick) ? 'Yes' : 'No';
+      break;
+    }
+    case 'MethodOfVictory': {             // stringPick=Regulation/ExtraTime/Penalties
+      c.movPick = p.leg?.stringPick || p.pick;
+      break;
+    }
     case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       const side = raw.startsWith('Home') ? 'H'
@@ -1136,6 +1153,46 @@ function semanticConflict(a, b) {
     const [sb, hb] = cb.thshPick.split(':');
     if (sa === sb && ha !== hb) return true;
   }
+
+  // ── WC Knockout clashes ──────────────────────────────────────────
+  // Two different qualifier picks: Home vs Away can't both advance.
+  if (ca.qualifyPick && cb.qualifyPick && ca.qualifyPick !== cb.qualifyPick) return true;
+
+  // Two different ExtraTime picks (Yes vs No) — impossible.
+  if (ca.etPick && cb.etPick && ca.etPick !== cb.etPick) return true;
+
+  // Two different Penalties picks — impossible.
+  if (ca.penPick && cb.penPick && ca.penPick !== cb.penPick) return true;
+
+  // Two different Method of Victory picks — match resolves to exactly one.
+  if (ca.movPick && cb.movPick && ca.movPick !== cb.movPick) return true;
+
+  // Cross-market knockout logic:
+  //   • Penalties Yes requires Extra Time Yes (you can't reach pens without ET).
+  //     So PenYes + ET No = impossible.
+  const etPick  = ca.etPick  || cb.etPick;
+  const penPick = ca.penPick || cb.penPick;
+  if (penPick === 'Yes' && etPick === 'No') return true;
+
+  //   • Method of Victory ↔ ET/Penalties consistency.
+  const mov = ca.movPick || cb.movPick;
+  if (mov === 'Regulation') {
+    if (etPick === 'Yes')  return true; // regulation means no ET
+    if (penPick === 'Yes') return true; // and no pens
+  }
+  if (mov === 'ExtraTime') {
+    if (etPick === 'No')   return true; // ET method requires ET to happen
+    if (penPick === 'Yes') return true; // but then decided in ET, not pens
+  }
+  if (mov === 'Penalties') {
+    if (etPick === 'No')  return true; // pens requires ET first
+    if (penPick === 'No') return true; // and a shootout
+  }
+
+  //   • Outright winner (1X2) Draw + ToQualify pick = OK, because qualifier
+  //     can still come through pens. But Winner=Home + ToQualify=Away is a
+  //     soft mismatch (Away can still advance via pens even after losing 90'),
+  //     so we DON'T block that — it's a legal combo bookmakers happily price.
 
   // Outcome ↔ goal couplings on a forced single outcome
   const ftFinal = ca.ft && cb.ft ? new Set(ft) : (ca.ft || cb.ft);

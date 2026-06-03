@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -596,6 +596,15 @@ export default function MatchesPage() {
       },
       rtg: (() => { try { return m.resultTotalGoalsOddsJson ? JSON.parse(m.resultTotalGoalsOddsJson) : {}; } catch { return {}; } })(),
       weh: { Home: m.winEitherHome ?? null, Away: m.winEitherAway ?? null },
+      // ── WC knockout markets — only present for knockout fixtures ──
+      qualify: { Home: m.qualifyHomeOdds ?? null, Away: m.qualifyAwayOdds ?? null },
+      extraTime: { true: m.extraTimeYesOdds ?? null, false: m.extraTimeNoOdds ?? null },
+      penalties: { true: m.penaltiesYesOdds ?? null, false: m.penaltiesNoOdds ?? null },
+      methodVic: {
+        Regulation: m.methodRegulationOdds ?? null,
+        ExtraTime:  m.methodExtraTimeOdds  ?? null,
+        Penalties:  m.methodPenaltiesOdds  ?? null,
+      },
       homeTs:    { true: m.homeToScoreYes ?? null, false: m.homeToScoreNo ?? null },
       awayTs:    { true: m.awayToScoreYes ?? null, false: m.awayToScoreNo ?? null },
       wbh: {
@@ -2141,6 +2150,175 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* ── WC Knockout: To Qualify (advance) ──
+                      Whole knockout block is rendered only when at least
+                      one of the 4 markets has live odds — group-stage
+                      fixtures get nothing instead of empty placeholders. */}
+                  {(() => {
+                    const hasKnockout =
+                      preOdds.qualify?.Home != null || preOdds.qualify?.Away != null ||
+                      preOdds.extraTime?.true != null || preOdds.extraTime?.false != null ||
+                      preOdds.penalties?.true != null || preOdds.penalties?.false != null ||
+                      preOdds.methodVic?.Regulation != null;
+                    if (!hasKnockout) return null;
+                    return (
+                      <>
+                        {/* To Qualify */}
+                        <div data-cat="special" className={`market-section ${collapsed.qualify ? 'market-section--collapsed' : ''}`}>
+                          <div className="market-section__header" onClick={() => toggleSection('qualify')}>
+                            <span className="market-section__name">🏆 Продължава нагоре (вкл. продължения + дузпи)</span>
+                            <span className="market-section__toggle">{collapsed.qualify ? '▼' : '▲'}</span>
+                          </div>
+                          {!collapsed.qualify && (
+                            <div className="market-options market-options--2">
+                              {[
+                                { side: 'Home', lbl: selectedMatch.homeTeamName },
+                                { side: 'Away', lbl: selectedMatch.awayTeamName },
+                              ].map(({ side, lbl }) => {
+                                const o = preOdds.qualify?.[side];
+                                const slipKey = `${selectedMatch.id}:${BET_TYPE.ToQualify}:${side}:QUAL`;
+                                const active  = ouPicks.has(slipKey);
+                                return (
+                                  <button key={side} type="button"
+                                    className={`market-option ${active ? 'market-option--active' : ''}`}
+                                    onClick={() => {
+                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                      if (o == null) return;
+                                      addToSlip({
+                                        betType: BET_TYPE.ToQualify, pick: side, selKey: 'QUAL',
+                                        odds: o,
+                                        leg: { pick: side },
+                                        label: `Продължава — ${lbl}`,
+                                        chip: side === 'Home' ? '1🏆' : '2🏆',
+                                      });
+                                    }}>
+                                    <div className="market-option__label">{lbl}</div>
+                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Going to Extra Time */}
+                        <div data-cat="special" className={`market-section ${collapsed.extraTime ? 'market-section--collapsed' : ''}`}>
+                          <div className="market-section__header" onClick={() => toggleSection('extraTime')}>
+                            <span className="market-section__name">⏱ Мачът отива в продължения</span>
+                            <span className="market-section__toggle">{collapsed.extraTime ? '▼' : '▲'}</span>
+                          </div>
+                          {!collapsed.extraTime && (
+                            <div className="market-options market-options--2">
+                              {[
+                                { val: 'true',  lbl: 'Да' },
+                                { val: 'false', lbl: 'Не' },
+                              ].map(({ val, lbl }) => {
+                                const o = preOdds.extraTime?.[val];
+                                const slipKey = `${selectedMatch.id}:${BET_TYPE.ExtraTime}:${val}:ET`;
+                                const active  = ouPicks.has(slipKey);
+                                return (
+                                  <button key={val} type="button"
+                                    className={`market-option ${active ? 'market-option--active' : ''}`}
+                                    onClick={() => {
+                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                      if (o == null) return;
+                                      addToSlip({
+                                        betType: BET_TYPE.ExtraTime, pick: val, selKey: 'ET',
+                                        odds: o,
+                                        leg: { bTTSPick: val === 'true' },
+                                        label: `Продължения — ${lbl}`,
+                                        chip: val === 'true' ? 'ET✓' : 'ET✗',
+                                      });
+                                    }}>
+                                    <div className="market-option__label">{lbl}</div>
+                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Going to Penalties */}
+                        <div data-cat="special" className={`market-section ${collapsed.penalties ? 'market-section--collapsed' : ''}`}>
+                          <div className="market-section__header" onClick={() => toggleSection('penalties')}>
+                            <span className="market-section__name">🥅 Мачът отива на дузпи</span>
+                            <span className="market-section__toggle">{collapsed.penalties ? '▼' : '▲'}</span>
+                          </div>
+                          {!collapsed.penalties && (
+                            <div className="market-options market-options--2">
+                              {[
+                                { val: 'true',  lbl: 'Да' },
+                                { val: 'false', lbl: 'Не' },
+                              ].map(({ val, lbl }) => {
+                                const o = preOdds.penalties?.[val];
+                                const slipKey = `${selectedMatch.id}:${BET_TYPE.Penalties}:${val}:PEN`;
+                                const active  = ouPicks.has(slipKey);
+                                return (
+                                  <button key={val} type="button"
+                                    className={`market-option ${active ? 'market-option--active' : ''}`}
+                                    onClick={() => {
+                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                      if (o == null) return;
+                                      addToSlip({
+                                        betType: BET_TYPE.Penalties, pick: val, selKey: 'PEN',
+                                        odds: o,
+                                        leg: { bTTSPick: val === 'true' },
+                                        label: `Дузпи — ${lbl}`,
+                                        chip: val === 'true' ? 'PEN✓' : 'PEN✗',
+                                      });
+                                    }}>
+                                    <div className="market-option__label">{lbl}</div>
+                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Method of Victory */}
+                        <div data-cat="special" className={`market-section ${collapsed.methodVic ? 'market-section--collapsed' : ''}`}>
+                          <div className="market-section__header" onClick={() => toggleSection('methodVic')}>
+                            <span className="market-section__name">🎲 Начин на победа</span>
+                            <span className="market-section__toggle">{collapsed.methodVic ? '▼' : '▲'}</span>
+                          </div>
+                          {!collapsed.methodVic && (
+                            <div className="market-options market-options--3">
+                              {[
+                                { k: 'Regulation', lbl: 'Редовно време' },
+                                { k: 'ExtraTime',  lbl: 'Продължения'   },
+                                { k: 'Penalties',  lbl: 'Дузпи'          },
+                              ].map(({ k, lbl }) => {
+                                const o = preOdds.methodVic?.[k];
+                                const slipKey = `${selectedMatch.id}:${BET_TYPE.MethodOfVictory}:${k}:MOV`;
+                                const active  = ouPicks.has(slipKey);
+                                return (
+                                  <button key={k} type="button"
+                                    className={`market-option ${active ? 'market-option--active' : ''}`}
+                                    onClick={() => {
+                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                      if (o == null) return;
+                                      addToSlip({
+                                        betType: BET_TYPE.MethodOfVictory, pick: k, selKey: 'MOV',
+                                        odds: o,
+                                        leg: { stringPick: k },
+                                        label: `Решен в — ${lbl}`,
+                                        chip: k === 'Regulation' ? 'REG' : k === 'ExtraTime' ? 'ET' : 'PEN',
+                                      });
+                                    }}>
+                                    <div className="market-option__label">{lbl}</div>
+                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Result / Total Goals 2.5 combo (Sportmonks market 37) */}
                   <div data-cat="special" className={`market-section ${collapsed.rtg ? 'market-section--collapsed' : ''}`}>
