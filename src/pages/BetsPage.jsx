@@ -501,7 +501,7 @@ export default function BetsPage() {
         <div className="gvb-overview__grid">
           <div className="gvb-stat">
             <div className="gvb-stat__bg-icon">💼</div>
-            <p className="gvb-stat__label">ОБЩА ЕКСПОЗИЦИЯ</p>
+            <p className="gvb-stat__label">ОБЩО ЗАЛОЖЕНО</p>
             <p className="gvb-stat__value">{totalExposure.toFixed(2)} монети</p>
           </div>
           <div className="gvb-stat">
