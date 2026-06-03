@@ -3143,7 +3143,6 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 6px;
-  border-radius: 20px;
   padding: 8px 14px;
   font-size: 0.9rem;
   font-weight: 600;
