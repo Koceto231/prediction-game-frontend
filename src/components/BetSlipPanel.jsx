@@ -868,6 +868,15 @@ function constraintsOf(p) {
       }
       break;
     }
+    case 'AsianHandicap1H': {             // 1H-only — constrains 1H diff, NOT full-time
+      // We track per-team 1H scores at low resolution (just totals) so the
+      // diff propagation logic doesn't carry over to FT. We still tag the
+      // pick for same-side-same-line duplicate detection.
+      const side = p.leg?.pick || p.pick;
+      const line = Number(p.leg?.lineValue);
+      if (side && Number.isFinite(line)) c.ah1hPick = `${side}:${line}`;
+      break;
+    }
     case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       const side = raw.startsWith('Home') ? 'H'
@@ -1179,6 +1188,12 @@ function semanticConflict(a, b) {
     const [sa, la] = ca.ahPick.split(':');
     const [sb, lb] = cb.ahPick.split(':');
     if (la === lb && sa !== sb) return true; // betting both sides on same line
+  }
+  // Same logic for 1st-half AH.
+  if (ca.ah1hPick && cb.ah1hPick) {
+    const [sa, la] = ca.ah1hPick.split(':');
+    const [sb, lb] = cb.ah1hPick.split(':');
+    if (la === lb && sa !== sb) return true;
   }
 
   // ── AH diff bounds — propagate into per-team + total bounds and

@@ -55,6 +55,7 @@ export const BET_TYPE = {
   Penalties:            'Penalties',
   MethodOfVictory:      'MethodOfVictory',
   AsianHandicap:        'AsianHandicap',
+  AsianHandicap1H:      'AsianHandicap1H',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */

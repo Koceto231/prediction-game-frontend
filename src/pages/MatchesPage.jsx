@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -602,6 +602,13 @@ export default function MatchesPage() {
         line: m.ahMainLine ?? null,
         Home: m.ahHomeOdds ?? null,
         Away: m.ahAwayOdds ?? null,
+        alt:  (() => { try { return m.alternativeAhOddsJson ? JSON.parse(m.alternativeAhOddsJson) : {}; } catch { return {}; } })(),
+      },
+      ah1h: {
+        line: m.ah1HMainLine ?? null,
+        Home: m.ah1HHomeOdds ?? null,
+        Away: m.ah1HAwayOdds ?? null,
+        alt:  (() => { try { return m.alternative1HAhOddsJson ? JSON.parse(m.alternative1HAhOddsJson) : {}; } catch { return {}; } })(),
       },
       extraTime: { true: m.extraTimeYesOdds ?? null, false: m.extraTimeNoOdds ?? null },
       penalties: { true: m.penaltiesYesOdds ?? null, false: m.penaltiesNoOdds ?? null },
@@ -2168,6 +2175,144 @@ export default function MatchesPage() {
                               </button>
                             );
                           })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Alternative Asian Handicap (Sportmonks market 104) */}
+                  {Object.keys(preOdds.ah?.alt ?? {}).length > 0 && (
+                    <div data-cat="special" className={`market-section ${collapsed.ahAlt ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('ahAlt')}>
+                        <span className="market-section__name">⚖ AH — алтернативни линии</span>
+                        <span className="market-section__toggle">{collapsed.ahAlt ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.ahAlt && (
+                        <div className="exact-score-grid">
+                          {Object.entries(preOdds.ah.alt)
+                            .map(([lineStr, pair]) => ({ line: Number(lineStr), pair }))
+                            .filter(({ line }) => Number.isFinite(line))
+                            .sort((a, b) => a.line - b.line)
+                            .flatMap(({ line, pair }) => ([
+                              { side: 'Home', line, odds: pair.home, lbl: selectedMatch.homeTeamName },
+                              { side: 'Away', line: -line, homeLine: line, odds: pair.away, lbl: selectedMatch.awayTeamName },
+                            ]))
+                            .map(({ side, line, homeLine, odds, lbl }) => {
+                              const storedLine = side === 'Home' ? line : homeLine;
+                              const sign = line > 0 ? '+' : '';
+                              const lineStr = line % 1 === 0 ? line.toFixed(0) : line.toFixed(1);
+                              const slipKey = `${selectedMatch.id}:${BET_TYPE.AsianHandicap}:${side}:AH:${storedLine}`;
+                              const active  = ouPicks.has(slipKey);
+                              return (
+                                <button key={`${side}:${storedLine}`} type="button"
+                                  className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                                  onClick={() => {
+                                    setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                    if (odds == null) return;
+                                    addToSlip({
+                                      betType: BET_TYPE.AsianHandicap, pick: side, selKey: `AH:${storedLine}`,
+                                      odds,
+                                      leg: { pick: side, lineValue: storedLine },
+                                      label: `${lbl} ${sign}${lineStr} (AH)`,
+                                      chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr}`,
+                                    });
+                                  }}>
+                                  <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
+                                  <div className="exact-score-tile__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 1st Half Asian Handicap — main line (Sportmonks market 26) */}
+                  {preOdds.ah1h?.line != null && preOdds.ah1h?.Home != null && preOdds.ah1h?.Away != null && (
+                    <div data-cat="special" className={`market-section ${collapsed.ah1h ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('ah1h')}>
+                        <span className="market-section__name">
+                          ⚖ AH 1-во полувреме ({preOdds.ah1h.line > 0 ? '+' : ''}{Number(preOdds.ah1h.line).toFixed(preOdds.ah1h.line % 1 === 0 ? 0 : 1)})
+                        </span>
+                        <span className="market-section__toggle">{collapsed.ah1h ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.ah1h && (
+                        <div className="market-options market-options--2">
+                          {[
+                            { side: 'Home', lbl: selectedMatch.homeTeamName, line: preOdds.ah1h.line },
+                            { side: 'Away', lbl: selectedMatch.awayTeamName, line: -preOdds.ah1h.line },
+                          ].map(({ side, lbl, line }) => {
+                            const o = preOdds.ah1h[side];
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.AsianHandicap1H}:${side}:AH1H:${preOdds.ah1h.line}`;
+                            const active  = ouPicks.has(slipKey);
+                            const sign = line > 0 ? '+' : '';
+                            const lineStr = line % 1 === 0 ? line.toFixed(0) : line.toFixed(2).replace(/0$/, '');
+                            return (
+                              <button key={side} type="button"
+                                className={`market-option ${active ? 'market-option--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  if (o == null) return;
+                                  addToSlip({
+                                    betType: BET_TYPE.AsianHandicap1H, pick: side, selKey: `AH1H:${preOdds.ah1h.line}`,
+                                    odds: o,
+                                    leg: { pick: side, lineValue: preOdds.ah1h.line },
+                                    label: `${lbl} ${sign}${lineStr} (AH 1H)`,
+                                    chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr} 1H`,
+                                  });
+                                }}>
+                                <div className="market-option__label">{lbl} {sign}{lineStr}</div>
+                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Alternative 1H AH (Sportmonks market 106) */}
+                  {Object.keys(preOdds.ah1h?.alt ?? {}).length > 0 && (
+                    <div data-cat="special" className={`market-section ${collapsed.ah1hAlt ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('ah1hAlt')}>
+                        <span className="market-section__name">⚖ AH 1H — алтернативни линии</span>
+                        <span className="market-section__toggle">{collapsed.ah1hAlt ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.ah1hAlt && (
+                        <div className="exact-score-grid">
+                          {Object.entries(preOdds.ah1h.alt)
+                            .map(([lineStr, pair]) => ({ line: Number(lineStr), pair }))
+                            .filter(({ line }) => Number.isFinite(line))
+                            .sort((a, b) => a.line - b.line)
+                            .flatMap(({ line, pair }) => ([
+                              { side: 'Home', line, odds: pair.home, lbl: selectedMatch.homeTeamName },
+                              { side: 'Away', line: -line, homeLine: line, odds: pair.away, lbl: selectedMatch.awayTeamName },
+                            ]))
+                            .map(({ side, line, homeLine, odds, lbl }) => {
+                              const storedLine = side === 'Home' ? line : homeLine;
+                              const sign = line > 0 ? '+' : '';
+                              const lineStr = line % 1 === 0 ? line.toFixed(0) : line.toFixed(1);
+                              const slipKey = `${selectedMatch.id}:${BET_TYPE.AsianHandicap1H}:${side}:AH1H:${storedLine}`;
+                              const active  = ouPicks.has(slipKey);
+                              return (
+                                <button key={`${side}:${storedLine}`} type="button"
+                                  className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                                  onClick={() => {
+                                    setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                    if (odds == null) return;
+                                    addToSlip({
+                                      betType: BET_TYPE.AsianHandicap1H, pick: side, selKey: `AH1H:${storedLine}`,
+                                      odds,
+                                      leg: { pick: side, lineValue: storedLine },
+                                      label: `${lbl} ${sign}${lineStr} (AH 1H)`,
+                                      chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr} 1H`,
+                                    });
+                                  }}>
+                                  <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
+                                  <div className="exact-score-tile__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                                </button>
+                              );
+                            })}
                         </div>
                       )}
                     </div>
