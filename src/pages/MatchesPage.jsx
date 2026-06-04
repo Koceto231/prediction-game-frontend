@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -598,6 +598,11 @@ export default function MatchesPage() {
       weh: { Home: m.winEitherHome ?? null, Away: m.winEitherAway ?? null },
       // ── WC knockout markets — only present for knockout fixtures ──
       qualify: { Home: m.qualifyHomeOdds ?? null, Away: m.qualifyAwayOdds ?? null },
+      ah: {
+        line: m.ahMainLine ?? null,
+        Home: m.ahHomeOdds ?? null,
+        Away: m.ahAwayOdds ?? null,
+      },
       extraTime: { true: m.extraTimeYesOdds ?? null, false: m.extraTimeNoOdds ?? null },
       penalties: { true: m.penaltiesYesOdds ?? null, false: m.penaltiesNoOdds ?? null },
       methodVic: {
@@ -2119,6 +2124,54 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Asian Handicap (Sportmonks market 6) */}
+                  {preOdds.ah?.line != null && preOdds.ah?.Home != null && preOdds.ah?.Away != null && (
+                    <div data-cat="special" className={`market-section ${collapsed.ah ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('ah')}>
+                        <span className="market-section__name">
+                          ⚖ Азиатски хендикап ({preOdds.ah.line > 0 ? '+' : ''}{Number(preOdds.ah.line).toFixed(preOdds.ah.line % 1 === 0 ? 0 : 1)})
+                        </span>
+                        <span className="market-section__toggle">{collapsed.ah ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.ah && (
+                        <div className="market-options market-options--2">
+                          {[
+                            { side: 'Home', lbl: selectedMatch.homeTeamName, line: preOdds.ah.line },
+                            { side: 'Away', lbl: selectedMatch.awayTeamName, line: -preOdds.ah.line },
+                          ].map(({ side, lbl, line }) => {
+                            const o = preOdds.ah[side];
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.AsianHandicap}:${side}:AH:${preOdds.ah.line}`;
+                            const active  = ouPicks.has(slipKey);
+                            const sign = line > 0 ? '+' : '';
+                            const lineStr = line % 1 === 0 ? line.toFixed(0) : line.toFixed(2).replace(/0$/, '');
+                            return (
+                              <button key={side} type="button"
+                                className={`market-option ${active ? 'market-option--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  if (o == null) return;
+                                  // We store the home-side line on the leg so the
+                                  // backend can settle from a single source. For
+                                  // an "Away" pick the user sees the flipped sign
+                                  // but we send the home-perspective value.
+                                  addToSlip({
+                                    betType: BET_TYPE.AsianHandicap, pick: side, selKey: `AH:${preOdds.ah.line}`,
+                                    odds: o,
+                                    leg: { pick: side, lineValue: preOdds.ah.line },
+                                    label: `${lbl} ${sign}${lineStr} (AH)`,
+                                    chip: side === 'Home' ? `1 ${sign}${lineStr}` : `2 ${sign}${lineStr}`,
+                                  });
+                                }}>
+                                <div className="market-option__label">{lbl} {sign}{lineStr}</div>
+                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* To Win Either Half (Sportmonks market 266) */}
                   <div data-cat="special" className={`market-section ${collapsed.weh ? 'market-section--collapsed' : ''}`}>

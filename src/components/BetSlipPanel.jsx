@@ -849,6 +849,12 @@ function constraintsOf(p) {
       c.movPick = p.leg?.stringPick || p.pick;
       break;
     }
+    case 'AsianHandicap': {               // leg.pick=Home/Away, leg.lineValue=home-perspective handicap
+      const side = p.leg?.pick || p.pick;
+      const line = Number(p.leg?.lineValue);
+      if (side && Number.isFinite(line)) c.ahPick = `${side}:${line}`;
+      break;
+    }
     case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
       const raw = String(p.pick || p.leg?.stringPick || '').trim();
       const side = raw.startsWith('Home') ? 'H'
@@ -1152,6 +1158,14 @@ function semanticConflict(a, b) {
     const [sa, ha] = ca.thshPick.split(':');
     const [sb, hb] = cb.thshPick.split(':');
     if (sa === sb && ha !== hb) return true;
+  }
+
+  // ── Asian Handicap — same side+line twice is a duplicate; opposite
+  //    sides on the SAME line is one-wins-one-loses, no point combining.
+  if (ca.ahPick && cb.ahPick) {
+    const [sa, la] = ca.ahPick.split(':');
+    const [sb, lb] = cb.ahPick.split(':');
+    if (la === lb && sa !== sb) return true; // betting both sides on same line
   }
 
   // ── WC Knockout clashes ──────────────────────────────────────────
