@@ -852,7 +852,20 @@ function constraintsOf(p) {
     case 'AsianHandicap': {               // leg.pick=Home/Away, leg.lineValue=home-perspective handicap
       const side = p.leg?.pick || p.pick;
       const line = Number(p.leg?.lineValue);
-      if (side && Number.isFinite(line)) c.ahPick = `${side}:${line}`;
+      if (side && Number.isFinite(line)) {
+        c.ahPick = `${side}:${line}`;
+        const isInteger = Math.abs(line - Math.round(line)) < 1e-9;
+        if (side === 'Home') {
+          // WIN iff diff > -line  (push when integer line and diff == -line)
+          c.ahDiffMin = isInteger ? Math.round(-line) + 1 : Math.ceil(-line);
+          if (c.ahDiffMin >= 1) c.ft = new Set(['H']);
+          else if (c.ahDiffMin === 0) c.ft = new Set(['H', 'D']);
+        } else if (side === 'Away') {
+          c.ahDiffMax = isInteger ? Math.round(-line) - 1 : Math.floor(-line);
+          if (c.ahDiffMax <= -1) c.ft = new Set(['A']);
+          else if (c.ahDiffMax === 0) c.ft = new Set(['D', 'A']);
+        }
+      }
       break;
     }
     case 'ResultTotalGoals': {            // pick: HomeOver25 / DrawUnder25 / …
@@ -1167,6 +1180,27 @@ function semanticConflict(a, b) {
     const [sb, lb] = cb.ahPick.split(':');
     if (la === lb && sa !== sb) return true; // betting both sides on same line
   }
+
+  // ── AH diff bounds — propagate into per-team + total bounds and
+  //    re-check feasibility. Catches cross-market clashes like
+  //    "AH Home -2.5 + Total Under 1.5".
+  const ahDMin = Math.max(ca.ahDiffMin ?? -Infinity, cb.ahDiffMin ?? -Infinity);
+  const ahDMax = Math.min(ca.ahDiffMax ??  Infinity, cb.ahDiffMax ??  Infinity);
+  if (ahDMin !== -Infinity) {
+    const derivedHMin = ahDMin + aMin;
+    const newHMin = Math.max(hMin, derivedHMin);
+    if (newHMin > hMax) return true;
+    const newTMin = newHMin + aMin;
+    if (newTMin > tMax) return true;
+  }
+  if (ahDMax !== Infinity) {
+    const derivedAMin = hMin - ahDMax;
+    const newAMin = Math.max(aMin, derivedAMin);
+    if (newAMin > aMax) return true;
+    const newTMin = hMin + newAMin;
+    if (newTMin > tMax) return true;
+  }
+  if (ahDMin > ahDMax) return true;
 
   // ── WC Knockout clashes ──────────────────────────────────────────
   // Two different qualifier picks: Home vs Away can't both advance.
