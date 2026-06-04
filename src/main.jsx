@@ -6,7 +6,6 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { WalletProvider } from './context/WalletContext';
 import './styles/global.css';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // ── Sentry init ──────────────────────────────────────────────────────────────
 // Reports unhandled JS errors, React render crashes, and a 10 % sample of
@@ -61,13 +60,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       )}
     >
       <BrowserRouter>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <AuthProvider>
           <WalletProvider>
             <App />
           </WalletProvider>
         </AuthProvider>
-      </GoogleOAuthProvider>
       </BrowserRouter>
     </Sentry.ErrorBoundary>
   </React.StrictMode>

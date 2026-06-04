@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/apiClient';
 
 export default function LoginPage() {
-  const { login, register, loginWithGoogle } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -101,25 +100,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setLoading(true);
-      setFeedback('');
-      setFeedbackType('info');
-      await loginWithGoogle(credentialResponse.credential);
-      navigate('/matches');
-    } catch (err) {
-      setFeedback(err?.response?.data?.message || err.message || 'Google login failed.');
-      setFeedbackType('error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleError = () => {
-    setFeedback('Google login failed.');
-    setFeedbackType('error');
-  };
 
   return (
     <div className="login-shell">
@@ -171,20 +151,6 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in →'}
             </button>
 
-            <div className="auth-divider"><span>or continue with</span></div>
-
-            <div className="google-wrapper">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="filled_black"
-                size="large"
-                shape="pill"
-                text="signin_with"
-                width="320"
-                locale="en"
-              />
-            </div>
           </form>
         ) : !inviteToken ? (
           <div className="alert alert-info" style={{ marginTop: 16 }}>

@@ -39,12 +39,6 @@ export function AuthProvider({ children }) {
     _applyAuth(response.data);
   };
 
-  // ── Google login ───────────────────────────────────────────────────
-  const loginWithGoogle = async (idToken) => {
-    const response = await api.post('/Auth/google', { idToken });
-    _applyAuth(response.data);
-  };
-
   // ── Register ───────────────────────────────────────────────────────
   // Open registration is closed — every signup must carry an inviteToken
   // issued by an admin. The /register page reads it from the URL query.
@@ -65,7 +59,7 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, isAuthenticated, isAdmin, login, loginWithGoogle, register, logout }),
+    () => ({ user, isAuthenticated, isAdmin, login, register, logout }),
     [user, isAuthenticated, isAdmin]
   );
 
