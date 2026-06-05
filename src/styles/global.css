@@ -11119,6 +11119,39 @@ select:focus {
   flex: 0 0 auto;
 }
 
+/* Per-fixture leg group — a small header with team flags + fixture
+   name shown ONCE above the picks for that match. Cross-fixture
+   accumulators get one of these per match so the screen no longer
+   prints "Mexico vs South Africa" twice in a row. */
+.gvb-bet__leg-group {
+  border-bottom: 1px solid var(--border, #2a2a2a);
+}
+.gvb-bet__leg-group:last-child { border-bottom: none; }
+.gvb-bet__leg-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted, #b9b3a3);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.gvb-bet__leg-group-flag {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.gvb-bet__leg-group-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Pick chip — the yellow "1" / "ДА" / "Над 2.5" badge that sits at the
    left of each leg row when the bet card already shows the fixture
    header above (no need to repeat team names in the description). */
