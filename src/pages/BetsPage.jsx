@@ -554,14 +554,12 @@ function ActiveBetCard({ bet, onCashedOut }) {
                       </div>
                     )}
                     {grp.legs.map((leg, li) => {
-                      const { chip, label } = shortPickDesc(bet, leg);
+                      // Chip badges removed per spec — just the clean
+                      // Bulgarian label + the odds. No leg number, no
+                      // yellow pick chip.
+                      const { label } = shortPickDesc(bet, leg);
                       return (
                         <div key={`${gi}-${li}`} className="gvb-bet__leg" style={{ padding: '10px 13px' }}>
-                          {chip ? (
-                            <span className="gvb-bet__leg-chip">{chip}</span>
-                          ) : (
-                            <span className="gvb-bet__leg-no">{li + 1}</span>
-                          )}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div className="gvb-bet__leg-desc" style={{ fontSize: '0.98rem' }}>
                               {label}
