@@ -11093,8 +11093,7 @@ select:focus {
   border-top: 1px solid var(--border-soft, #4d4633);
 }
 .gvb-bet__leg {
-  display: grid;
-  grid-template-columns: 24px 1fr auto;
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 13px;
@@ -11175,13 +11174,13 @@ select:focus {
 .gvb-bet__leg-desc {
   color: var(--text-main);
   font-weight: 600;
-  /* Wrap long descriptions instead of clipping them — Safari on
-     iOS was hiding the tail of Bulgarian picks like "Полувреме Mexico
-     + И двата бележат 1-во полувреме — Да". word-break lets the line
-     break mid-word as a last resort on very narrow viewports. */
+  /* Wrap long descriptions instead of clipping them on narrow
+     viewports, but always at word boundaries — `overflow-wrap:
+     anywhere` was breaking Bulgarian labels character-by-character
+     when the parent ended up narrower than expected. */
   white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   min-width: 0;
 }
 .gvb-bet__leg-odds {
