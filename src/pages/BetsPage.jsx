@@ -39,6 +39,143 @@ const LEAGUE_LABEL = {
 // ── Helpers ──────────────────────────────────────────────────────────────
 // Frontend safety-net translation for descriptions that were written
 // before the backend was localised. New bets already ship Bulgarian text.
+// ──────────────────────────────────────────────────────────────────
+// shortPickDesc — chip + clean Bulgarian label WITHOUT team names.
+// When a bet card already shows the fixture header at the top, we don't
+// want every leg below to repeat "Мексико печели" / "Мексико отбелязва".
+// Returns `{ chip, label }` — the chip is a small yellow badge like
+// "1" / "X" / "2" / "ДА" / "НЕ" / "Над 2.5"; the label is the market
+// description without the team name baked in.
+// Falls back to translatePickDesc for less common markets so nothing
+// renders as undefined.
+// ──────────────────────────────────────────────────────────────────
+function shortPickDesc(bet, leg) {
+  // For single bets, the relevant fields live on the bet; for accumulator
+  // legs, the API ships them on each leg entry.
+  const src       = leg ?? bet;
+  const betType   = src?.betType ?? bet?.betType;
+  const pick      = src?.pick;
+  const bttsPick  = src?.bttsPick;
+  const dcPick    = src?.dCPick    ?? src?.dcPick;
+  const ouLine    = src?.oULine    ?? src?.ouLine;
+  const ouPick    = src?.oUPick    ?? src?.ouPick;
+  const lineValue = src?.lineValue;
+  const stringPick = src?.stringPick;
+  const scoreHome = src?.scoreHome;
+  const scoreAway = src?.scoreAway;
+
+  const lineNum = (() => {
+    if (typeof ouLine === 'string') {
+      const m = ouLine.match(/Line(\d{1,2})/);
+      if (m) return `${m[1][0]}.${m[1].slice(1) || '5'}`;
+    }
+    if (lineValue != null) return String(lineValue);
+    return '';
+  })();
+
+  switch (betType) {
+    case 'Winner':
+      if (pick === 'Home') return { chip: '1', label: 'Краен резултат — 1' };
+      if (pick === 'Away') return { chip: '2', label: 'Краен резултат — 2' };
+      if (pick === 'Draw') return { chip: 'X', label: 'Краен резултат — X' };
+      break;
+    case 'BTTS':
+      return bttsPick
+        ? { chip: 'ДА', label: 'И двата отбора отбелязват — Да' }
+        : { chip: 'НЕ', label: 'И двата отбора отбелязват — Не' };
+    case 'OverUnder':
+      if (ouPick === 'Over')  return { chip: `Над ${lineNum}`,  label: `Голове над ${lineNum}` };
+      if (ouPick === 'Under') return { chip: `Под ${lineNum}`, label: `Голове под ${lineNum}` };
+      break;
+    case 'DoubleChance':
+      if (dcPick === 'HomeOrDraw') return { chip: '1X', label: 'Двоен шанс — 1X' };
+      if (dcPick === 'HomeOrAway') return { chip: '12', label: 'Двоен шанс — 12' };
+      if (dcPick === 'DrawOrAway') return { chip: 'X2', label: 'Двоен шанс — X2' };
+      break;
+    case 'DrawNoBet':
+      if (pick === 'Home') return { chip: '1', label: 'Без равенство — 1' };
+      if (pick === 'Away') return { chip: '2', label: 'Без равенство — 2' };
+      break;
+    case 'HalfTime':
+      if (pick === 'Home') return { chip: '1', label: 'Резултат на полувремето — 1' };
+      if (pick === 'Away') return { chip: '2', label: 'Резултат на полувремето — 2' };
+      if (pick === 'Draw') return { chip: 'X', label: 'Резултат на полувремето — X' };
+      break;
+    case 'ExactScore': {
+      const score = `${scoreHome ?? '?'}-${scoreAway ?? '?'}`;
+      return { chip: score, label: `Точен резултат — ${score}` };
+    }
+    case 'HalfTimeCorrectScore': {
+      const score = `${scoreHome ?? '?'}-${scoreAway ?? '?'}`;
+      return { chip: score, label: `Точен резултат на полувремето — ${score}` };
+    }
+    case 'OddEven':
+      return bttsPick
+        ? { chip: 'НЕЧ', label: 'Нечетен брой голове' }
+        : { chip: 'ЧЕТ', label: 'Четен брой голове' };
+    case 'Btts1stHalf':
+      return bttsPick
+        ? { chip: 'ДА', label: 'И двата отбора бележат 1-во полувреме — Да' }
+        : { chip: 'НЕ', label: 'И двата отбора бележат 1-во полувреме — Не' };
+    case 'Btts2ndHalf':
+      return bttsPick
+        ? { chip: 'ДА', label: 'И двата отбора бележат 2-ро полувреме — Да' }
+        : { chip: 'НЕ', label: 'И двата отбора бележат 2-ро полувреме — Не' };
+    case 'HalfTimeGoals':
+      if (ouPick === 'Over')  return { chip: `Над ${lineNum}`,  label: `Голове 1-во полувреме над ${lineNum}` };
+      if (ouPick === 'Under') return { chip: `Под ${lineNum}`, label: `Голове 1-во полувреме под ${lineNum}` };
+      break;
+    case 'SecondHalfGoals':
+      if (ouPick === 'Over')  return { chip: `Над ${lineNum}`,  label: `Голове 2-ро полувреме над ${lineNum}` };
+      if (ouPick === 'Under') return { chip: `Под ${lineNum}`, label: `Голове 2-ро полувреме под ${lineNum}` };
+      break;
+    case 'Corners':
+      if (ouPick === 'Over')  return { chip: `Над ${lineNum}`,  label: `Корнери над ${lineNum}` };
+      if (ouPick === 'Under') return { chip: `Под ${lineNum}`, label: `Корнери под ${lineNum}` };
+      break;
+    case 'YellowCards':
+      if (ouPick === 'Over')  return { chip: `Над ${lineNum}`,  label: `Жълти картони над ${lineNum}` };
+      if (ouPick === 'Under') return { chip: `Под ${lineNum}`, label: `Жълти картони под ${lineNum}` };
+      break;
+    case 'AsianHandicap':
+    case 'AsianHandicap1H': {
+      const ln = lineValue != null
+        ? (pick === 'Away' ? -Number(lineValue) : Number(lineValue))
+        : 0;
+      const sign = ln >= 0 ? '+' : '';
+      const teamChip = pick === 'Home' ? '1' : '2';
+      const halfSuffix = betType === 'AsianHandicap1H' ? ' 1H' : '';
+      return {
+        chip:  `${teamChip} ${sign}${ln}`,
+        label: `Азиатски хендикап${halfSuffix} — ${teamChip} ${sign}${ln}`,
+      };
+    }
+    case 'TeamToScorePenalty':
+      return {
+        chip:  pick === 'Home' ? '1 ⚽' : '2 ⚽',
+        label: pick === 'Home' ? 'Домакин отбелязва дузпа' : 'Гост отбелязва дузпа',
+      };
+    case 'TeamToMissPenalty':
+      return {
+        chip:  pick === 'Home' ? '1 ✗' : '2 ✗',
+        label: pick === 'Home' ? 'Домакин пропуска дузпа' : 'Гост пропуска дузпа',
+      };
+    default:
+      break;
+  }
+
+  // Fallback — strip the team name when present so the description
+  // doesn't repeat what the fixture header already says.
+  const fallbackDesc = leg?.description ?? bet?.betDescription;
+  const homeName = bet?.homeTeam || (leg?.homeTeam);
+  const awayName = bet?.awayTeam || (leg?.awayTeam);
+  let cleaned = String(fallbackDesc ?? '');
+  if (homeName) cleaned = cleaned.replace(new RegExp(homeName, 'gi'), '').trim();
+  if (awayName) cleaned = cleaned.replace(new RegExp(awayName, 'gi'), '').trim();
+  cleaned = cleaned.replace(/^[—–-]+\s*/, '').replace(/\s{2,}/g, ' ').trim();
+  return { chip: null, label: cleaned || fallbackDesc };
+}
+
 function translatePickDesc(desc, bet) {
   if (!desc) return desc;
   const t = String(desc).trim();
@@ -340,37 +477,46 @@ function ActiveBetCard({ bet, onCashedOut }) {
           </button>
           {legsOpen && (
             <div className="gvb-bet__legs-list">
-              {renderedLegs.map((leg, i) => (
-                <div key={i} className="gvb-bet__leg" style={{ padding: '10px 13px' }}>
-                  <span className="gvb-bet__leg-no">{i + 1}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="gvb-bet__leg-desc" style={{ fontSize: '0.98rem' }}>
-                      {translatePickDesc(leg.description, { homeTeam: leg.homeTeam ?? bet.homeTeam, awayTeam: leg.awayTeam ?? bet.awayTeam })}
-                    </div>
-                    {/* Per-leg fixture row hidden when the whole bet is on one
-                        match (the dual-crest header already says it). */}
-                    {!showSingleFixtureHeader && (leg.homeTeam || leg.awayTeam) && (
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)',
-                                    marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {leg.homeTeamLogo && (
-                          <img src={leg.homeTeamLogo} alt=""
-                            style={{ width: 16, height: 16, objectFit: 'contain' }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        )}
-                        <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
-                        {leg.awayTeamLogo && (
-                          <img src={leg.awayTeamLogo} alt=""
-                            style={{ width: 16, height: 16, objectFit: 'contain' }}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        )}
-                      </div>
+              {renderedLegs.map((leg, i) => {
+                // Single-fixture layout: chip badge + clean label (no team
+                // names duplicated from the card header). Cross-fixture
+                // accumulators fall back to the per-leg fixture row so the
+                // reader can still tell which match each pick is on.
+                const { chip, label } = shortPickDesc(bet, leg);
+                return (
+                  <div key={i} className="gvb-bet__leg" style={{ padding: '10px 13px' }}>
+                    {chip ? (
+                      <span className="gvb-bet__leg-chip">{chip}</span>
+                    ) : (
+                      <span className="gvb-bet__leg-no">{i + 1}</span>
                     )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="gvb-bet__leg-desc" style={{ fontSize: '0.98rem' }}>
+                        {label}
+                      </div>
+                      {!showSingleFixtureHeader && (leg.homeTeam || leg.awayTeam) && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)',
+                                      marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {leg.homeTeamLogo && (
+                            <img src={leg.homeTeamLogo} alt=""
+                              style={{ width: 16, height: 16, objectFit: 'contain' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          )}
+                          <span>{leg.homeTeam ?? '—'} vs {leg.awayTeam ?? '—'}</span>
+                          {leg.awayTeamLogo && (
+                            <img src={leg.awayTeamLogo} alt=""
+                              style={{ width: 16, height: 16, objectFit: 'contain' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <span className="gvb-bet__leg-odds" style={{ fontSize: '1rem' }}>
+                      {Number(leg.odds).toFixed(2)}
+                    </span>
                   </div>
-                  <span className="gvb-bet__leg-odds" style={{ fontSize: '1rem' }}>
-                    {Number(leg.odds).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -11116,6 +11116,28 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+}
+
+/* Pick chip — the yellow "1" / "ДА" / "Над 2.5" badge that sits at the
+   left of each leg row when the bet card already shows the fixture
+   header above (no need to repeat team names in the description). */
+.gvb-bet__leg-chip {
+  min-width: 34px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--accent, #f0c519);
+  color: #0a0a0a;
+  font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 .gvb-bet__leg-desc {
   color: var(--text-main);
