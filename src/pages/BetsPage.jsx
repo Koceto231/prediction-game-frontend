@@ -544,9 +544,7 @@ function ActiveBetCard({ bet, onCashedOut }) {
                             onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                         )}
                         <span className="gvb-bet__leg-group-name">
-                          <span className="gvb-bet__leg-group-team">{grp.leg0.homeTeam ?? '—'}</span>
-                          <span className="gvb-bet__leg-group-sep"> срещу </span>
-                          <span className="gvb-bet__leg-group-team">{grp.leg0.awayTeam ?? '—'}</span>
+                          {grp.leg0.homeTeam ?? '—'} срещу {grp.leg0.awayTeam ?? '—'}
                         </span>
                         {grp.leg0.awayTeamLogo && (
                           <img src={grp.leg0.awayTeamLogo} alt=""
