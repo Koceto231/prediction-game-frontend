@@ -11148,6 +11148,32 @@ select:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gvb-bet__leg-group-team {
+  white-space: nowrap;
+}
+.gvb-bet__leg-group-sep {
+  color: var(--text-muted, #b9b3a3);
+  font-weight: 500;
+}
+
+/* Mobile — drop the long team names and keep flag ⚔ flag.
+   The flanking flag images stay in the head row; the middle text
+   collapses to a small "vs" so the reader still sees the match-up
+   structure without the noise of two repeated names. */
+@media (max-width: 540px) {
+  .gvb-bet__leg-group-team { display: none; }
+  .gvb-bet__leg-group-sep {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  /* Reset gap on the head so the two flags + tiny "vs" sit centered */
+  .gvb-bet__leg-group-head { gap: 10px; }
 }
 
 /* Pick chip — the yellow "1" / "ДА" / "Над 2.5" badge that sits at the
