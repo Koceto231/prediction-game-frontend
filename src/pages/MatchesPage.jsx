@@ -94,7 +94,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -610,6 +610,9 @@ export default function MatchesPage() {
         Away: m.ah1HAwayOdds ?? null,
         alt:  (() => { try { return m.alternative1HAhOddsJson ? JSON.parse(m.alternative1HAhOddsJson) : {}; } catch { return {}; } })(),
       },
+      // Penalty events per team (phase 7)
+      scorePen: { Home: m.teamScorePenHomeOdds ?? null, Away: m.teamScorePenAwayOdds ?? null },
+      missPen:  { Home: m.teamMissPenHomeOdds  ?? null, Away: m.teamMissPenAwayOdds  ?? null },
       extraTime: { true: m.extraTimeYesOdds ?? null, false: m.extraTimeNoOdds ?? null },
       penalties: { true: m.penaltiesYesOdds ?? null, false: m.penaltiesNoOdds ?? null },
       methodVic: {
@@ -2313,6 +2316,86 @@ export default function MatchesPage() {
                                 </button>
                               );
                             })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Team to Score a Penalty (Sportmonks market 270) */}
+                  {(preOdds.scorePen?.Home != null || preOdds.scorePen?.Away != null) && (
+                    <div data-cat="special" className={`market-section ${collapsed.scorePen ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('scorePen')}>
+                        <span className="market-section__name">🥅 Отбор отбелязва дузпа</span>
+                        <span className="market-section__toggle">{collapsed.scorePen ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.scorePen && (
+                        <div className="market-options market-options--2">
+                          {[
+                            { side: 'Home', lbl: selectedMatch.homeTeamName },
+                            { side: 'Away', lbl: selectedMatch.awayTeamName },
+                          ].map(({ side, lbl }) => {
+                            const o = preOdds.scorePen?.[side];
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamToScorePenalty}:${side}:TSP`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={side} type="button"
+                                className={`market-option ${active ? 'market-option--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  if (o == null) return;
+                                  addToSlip({
+                                    betType: BET_TYPE.TeamToScorePenalty, pick: side, selKey: 'TSP',
+                                    odds: o,
+                                    leg: { pick: side },
+                                    label: `${lbl} отбелязва дузпа`,
+                                    chip: side === 'Home' ? '1 PEN✓' : '2 PEN✓',
+                                  });
+                                }}>
+                                <div className="market-option__label">{lbl}</div>
+                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Team to Miss a Penalty (Sportmonks market 271) */}
+                  {(preOdds.missPen?.Home != null || preOdds.missPen?.Away != null) && (
+                    <div data-cat="special" className={`market-section ${collapsed.missPen ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection('missPen')}>
+                        <span className="market-section__name">❌ Отбор пропуска дузпа</span>
+                        <span className="market-section__toggle">{collapsed.missPen ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed.missPen && (
+                        <div className="market-options market-options--2">
+                          {[
+                            { side: 'Home', lbl: selectedMatch.homeTeamName },
+                            { side: 'Away', lbl: selectedMatch.awayTeamName },
+                          ].map(({ side, lbl }) => {
+                            const o = preOdds.missPen?.[side];
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamToMissPenalty}:${side}:TMP`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={side} type="button"
+                                className={`market-option ${active ? 'market-option--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  if (o == null) return;
+                                  addToSlip({
+                                    betType: BET_TYPE.TeamToMissPenalty, pick: side, selKey: 'TMP',
+                                    odds: o,
+                                    leg: { pick: side },
+                                    label: `${lbl} пропуска дузпа`,
+                                    chip: side === 'Home' ? '1 PEN✗' : '2 PEN✗',
+                                  });
+                                }}>
+                                <div className="market-option__label">{lbl}</div>
+                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
