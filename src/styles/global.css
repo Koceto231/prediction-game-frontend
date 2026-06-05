@@ -11144,7 +11144,6 @@ select:focus {
   flex: 0 0 auto;
 }
 .gvb-bet__leg-group-name {
-  flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
