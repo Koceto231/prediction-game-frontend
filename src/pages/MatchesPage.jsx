@@ -8,6 +8,8 @@ import { useWallet } from '../context/WalletContext';
 import {
   BET_TYPE, WINNER_MAP, OU_LINE_MAP, OU_PICK_MAP, DC_OPTIONS,
   CORNER_LINES, YELLOW_LINES, TEAM_GOAL_LINES,
+  TEAM_SOT_LINES, TEAM_SHOTS_LINES, TEAM_OFFSIDES_LINES, TEAM_TACKLES_LINES,
+  MATCH_SOT_LINES, MATCH_SHOTS_LINES, MATCH_OFFSIDES_LINES, MATCH_TACKLES_LINES,
   EMPTY_FORM as EMPTY, lineToKey, parseScore, fetchOdds, LEAGUE_LIST,
 } from './MatchesPage.constants';
 
@@ -94,7 +96,7 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -291,15 +293,16 @@ export default function MatchesPage() {
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
 
-  // Load players when scorer section is expanded
+  // Load players when scorer / assist sections are expanded
   useEffect(() => {
-    if (collapsed.scorer || !isMarket || !selectedMatch) return;
-    setScorerPlayers([]); setScorerLoading(true);
+    if ((collapsed.scorer && collapsed.playerAssist && collapsed.playerSoa) || !isMarket || !selectedMatch) return;
+    if (scorerPlayers.length > 0 || scorerLoading) return;
+    setScorerLoading(true);
     api.get(`/Match/${selectedMatch.id}/players`)
       .then(r => setScorerPlayers(r.data ?? []))
       .catch(() => {})
       .finally(() => setScorerLoading(false));
-  }, [collapsed.scorer, isMarket, selectedMatch?.id]);
+  }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
 
   // Live odds — Exact Score.
   // Cached per "h-a" score (cleared when the match changes) + debounced, so
@@ -3041,6 +3044,159 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* ── Phase 8: Team Shots on Target O/U ── */}
+                  {[
+                    { key: 'teamSot',      bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES,     label: 'Удари в рамката (отбор)' },
+                    { key: 'teamShots',    bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES,   label: 'Удари (отбор)' },
+                    { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES, label: 'Засади (отбор)' },
+                    { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES,  label: 'Откраднати топки (отбор)' },
+                  ].map(({ key, bt, lines, label }) => (
+                    <div key={key} data-cat="special" className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection(key)}>
+                        <span className="market-section__name">📊 {label}</span>
+                        <span className="market-section__toggle">{collapsed[key] ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed[key] && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '10px 14px' }}>
+                          {[{ side: 'Home', teamName: selectedMatch.homeTeamName }, { side: 'Away', teamName: selectedMatch.awayTeamName }].map(({ side, teamName }) => (
+                            <div key={side}>
+                              <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, opacity: 0.7 }}>{teamName}</div>
+                              <div className="ou-table">
+                                <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                                {lines.map(l => (
+                                  <div key={l} className="ou-table__row">
+                                    <span className="ou-table__line">{l}</span>
+                                    {['Over', 'Under'].map(p => {
+                                      const k = `${selectedMatch.id}:${bt}:${p}:${side}-${l}`;
+                                      return (
+                                        <button key={p} type="button"
+                                          className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                          onClick={async () => {
+                                            const result = await fetchOdds(selectedMatch.id, bt, { winnerPick: side, lineValue: l, ouPick: p });
+                                            if (!result) return;
+                                            setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                            addToSlip({
+                                              betType: bt, pick: p, selKey: `${side}-${l}`,
+                                              odds: result.odds,
+                                              leg: { pick: side, lineValue: l, oUPick: p },
+                                              label: `${teamName} ${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
+                                              chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
+                                            });
+                                          }}>
+                                          —
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* ── Phase 8: Match-level stat O/U ── */}
+                  {[
+                    { key: 'matchSot',      bt: BET_TYPE.MatchShotsOnTarget, lines: MATCH_SOT_LINES,     label: 'Удари в рамката (мач)' },
+                    { key: 'matchShots',    bt: BET_TYPE.MatchShots,         lines: MATCH_SHOTS_LINES,   label: 'Удари (мач)' },
+                    { key: 'matchOffsides', bt: BET_TYPE.MatchOffsides,      lines: MATCH_OFFSIDES_LINES, label: 'Засади (мач)' },
+                    { key: 'matchTackles',  bt: BET_TYPE.MatchTackles,       lines: MATCH_TACKLES_LINES,  label: 'Откраднати топки (мач)' },
+                  ].map(({ key, bt, lines, label }) => (
+                    <div key={key} data-cat="special" className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection(key)}>
+                        <span className="market-section__name">📊 {label}</span>
+                        <span className="market-section__toggle">{collapsed[key] ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed[key] && (
+                        <div className="ou-table" style={{ padding: '10px 14px' }}>
+                          <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
+                          {lines.map(l => (
+                            <div key={l} className="ou-table__row">
+                              <span className="ou-table__line">{l}</span>
+                              {['Over', 'Under'].map(p => {
+                                const k = `${selectedMatch.id}:${bt}:${p}:MST-${l}`;
+                                return (
+                                  <button key={p} type="button"
+                                    className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                    onClick={async () => {
+                                      const result = await fetchOdds(selectedMatch.id, bt, { lineValue: l, ouPick: p });
+                                      if (!result) return;
+                                      setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                      addToSlip({
+                                        betType: bt, pick: p, selKey: `MST-${l}`,
+                                        odds: result.odds,
+                                        leg: { lineValue: l, oUPick: p },
+                                        label: `${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
+                                        chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
+                                      });
+                                    }}>
+                                    —
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* ── Phase 8: Player to Assist / Score or Assist ── */}
+                  {[
+                    { key: 'playerAssist', bt: BET_TYPE.PlayerAssist,        label: '🅰️ Асистенция', chipLabel: 'AST' },
+                    { key: 'playerSoa',    bt: BET_TYPE.PlayerScoreOrAssist, label: '⚡ Гол или асистенция', chipLabel: 'G/A' },
+                  ].map(({ key, bt, label, chipLabel }) => (
+                    <div key={key} data-cat="goals" className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
+                      <div className="market-section__header" onClick={() => toggleSection(key)}>
+                        <span className="market-section__name">{label}</span>
+                        <span className="market-section__toggle">{collapsed[key] ? '▼' : '▲'}</span>
+                      </div>
+                      {!collapsed[key] && (
+                        <div style={{ padding: '12px 16px' }}>
+                          {scorerLoading && <div className="muted-text" style={{ fontSize: '0.82rem' }}>Loading players...</div>}
+                          {!scorerLoading && scorerPlayers.length === 0 && (
+                            <div className="muted-text" style={{ fontSize: '0.78rem' }}>No players found</div>
+                          )}
+                          {!scorerLoading && scorerPlayers.length > 0 && (
+                            <div className="gs-list">
+                              {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
+                                const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
+                                const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
+                                const slipKey = `${selectedMatch.id}:${bt}:${p.playerId}:${chipLabel}`;
+                                const active = ouPicks.has(slipKey);
+                                return (
+                                  <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
+                                    onClick={async () => {
+                                      const result = await fetchOdds(selectedMatch.id, bt, { goalscorerId: p.playerId });
+                                      if (!result) return;
+                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                      addToSlip({
+                                        betType: bt, pick: String(p.playerId), selKey: `${chipLabel}-${p.playerId}`,
+                                        odds: result.odds,
+                                        leg: { goalscorerId: p.playerId },
+                                        label: `${label} — ${p.name}`,
+                                        chip: chipLabel,
+                                      });
+                                    }}>
+                                    <span className="gs-row__crest">
+                                      {logo
+                                        ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                        : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
+                                    </span>
+                                    <span className="gs-row__name">{p.name}</span>
+                                    <span className="gs-row__odds">—</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
 
                 </div>{/* end market-table */}
 

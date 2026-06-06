@@ -58,6 +58,17 @@ export const BET_TYPE = {
   AsianHandicap1H:      'AsianHandicap1H',
   TeamToScorePenalty:   'TeamToScorePenalty',
   TeamToMissPenalty:    'TeamToMissPenalty',
+  // ── Phase 8 (Stats markets) ────────────────────────────────────────
+  TeamShotsOnTarget:    'TeamShotsOnTarget',
+  TeamShots:            'TeamShots',
+  TeamOffsides:         'TeamOffsides',
+  TeamTackles:          'TeamTackles',
+  MatchShotsOnTarget:   'MatchShotsOnTarget',
+  MatchShots:           'MatchShots',
+  MatchOffsides:        'MatchOffsides',
+  MatchTackles:         'MatchTackles',
+  PlayerAssist:         'PlayerAssist',
+  PlayerScoreOrAssist:  'PlayerScoreOrAssist',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
@@ -79,6 +90,16 @@ export const DC_OPTIONS = [
 export const CORNER_LINES    = [8.5, 9.5, 10.5];
 export const YELLOW_LINES    = [2.5, 3.5, 4.5];
 export const TEAM_GOAL_LINES = [0.5, 1.5, 2.5];
+
+// Phase 8 stat market lines
+export const TEAM_SOT_LINES    = [2.5, 3.5, 4.5];   // shots on target per team
+export const TEAM_SHOTS_LINES  = [10.5, 12.5, 14.5]; // shots per team
+export const TEAM_OFFSIDES_LINES = [1.5, 2.5, 3.5];
+export const TEAM_TACKLES_LINES  = [14.5, 17.5, 20.5];
+export const MATCH_SOT_LINES    = [6.5, 8.5, 10.5];  // total match shots on target
+export const MATCH_SHOTS_LINES  = [22.5, 25.5, 28.5];
+export const MATCH_OFFSIDES_LINES = [3.5, 4.5, 5.5];
+export const MATCH_TACKLES_LINES  = [29.5, 33.5, 37.5];
 
 export const POS_ORDER = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
