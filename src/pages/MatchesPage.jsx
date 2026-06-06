@@ -337,7 +337,7 @@ export default function MatchesPage() {
         for (const l of lines) {
           for (const p of ['Over', 'Under']) {
             promises.push(
-              fetchOdds(id, bt, { winnerPick: side, lineValue: l, ouPick: p }).then(r => {
+              fetchOdds(id, bt, { pick: side, lineValue: l, ouPick: p }).then(r => {
                 if (!r) return;
                 updates[bt] ??= {};
                 updates[bt][side] ??= {};
@@ -3150,7 +3150,7 @@ export default function MatchesPage() {
                                           onClick={async () => {
                                             let o = preO;
                                             if (!o) {
-                                              const result = await fetchOdds(selectedMatch.id, bt, { winnerPick: side, lineValue: l, ouPick: p });
+                                              const result = await fetchOdds(selectedMatch.id, bt, { pick: side, lineValue: l, ouPick: p });
                                               if (!result) return;
                                               o = result.odds;
                                             }
