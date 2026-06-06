@@ -114,9 +114,10 @@ export default function MatchesPage() {
     { id: 'special', label: 'Special' },
   ];
 
-  const panelRef  = useRef(null);
-  const aiRef     = useRef(null);
-  const aiCache   = useRef({});   // matchId → AIPredictionResponseDTO
+  const panelRef         = useRef(null);
+  const aiRef            = useRef(null);
+  const aiCache          = useRef({});   // matchId → AIPredictionResponseDTO
+  const playersFetchedRef = useRef(false); // prevent duplicate /players fetches per match
   const setField  = useCallback((k, v) => setFields(p => ({ ...p, [k]: v })), []);
 
   /**
@@ -275,6 +276,7 @@ export default function MatchesPage() {
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setDc1hPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
     setOuPicks(new Set()); setScorerPicks(new Set()); setScorerPlayers([]);
+    playersFetchedRef.current = false;
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
     setHtPick(''); setCsPick(''); setCsYN(''); setFgPick('');
@@ -296,14 +298,15 @@ export default function MatchesPage() {
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
 
-  // Load players when scorer / assist sections are expanded
+  // Load players when scorer / assist sections are expanded — fetch only once per match
   useEffect(() => {
     if ((collapsed.scorer && collapsed.playerAssist && collapsed.playerSoa) || !isMarket || !selectedMatch) return;
-    if (scorerPlayers.length > 0 || scorerLoading) return;
-    setScorerLoading(true);
+    if (playersFetchedRef.current) return;
+    playersFetchedRef.current = true;
+    setScorerPlayers([]); setScorerLoading(true);
     api.get(`/Match/${selectedMatch.id}/players`)
       .then(r => setScorerPlayers(r.data ?? []))
-      .catch(() => {})
+      .catch(() => setScorerPlayers([]))
       .finally(() => setScorerLoading(false));
   }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
 
