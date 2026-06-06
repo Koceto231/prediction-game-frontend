@@ -96,6 +96,9 @@ export default function MatchesPage() {
   const [preOddsLoading, setPreOddsLoading] = useState(false);
   const [cornersPreOdds, setCornersPreOdds] = useState({});
   const [yellowsPreOdds, setYellowsPreOdds] = useState({});
+  // Phase 8 stat market odds — fetched from API when section is expanded
+  // Structure: { [betType]: { [side_or_match]: { [line]: { Over, Under } } } }
+  const [statOdds, setStatOdds] = useState({});
   const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
@@ -281,7 +284,7 @@ export default function MatchesPage() {
     setHomeTsPick(''); setAwayTsPick('');
     setWbhHomePick(''); setWbhAwayPick('');
     setLastScorePick(''); setHtftPick('');
-    setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({});
+    setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); setStatOdds({});
     setCollapsed(INIT_COLLAPSED);
   }, []);
 
@@ -303,6 +306,77 @@ export default function MatchesPage() {
       .catch(() => {})
       .finally(() => setScorerLoading(false));
   }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
+
+  // Fetch Phase 8 stat market odds from API when a section is expanded.
+  // Each market is fetched lazily once; already-loaded markets are skipped.
+  useEffect(() => {
+    if (!isMarket || !selectedMatch) return;
+
+    const TEAM_MARKETS = [
+      { key: 'teamSot',      bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES,      colKey: 'teamSot' },
+      { key: 'teamShots',    bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES,    colKey: 'teamShots' },
+      { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES, colKey: 'teamOffsides' },
+      { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES,  colKey: 'teamTackles' },
+    ];
+    const MATCH_MARKETS = [
+      { key: 'matchSot',      bt: BET_TYPE.MatchShotsOnTarget,  lines: MATCH_SOT_LINES,      colKey: 'matchSot' },
+      { key: 'matchShots',    bt: BET_TYPE.MatchShots,          lines: MATCH_SHOTS_LINES,    colKey: 'matchShots' },
+      { key: 'matchOffsides', bt: BET_TYPE.MatchOffsides,       lines: MATCH_OFFSIDES_LINES, colKey: 'matchOffsides' },
+      { key: 'matchTackles',  bt: BET_TYPE.MatchTackles,        lines: MATCH_TACKLES_LINES,  colKey: 'matchTackles' },
+    ];
+
+    const id = selectedMatch.id;
+    const updates = {};
+
+    const promises = [];
+
+    for (const { bt, lines, colKey } of TEAM_MARKETS) {
+      if (collapsed[colKey]) continue;
+      if (statOdds[bt]) continue; // already loaded
+      for (const side of ['Home', 'Away']) {
+        for (const l of lines) {
+          for (const p of ['Over', 'Under']) {
+            promises.push(
+              fetchOdds(id, bt, { winnerPick: side, lineValue: l, ouPick: p }).then(r => {
+                if (!r) return;
+                updates[bt] ??= {};
+                updates[bt][side] ??= {};
+                updates[bt][side][l] ??= {};
+                updates[bt][side][l][p] = r.odds;
+              })
+            );
+          }
+        }
+      }
+    }
+
+    for (const { bt, lines, colKey } of MATCH_MARKETS) {
+      if (collapsed[colKey]) continue;
+      if (statOdds[bt]) continue;
+      for (const l of lines) {
+        for (const p of ['Over', 'Under']) {
+          promises.push(
+            fetchOdds(id, bt, { lineValue: l, ouPick: p }).then(r => {
+              if (!r) return;
+              updates[bt] ??= {};
+              updates[bt][l] ??= {};
+              updates[bt][l][p] = r.odds;
+            })
+          );
+        }
+      }
+    }
+
+    if (promises.length === 0) return;
+    Promise.all(promises).then(() => {
+      if (Object.keys(updates).length > 0)
+        setStatOdds(prev => ({ ...prev, ...updates }));
+    });
+  }, [
+    collapsed.teamSot, collapsed.teamShots, collapsed.teamOffsides, collapsed.teamTackles,
+    collapsed.matchSot, collapsed.matchShots, collapsed.matchOffsides, collapsed.matchTackles,
+    isMarket, selectedMatch?.id,
+  ]);
 
   // Live odds — Exact Score.
   // Cached per "h-a" score (cleared when the match changes) + debounced, so
@@ -526,7 +600,7 @@ export default function MatchesPage() {
 
   // Build all market odds from real Sportmonks data on the match object — no API calls
   useEffect(() => {
-    if (!selectedMatch) { setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); return; }
+    if (!selectedMatch) { setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); setStatOdds({}); return; }
     const m = selectedMatch;
     setPreOdds({
       dc: {
@@ -3069,22 +3143,27 @@ export default function MatchesPage() {
                                     <span className="ou-table__line">{l}</span>
                                     {['Over', 'Under'].map(p => {
                                       const k = `${selectedMatch.id}:${bt}:${p}:${side}-${l}`;
+                                      const preO = statOdds[bt]?.[side]?.[l]?.[p];
                                       return (
                                         <button key={p} type="button"
                                           className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
                                           onClick={async () => {
-                                            const result = await fetchOdds(selectedMatch.id, bt, { winnerPick: side, lineValue: l, ouPick: p });
-                                            if (!result) return;
+                                            let o = preO;
+                                            if (!o) {
+                                              const result = await fetchOdds(selectedMatch.id, bt, { winnerPick: side, lineValue: l, ouPick: p });
+                                              if (!result) return;
+                                              o = result.odds;
+                                            }
                                             setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                             addToSlip({
                                               betType: bt, pick: p, selKey: `${side}-${l}`,
-                                              odds: result.odds,
+                                              odds: o,
                                               leg: { pick: side, lineValue: l, oUPick: p },
                                               label: `${teamName} ${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                               chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                             });
                                           }}>
-                                          —
+                                          {preO != null ? Number(preO).toFixed(2) : '—'}
                                         </button>
                                       );
                                     })}
@@ -3118,22 +3197,27 @@ export default function MatchesPage() {
                               <span className="ou-table__line">{l}</span>
                               {['Over', 'Under'].map(p => {
                                 const k = `${selectedMatch.id}:${bt}:${p}:MST-${l}`;
+                                const preO = statOdds[bt]?.[l]?.[p];
                                 return (
                                   <button key={p} type="button"
                                     className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
                                     onClick={async () => {
-                                      const result = await fetchOdds(selectedMatch.id, bt, { lineValue: l, ouPick: p });
-                                      if (!result) return;
+                                      let o = preO;
+                                      if (!o) {
+                                        const result = await fetchOdds(selectedMatch.id, bt, { lineValue: l, ouPick: p });
+                                        if (!result) return;
+                                        o = result.odds;
+                                      }
                                       setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                       addToSlip({
                                         betType: bt, pick: p, selKey: `MST-${l}`,
-                                        odds: result.odds,
+                                        odds: o,
                                         leg: { lineValue: l, oUPick: p },
                                         label: `${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                         chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                       });
                                     }}>
-                                    —
+                                    {preO != null ? Number(preO).toFixed(2) : '—'}
                                   </button>
                                 );
                               })}

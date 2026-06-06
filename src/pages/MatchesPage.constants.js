@@ -101,6 +101,46 @@ export const MATCH_SHOTS_LINES  = [22.5, 25.5, 28.5];
 export const MATCH_OFFSIDES_LINES = [3.5, 4.5, 5.5];
 export const MATCH_TACKLES_LINES  = [29.5, 33.5, 37.5];
 
+// ── Client-side Poisson odds (mirrors server-side PoissonCdfOver + ToOdds) ──
+// Precomputed so stat market buttons show prices instantly without API calls.
+const _HOUSE = 0.90;
+const _MIN   = 1.05;
+
+function _cdfOver(lambda, k) {
+  const n = Math.floor(k);
+  let sum = 0, term = Math.exp(-lambda);
+  sum = term;
+  for (let i = 1; i <= n; i++) { term *= lambda / i; sum += term; }
+  return 1 - sum;
+}
+
+function _toOdds(p) {
+  if (p <= 0) return _MIN;
+  return Math.max(Math.round(_HOUSE / p * 100) / 100, _MIN);
+}
+
+/** Returns { [line]: { Over: decimal, Under: decimal } } for a given Poisson λ and line list. */
+export function buildStatLineOdds(lambda, lines) {
+  const r = {};
+  for (const l of lines) {
+    const p = _cdfOver(lambda, l);
+    r[l] = { Over: _toOdds(p), Under: _toOdds(1 - p) };
+  }
+  return r;
+}
+
+// Server-side averages (must stay in sync with OddsService.cs constants)
+export const STAT_AVGS = {
+  TeamShotsOnTarget:  4.2,
+  TeamShots:         13.0,
+  TeamOffsides:       2.3,
+  TeamTackles:       17.0,
+  MatchShotsOnTarget: 8.4,
+  MatchShots:        26.0,
+  MatchOffsides:      4.6,
+  MatchTackles:      34.0,
+};
+
 export const POS_ORDER = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
 /** Empty form state shared by `setField` resets across the bet panel. */
