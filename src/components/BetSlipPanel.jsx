@@ -131,10 +131,11 @@ export default function BetSlipPanel() {
           emitRemoved(removed ? [removed] : []);
           return { ...c, picks: c.picks.filter(p => p.key !== key) };
         }
-        // Conflicting picks get dropped — tell the page to de-select them too
-        const conflicts = c.picks.filter(p => isConflict(p, newPick));
-        if (conflicts.length) emitRemoved(conflicts);
-        return { ...c, picks: [...c.picks.filter(p => !isConflict(p, newPick)), newPick] };
+        // Only one pick per match allowed — remove all existing picks for this match,
+        // plus any cross-match conflicting picks.
+        const toRemove = c.picks.filter(p => p.matchId === matchId || isConflict(p, newPick));
+        if (toRemove.length) emitRemoved(toRemove);
+        return { ...c, picks: [...c.picks.filter(p => p.matchId !== matchId && !isConflict(p, newPick)), newPick] };
       }));
       setError(''); setSuccess('');
     };
