@@ -56,6 +56,8 @@ export default function MatchesPage() {
   const [scorerPicks, setScorerPicks]         = useState(() => new Set());  // Set<playerId> — multiple goalscorers allowed
   const [scorerPlayers, setScorerPlayers]     = useState([]);
   const [scorerLoading, setScorerLoading]     = useState(false);
+  const [assistOdds, setAssistOdds]           = useState({});  // { [playerId]: odds }
+  const [soaOdds, setSoaOdds]                 = useState({});  // { [playerId]: odds }
 
   // Phase 1 markets
   const [oddEvenPick, setOddEvenPick]   = useState('');   // '' | 'true' (Odd) | 'false' (Even)
@@ -276,6 +278,7 @@ export default function MatchesPage() {
     setMpOdds({ winner: null, btts: null, ou: null, dc: null, corners: null, yellows: null, oddEven: null, dnb: null, wtn: null, hcp: null, homeGoals: null, awayGoals: null, ht: null, cs: null, fg: null, btts1h: null, btts2h: null, htGoals: null, shGoals: null, homeOE: null, awayOE: null, oe1h: null, homeTs: null, awayTs: null, wbhHome: null, wbhAway: null, lastScore: null, htft: null });
     setDCPick(''); setDc1hPick(''); setCornersLine(''); setCornersOU(''); setYellowsLine(''); setYellowsOU('');
     setOuPicks(new Set()); setScorerPicks(new Set()); setScorerPlayers([]);
+    setAssistOdds({}); setSoaOdds({});
     playersFetchedRef.current = false;
     setOddEvenPick(''); setDnbPick(''); setWtnTeam(''); setWtnYN(''); setHcpPick('');
     setHGoalsLine(''); setHGoalsOU(''); setAGoalsLine(''); setAGoalsOU('');
@@ -298,14 +301,33 @@ export default function MatchesPage() {
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
 
-  // Load players when scorer / assist sections are expanded — fetch only once per match
+  // Load players when scorer / assist sections are expanded — fetch only once per match.
+  // After the player list arrives, fire parallel per-player odds requests for Assist and SoA.
   useEffect(() => {
     if ((collapsed.scorer && collapsed.playerAssist && collapsed.playerSoa) || !isMarket || !selectedMatch) return;
     if (playersFetchedRef.current) return;
     playersFetchedRef.current = true;
     setScorerPlayers([]); setScorerLoading(true);
-    api.get(`/Match/${selectedMatch.id}/players`)
-      .then(r => setScorerPlayers(r.data ?? []))
+    const mid = selectedMatch.id;
+    api.get(`/Match/${mid}/players`)
+      .then(async r => {
+        const players = r.data ?? [];
+        setScorerPlayers(players);
+        if (players.length === 0) return;
+        // Pre-fetch Assist and SoA odds for every player in parallel
+        const [astEntries, soaEntries] = await Promise.all([
+          Promise.all(players.map(p =>
+            fetchOdds(mid, BET_TYPE.PlayerAssist, { goalscorerId: p.playerId })
+              .then(res => [p.playerId, res?.odds])
+          )),
+          Promise.all(players.map(p =>
+            fetchOdds(mid, BET_TYPE.PlayerScoreOrAssist, { goalscorerId: p.playerId })
+              .then(res => [p.playerId, res?.odds])
+          )),
+        ]);
+        setAssistOdds(Object.fromEntries(astEntries.filter(([, v]) => v != null)));
+        setSoaOdds(Object.fromEntries(soaEntries.filter(([, v]) => v != null)));
+      })
       .catch(() => setScorerPlayers([]))
       .finally(() => setScorerLoading(false));
   }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
@@ -3230,35 +3252,41 @@ export default function MatchesPage() {
                           )}
                           {!scorerLoading && scorerPlayers.length > 0 && (
                             <div className="gs-list">
-                              {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
-                                const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
-                                const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
-                                const slipKey = `${selectedMatch.id}:${bt}:${p.playerId}:${chipLabel}`;
-                                const active = ouPicks.has(slipKey);
-                                return (
-                                  <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
-                                    onClick={async () => {
-                                      const result = await fetchOdds(selectedMatch.id, bt, { goalscorerId: p.playerId });
-                                      if (!result) return;
-                                      setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                      addToSlip({
-                                        betType: bt, pick: String(p.playerId), selKey: `${chipLabel}-${p.playerId}`,
-                                        odds: result.odds,
-                                        leg: { goalscorerId: p.playerId },
-                                        label: `${label} — ${p.name}`,
-                                        chip: chipLabel,
-                                      });
-                                    }}>
-                                    <span className="gs-row__crest">
-                                      {logo
-                                        ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                        : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
-                                    </span>
-                                    <span className="gs-row__name">{p.name}</span>
-                                    <span className="gs-row__odds">—</span>
-                                  </button>
-                                );
-                              })}
+                              {(() => {
+                                const oddsMap = key === 'playerAssist' ? assistOdds : soaOdds;
+                                return [...scorerPlayers]
+                                  .sort((a, b) => (oddsMap[a.playerId] ?? 99) - (oddsMap[b.playerId] ?? 99))
+                                  .map(p => {
+                                    const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
+                                    const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
+                                    const slipKey = `${selectedMatch.id}:${bt}:${p.playerId}:${chipLabel}`;
+                                    const active = ouPicks.has(slipKey);
+                                    const preOddsVal = oddsMap[p.playerId];
+                                    return (
+                                      <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
+                                        onClick={async () => {
+                                          const oddsVal = preOddsVal ?? (await fetchOdds(selectedMatch.id, bt, { goalscorerId: p.playerId }))?.odds;
+                                          if (!oddsVal) return;
+                                          setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                          addToSlip({
+                                            betType: bt, pick: String(p.playerId), selKey: `${chipLabel}-${p.playerId}`,
+                                            odds: oddsVal,
+                                            leg: { goalscorerId: p.playerId },
+                                            label: `${label} — ${p.name}`,
+                                            chip: chipLabel,
+                                          });
+                                        }}>
+                                        <span className="gs-row__crest">
+                                          {logo
+                                            ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                            : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
+                                        </span>
+                                        <span className="gs-row__name">{p.name}</span>
+                                        <span className="gs-row__odds">{preOddsVal ?? '—'}</span>
+                                      </button>
+                                    );
+                                  });
+                              })()}
                             </div>
                           )}
                         </div>
