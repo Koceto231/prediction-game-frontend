@@ -307,76 +307,6 @@ export default function MatchesPage() {
       .finally(() => setScorerLoading(false));
   }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
 
-  // Fetch Phase 8 stat market odds from API when a section is expanded.
-  // Each market is fetched lazily once; already-loaded markets are skipped.
-  useEffect(() => {
-    if (!isMarket || !selectedMatch) return;
-
-    const TEAM_MARKETS = [
-      { key: 'teamSot',      bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES,      colKey: 'teamSot' },
-      { key: 'teamShots',    bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES,    colKey: 'teamShots' },
-      { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES, colKey: 'teamOffsides' },
-      { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES,  colKey: 'teamTackles' },
-    ];
-    const MATCH_MARKETS = [
-      { key: 'matchSot',      bt: BET_TYPE.MatchShotsOnTarget,  lines: MATCH_SOT_LINES,      colKey: 'matchSot' },
-      { key: 'matchShots',    bt: BET_TYPE.MatchShots,          lines: MATCH_SHOTS_LINES,    colKey: 'matchShots' },
-      { key: 'matchOffsides', bt: BET_TYPE.MatchOffsides,       lines: MATCH_OFFSIDES_LINES, colKey: 'matchOffsides' },
-      { key: 'matchTackles',  bt: BET_TYPE.MatchTackles,        lines: MATCH_TACKLES_LINES,  colKey: 'matchTackles' },
-    ];
-
-    const id = selectedMatch.id;
-    const updates = {};
-
-    const promises = [];
-
-    for (const { bt, lines, colKey } of TEAM_MARKETS) {
-      if (collapsed[colKey]) continue;
-      if (statOdds[bt]) continue; // already loaded
-      for (const side of ['Home', 'Away']) {
-        for (const l of lines) {
-          for (const p of ['Over', 'Under']) {
-            promises.push(
-              fetchOdds(id, bt, { pick: side, lineValue: l, ouPick: p }).then(r => {
-                if (!r) return;
-                updates[bt] ??= {};
-                updates[bt][side] ??= {};
-                updates[bt][side][l] ??= {};
-                updates[bt][side][l][p] = r.odds;
-              })
-            );
-          }
-        }
-      }
-    }
-
-    for (const { bt, lines, colKey } of MATCH_MARKETS) {
-      if (collapsed[colKey]) continue;
-      if (statOdds[bt]) continue;
-      for (const l of lines) {
-        for (const p of ['Over', 'Under']) {
-          promises.push(
-            fetchOdds(id, bt, { lineValue: l, ouPick: p }).then(r => {
-              if (!r) return;
-              updates[bt] ??= {};
-              updates[bt][l] ??= {};
-              updates[bt][l][p] = r.odds;
-            })
-          );
-        }
-      }
-    }
-
-    if (promises.length === 0) return;
-    Promise.all(promises).then(() => {
-      if (Object.keys(updates).length > 0)
-        setStatOdds(prev => ({ ...prev, ...updates }));
-    });
-  }, [
-    collapsed.teamSot, collapsed.teamShots, collapsed.teamOffsides, collapsed.teamTackles,
-    collapsed.matchSot, collapsed.matchShots, collapsed.matchOffsides, collapsed.matchTackles,
-    isMarket, selectedMatch?.id,
-  ]);
 
   // Live odds — Exact Score.
   // Cached per "h-a" score (cleared when the match changes) + debounced, so
@@ -728,6 +658,57 @@ export default function MatchesPage() {
       4.5: { Over: m.yellowOver45 ?? null, Under: m.yellowUnder45 ?? null },
     });
     setPreOddsLoading(false);
+
+    // Pre-fetch Phase 8 stat market odds upfront so buttons show prices immediately
+    const sid = m.id;
+    const TEAM_STAT_MARKETS = [
+      { bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES      },
+      { bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES     },
+      { bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES  },
+      { bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES   },
+    ];
+    const MATCH_STAT_MARKETS = [
+      { bt: BET_TYPE.MatchShotsOnTarget, lines: MATCH_SOT_LINES      },
+      { bt: BET_TYPE.MatchShots,         lines: MATCH_SHOTS_LINES    },
+      { bt: BET_TYPE.MatchOffsides,      lines: MATCH_OFFSIDES_LINES },
+      { bt: BET_TYPE.MatchTackles,       lines: MATCH_TACKLES_LINES  },
+    ];
+    const statUpdates = {};
+    const statPromises = [];
+    for (const { bt, lines } of TEAM_STAT_MARKETS) {
+      for (const side of ['Home', 'Away']) {
+        for (const l of lines) {
+          for (const p of ['Over', 'Under']) {
+            statPromises.push(
+              fetchOdds(sid, bt, { pick: side, lineValue: l, ouPick: p }).then(r => {
+                if (!r) return;
+                statUpdates[bt] ??= {};
+                statUpdates[bt][side] ??= {};
+                statUpdates[bt][side][l] ??= {};
+                statUpdates[bt][side][l][p] = r.odds;
+              })
+            );
+          }
+        }
+      }
+    }
+    for (const { bt, lines } of MATCH_STAT_MARKETS) {
+      for (const l of lines) {
+        for (const p of ['Over', 'Under']) {
+          statPromises.push(
+            fetchOdds(sid, bt, { lineValue: l, ouPick: p }).then(r => {
+              if (!r) return;
+              statUpdates[bt] ??= {};
+              statUpdates[bt][l] ??= {};
+              statUpdates[bt][l][p] = r.odds;
+            })
+          );
+        }
+      }
+    }
+    Promise.all(statPromises).then(() => {
+      if (Object.keys(statUpdates).length > 0) setStatOdds(statUpdates);
+    });
   }, [selectedMatch?.id]);
 
   // All selected odds (for combined slip)
