@@ -922,6 +922,26 @@ export default function AdminPage() {
             <p className="admin-hint">Pulls real Sportmonks 1X2 odds for all upcoming matches in the 60-day window. Safe to re-run.</p>
           </AdminSection>
 
+          {/* ── Sync Players (Goalscorer / Assist markets) ── */}
+          <AdminSection title="Sync Players (Голмайстори / Асистенция)">
+            <div className="admin-row">
+              <label className="admin-label">League</label>
+              <select className="admin-input" value={smLeague} onChange={e => setSmLeague(e.target.value)}>
+                {SM_LEAGUES.map(l => (
+                  <option key={l} value={l}>{l === 'BGL' ? 'BGL — efbet Liga' : l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button" disabled={loading === 'sync-players'}
+                onClick={() => run('sync-players', () =>
+                  api.post(`/admin/sync/players/sync-squads?leagueCode=${smLeague}`))}>
+                {loading === 'sync-players' ? 'Syncing…' : `⚽ Sync ${smLeague} Players`}
+              </button>
+            </div>
+            <p className="admin-hint">Дърпа актуалните съставите от Sportmonks и добавя/обновява играчите в базата. Пусни веднъж за всяка лига — след това играчите ще се показват в секциите Голмайстори, Асистенция и Гол или асистенция.</p>
+          </AdminSection>
+
           {/* ── Re-resolve Bet ── */}
           <AdminSection title="Re-resolve Bet">
             <div className="admin-row">
