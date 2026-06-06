@@ -821,33 +821,8 @@ export default function MatchesPage() {
     } finally { setLoading(false); }
   };
 
-  // ── Accumulator conflict prevention ────────────────────────────
-  const groupAPicked =
-       (winner       ? 'Match Result'      : null)
-    || (dcPick       ? 'Double Chance'     : null)
-    || (dnbPick      ? 'Draw No Bet'       : null)
-    || (htftPick     ? 'HT/FT'             : null)
-    || (wtnTeam      ? 'Win to Nil'        : null)
-    || (wbhHomePick || wbhAwayPick ? 'Win Both Halves' : null)
-    || (hcpPick      ? 'Handicap'          : null);
-  const groupBPicked =
-       (htPick       ? 'Half-time Result'  : null)
-    || (htftPick     ? 'HT/FT'             : null);
-  const dis = {
-    winner: groupAPicked && !winner,
-    dc:     groupAPicked && !dcPick,
-    dnb:    groupAPicked && !dnbPick,
-    htft:   (groupAPicked && !htftPick) || (groupBPicked && !htftPick),
-    wtn:    groupAPicked && !wtnTeam,
-    wbh:    groupAPicked && !(wbhHomePick || wbhAwayPick),
-    hcp:    groupAPicked && !hcpPick,
-    ht:     groupBPicked && !htPick,
-  };
-  const LiveLock = ({ reason }) => (
-    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 8, fontStyle: 'italic' }}>
-      🔒 {reason}
-    </span>
-  );
+  const dis = { winner: false, dc: false, dnb: false, htft: false, wtn: false, wbh: false, hcp: false, ht: false };
+  const LiveLock = () => null;
 
   // ── Render ────────────────────────────────────────────────────
   const filteredMatches = selectedLeague
