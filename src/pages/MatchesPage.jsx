@@ -5,6 +5,7 @@ import LiveNowSidebar from '../components/LiveNowSidebar';
 import QuickStakeModal from '../components/QuickStakeModal';
 import QuickBetPanel from '../components/QuickBetPanel';
 import { useWallet } from '../context/WalletContext';
+import { useAuth } from '../context/AuthContext';
 import {
   BET_TYPE, WINNER_MAP, OU_LINE_MAP, OU_PICK_MAP, DC_OPTIONS,
   CORNER_LINES, YELLOW_LINES, TEAM_GOAL_LINES,
@@ -16,6 +17,7 @@ import {
 // ── Main page ────────────────────────────────────────────────────
 export default function MatchesPage() {
   const { refreshBalance } = useWallet();
+  const { isAdmin } = useAuth();
 
   const [matches, setMatches]             = useState([]);
   const [selectedLeague, setSelectedLeague] = useState(null);
@@ -1027,6 +1029,11 @@ export default function MatchesPage() {
             {selectedMatch.venueName && (
               <div className="gvmd-hero__venue">
                 📍 {selectedMatch.venueName.toUpperCase()}{selectedMatch.venueCity ? ` · ${selectedMatch.venueCity}` : ''}
+              </div>
+            )}
+            {isAdmin && selectedMatch.externalId > 0 && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted, #888)', marginTop: 4, textAlign: 'center', letterSpacing: '0.04em' }}>
+                SM ID: <strong>{selectedMatch.externalId}</strong>
               </div>
             )}
           </div>
