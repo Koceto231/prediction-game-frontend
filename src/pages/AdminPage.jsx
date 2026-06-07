@@ -799,6 +799,7 @@ export default function AdminPage() {
   const [gwNumber, setGwNumber]         = useState('');
   const [gwDeadline, setGwDeadline]     = useState('');
   const [reResolveBetId, setReResolveBetId] = useState('');
+  const [debugFixtureId, setDebugFixtureId] = useState('');
   const [fdTeamSearch, setFdTeamSearch]     = useState('');
   const [feedback, setFeedback] = useState(null);
   const [loading, setLoading]   = useState('');
@@ -940,6 +941,23 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Дърпа актуалните съставите от Sportmonks и добавя/обновява играчите в базата. Пусни веднъж за всяка лига — след това играчите ще се показват в секциите Голмайстори, Асистенция и Гол или асистенция.</p>
+          </AdminSection>
+
+          {/* ── Debug Odds (bookmaker check) ── */}
+          <AdminSection title="Debug Odds (Bookmaker Check)">
+            <div className="admin-row">
+              <label className="admin-label">Sportmonks Fixture ID</label>
+              <input className="admin-input" type="number" placeholder="e.g. 19134660"
+                value={debugFixtureId} onChange={e => setDebugFixtureId(e.target.value)} />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button"
+                disabled={loading === 'debug-odds' || !debugFixtureId}
+                onClick={() => run('debug-odds', () => api.get(`/admin/debug/odds/${debugFixtureId}`))}>
+                {loading === 'debug-odds' ? 'Loading…' : '🔍 Check Odds'}
+              </button>
+            </div>
+            <p className="admin-hint">Shows raw Bet365 odds from Sportmonks for a fixture. Use this to verify bookmaker IDs and odds values match real Bet365.</p>
           </AdminSection>
 
           {/* ── Re-resolve Bet ── */}
