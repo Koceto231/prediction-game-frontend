@@ -988,6 +988,26 @@ export default function AdminPage() {
             <p className="admin-hint">Debug odds — показва всички пазари и коефициенти от Sportmonks за конкретен fixture. Използвай ExternalId на мача.</p>
           </AdminSection>
 
+          {/* ── Preview Bet365 odds before sync ───────────────────────── */}
+          <AdminSection title="👁 Преглед на Bet365 коефициенти (преди синк)">
+            <div className="admin-row">
+              <label className="admin-label">Match ID</label>
+              <input className="admin-input" value={matchId}
+                onChange={e => setMatchId(e.target.value)} placeholder="Internal Match ID (не ExternalId)" />
+            </div>
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button"
+                disabled={loading === 'preview-odds' || !matchId}
+                onClick={() => run('preview-odds', () => api.get(`/admin/sync/odds/preview/${matchId}`))}>
+                {loading === 'preview-odds' ? 'Зарежда…' : '👁 Покажи Bet365 преглед'}
+              </button>
+            </div>
+            <p className="admin-hint">
+              Връща пълния списък с пазари + коефициенти на Bet365 за този мач — <strong>без</strong> да записва нищо в БД.
+              Чудесно за проверка преди да решиш дали да пуснеш истинско синкване.
+            </p>
+          </AdminSection>
+
           {/* ── Score Predictions ── */}
           <AdminSection title="Score Predictions / Force Re-sync Stats">
             <div className="admin-row">
