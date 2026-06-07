@@ -988,6 +988,21 @@ export default function AdminPage() {
             <p className="admin-hint">Debug odds — показва всички пазари и коефициенти от Sportmonks за конкретен fixture. Използвай ExternalId на мача.</p>
           </AdminSection>
 
+          {/* ── Flush matches cache ───────────────────────────────────── */}
+          <AdminSection title="🧹 Изчисти кеша на мачовете">
+            <div className="admin-actions">
+              <button className="admin-btn admin-btn--accent" type="button"
+                disabled={loading === 'flush-cache'}
+                onClick={() => run('flush-cache', () => api.post('/admin/sync/matches/flush-cache'))}>
+                {loading === 'flush-cache' ? 'Чисти…' : '🧹 Изчисти кеша сега'}
+              </button>
+            </div>
+            <p className="admin-hint">
+              Когато синкнеш odds или промениш нещо в БД, frontend-ът може да показва кеширани данни още до ~1 минута.
+              Този бутон веднага изчиства кеша → следващото отваряне на „Мачове" зарежда пресни данни.
+            </p>
+          </AdminSection>
+
           {/* ── Preview Bet365 odds before sync ───────────────────────── */}
           <AdminSection title="👁 Преглед на Bet365 коефициенти (преди синк)">
             <div className="admin-row">
