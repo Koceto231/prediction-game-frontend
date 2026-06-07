@@ -953,7 +953,7 @@ export default function AdminPage() {
             <div className="admin-actions">
               <button className="admin-btn admin-btn--accent" type="button"
                 disabled={loading === 'debug-odds' || !debugFixtureId}
-                onClick={() => run('debug-odds', () => api.get(`/admin/debug/odds/${debugFixtureId}`))}>
+                onClick={() => run('debug-odds', () => api.get(`/admin/sync/debug/odds/${debugFixtureId}`))}>
                 {loading === 'debug-odds' ? 'Loading…' : '🔍 Check Odds'}
               </button>
             </div>
