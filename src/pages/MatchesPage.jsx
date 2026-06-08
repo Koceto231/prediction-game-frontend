@@ -702,55 +702,49 @@ export default function MatchesPage() {
     });
     setPreOddsLoading(false);
 
-    // Pre-fetch Phase 8 stat market odds upfront so buttons show prices immediately
-    const sid = m.id;
-    const TEAM_STAT_MARKETS = [
-      { bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES      },
-      { bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES     },
-      { bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES  },
-      { bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES   },
-    ];
-    const MATCH_STAT_MARKETS = [
-      { bt: BET_TYPE.MatchShotsOnTarget, lines: MATCH_SOT_LINES      },
-      { bt: BET_TYPE.MatchShots,         lines: MATCH_SHOTS_LINES    },
-      { bt: BET_TYPE.MatchOffsides,      lines: MATCH_OFFSIDES_LINES },
-      { bt: BET_TYPE.MatchTackles,       lines: MATCH_TACKLES_LINES  },
-    ];
-    const statUpdates = {};
-    const statPromises = [];
-    for (const { bt, lines } of TEAM_STAT_MARKETS) {
-      for (const side of ['Home', 'Away']) {
-        for (const l of lines) {
-          for (const p of ['Over', 'Under']) {
-            statPromises.push(
-              fetchOdds(sid, bt, { pick: side, lineValue: l, ouPick: p }).then(r => {
-                if (!r) return;
-                statUpdates[bt] ??= {};
-                statUpdates[bt][side] ??= {};
-                statUpdates[bt][side][l] ??= {};
-                statUpdates[bt][side][l][p] = r.odds;
-              })
-            );
-          }
+    // Parse stat market odds directly from match JSON — no API calls needed
+    const parseTeamStatJson = (json) => {
+      if (!json) return {};
+      try {
+        const raw = JSON.parse(json);
+        const result = {};
+        for (const [key, odds] of Object.entries(raw)) {
+          const parts = key.split('_');
+          if (parts.length !== 3) continue;
+          const [team, line, pick] = parts;
+          const side = team.toLowerCase() === 'home' ? 'Home' : 'Away';
+          result[side] ??= {};
+          result[side][line] ??= {};
+          result[side][line][pick] = odds;
         }
-      }
-    }
-    for (const { bt, lines } of MATCH_STAT_MARKETS) {
-      for (const l of lines) {
-        for (const p of ['Over', 'Under']) {
-          statPromises.push(
-            fetchOdds(sid, bt, { lineValue: l, ouPick: p }).then(r => {
-              if (!r) return;
-              statUpdates[bt] ??= {};
-              statUpdates[bt][l] ??= {};
-              statUpdates[bt][l][p] = r.odds;
-            })
-          );
+        return result;
+      } catch { return {}; }
+    };
+    const parseMatchStatJson = (json) => {
+      if (!json) return {};
+      try {
+        const raw = JSON.parse(json);
+        const result = {};
+        for (const [key, odds] of Object.entries(raw)) {
+          const lastUnderscore = key.lastIndexOf('_');
+          if (lastUnderscore === -1) continue;
+          const line = key.substring(0, lastUnderscore);
+          const pick = key.substring(lastUnderscore + 1);
+          result[line] ??= {};
+          result[line][pick] = odds;
         }
-      }
-    }
-    Promise.all(statPromises).then(() => {
-      if (Object.keys(statUpdates).length > 0) setStatOdds(statUpdates);
+        return result;
+      } catch { return {}; }
+    };
+    setStatOdds({
+      [BET_TYPE.TeamShotsOnTarget]:  parseTeamStatJson(m.teamSotOddsJson),
+      [BET_TYPE.TeamShots]:          parseTeamStatJson(m.teamShotsOddsJson),
+      [BET_TYPE.TeamOffsides]:       parseTeamStatJson(m.teamOffsidesOddsJson),
+      [BET_TYPE.TeamTackles]:        parseTeamStatJson(m.teamTacklesOddsJson),
+      [BET_TYPE.MatchShotsOnTarget]: parseMatchStatJson(m.matchSotOddsJson),
+      [BET_TYPE.MatchShots]:         parseMatchStatJson(m.matchShotsOddsJson),
+      [BET_TYPE.MatchOffsides]:      parseMatchStatJson(m.matchOffsidesOddsJson),
+      [BET_TYPE.MatchTackles]:       parseMatchStatJson(m.matchTacklesOddsJson),
     });
   }, [selectedMatch?.id]);
 
@@ -1216,18 +1210,15 @@ export default function MatchesPage() {
                           { key: 'Home', label: selectedMatch.homeTeamName, odds: selectedMatch.homeOdds },
                           { key: 'Draw', label: 'Draw',                    odds: selectedMatch.drawOdds  },
                           { key: 'Away', label: selectedMatch.awayTeamName, odds: selectedMatch.awayOdds  },
-                        ].map(({ key, label, odds }) => (
+                        ].filter(({ odds }) => odds != null).map(({ key, label, odds }) => (
                           <button key={key} type="button"
                             className={`market-option ${winner === key ? 'market-option--active' : ''}`}
                             onClick={() => {
                               setField('winner', winner === key ? '' : key);
-                              // Always dispatch (even on toggle-off): the slip's
-                              // onAdd adds a new pick or toggles an existing one
-                              // off, so de-selecting here also removes it there.
-                              if (odds != null) addToSlip({ betType: BET_TYPE.Winner, pick: key, odds });
+                              addToSlip({ betType: BET_TYPE.Winner, pick: key, odds });
                             }}>
                             <div className="market-option__label">{label}</div>
-                            <div className="market-option__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                            <div className="market-option__odds">{Number(odds).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1243,19 +1234,18 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.dc && !dis.dc && (
                       <div className="market-options market-options--3">
-                        {DC_OPTIONS.map(({ key }) => {
+                        {DC_OPTIONS.filter(({ key }) => preOdds.dc?.[key] != null).map(({ key }) => {
                           const [a, b] = key === 'HomeOrDraw' ? [selectedMatch.homeTeamName, 'Draw']
                                        : key === 'DrawOrAway' ? ['Draw', selectedMatch.awayTeamName]
                                        : [selectedMatch.homeTeamName, selectedMatch.awayTeamName];
-                          const dcOdds = preOdds.dc?.[key];
+                          const dcOdds = preOdds.dc[key];
                           return (
                             <button key={key} type="button"
                               className={`market-option market-option--htft ${dcPick === key ? 'market-option--active' : ''}`}
                               title={`${a} or ${b}`}
                               onClick={() => {
                                 setDCPick(dcPick === key ? '' : key);
-                                // Always dispatch — slip adds or toggles off.
-                                if (dcOdds != null) addToSlip({ betType: BET_TYPE.DoubleChance, pick: key, odds: dcOdds });
+                                addToSlip({ betType: BET_TYPE.DoubleChance, pick: key, odds: dcOdds });
                               }}>
                               <div className="market-option__label htft-stack">
                                 <span className="htft-stack__line">{a}</span>
@@ -1263,7 +1253,7 @@ export default function MatchesPage() {
                                 <span className="htft-stack__line">{b}</span>
                               </div>
                               <div className="market-option__odds">
-                                {dcOdds != null ? Number(dcOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
+                                {Number(dcOdds).toFixed(2)}
                               </div>
                             </button>
                           );
@@ -1281,18 +1271,18 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.dc1h && (
                       <div className="market-options market-options--3">
-                        {DC_OPTIONS.map(({ key }) => {
+                        {DC_OPTIONS.filter(({ key }) => preOdds.dc1h?.[key] != null).map(({ key }) => {
                           const [a, b] = key === 'HomeOrDraw' ? [selectedMatch.homeTeamName, 'Draw']
                                        : key === 'DrawOrAway' ? ['Draw', selectedMatch.awayTeamName]
                                        : [selectedMatch.homeTeamName, selectedMatch.awayTeamName];
-                          const dc1Odds = preOdds.dc1h?.[key];
+                          const dc1Odds = preOdds.dc1h[key];
                           return (
                             <button key={key} type="button"
                               className={`market-option market-option--htft ${dc1hPick === key ? 'market-option--active' : ''}`}
                               title={`1st Half: ${a} or ${b}`}
                               onClick={() => {
                                 setDc1hPick(dc1hPick === key ? '' : key);
-                                if (dc1Odds != null) addToSlip({
+                                addToSlip({
                                   betType: BET_TYPE.DoubleChance1stHalf, pick: key, selKey: `DC1H-${key}`,
                                   odds: dc1Odds,
                                   leg: { dCPick: key },
@@ -1306,7 +1296,7 @@ export default function MatchesPage() {
                                 <span className="htft-stack__line">{b}</span>
                               </div>
                               <div className="market-option__odds">
-                                {dc1Odds != null ? Number(dc1Odds).toFixed(2) : preOddsLoading ? '…' : '—'}
+                                {Number(dc1Odds).toFixed(2)}
                               </div>
                             </button>
                           );
@@ -1325,22 +1315,22 @@ export default function MatchesPage() {
                     {!collapsed.goals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => (
+                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }]
+                          .filter(({ line }) => preOdds.ou?.[line]?.Over != null || preOdds.ou?.[line]?.Under != null)
+                          .map(({ line, label }) => (
                           <div key={line} className="ou-table__row">
                             <span className="ou-table__line">{label}</span>
-                            {['Over', 'Under'].map(pick => {
-                              const ouOdds = preOdds.ou?.[line]?.[pick];
+                            {['Over', 'Under'].filter(pick => preOdds.ou?.[line]?.[pick] != null).map(pick => {
+                              const ouOdds = preOdds.ou[line][pick];
                               const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
                               return (
                                 <button key={pick} type="button"
                                   className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
                                   onClick={() => {
-                                    // Multi-select: toggle this exact line in/out; the slip
-                                    // toggles the matching key and enforces conflict rules.
                                     setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                    if (ouOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: ouOdds });
+                                    addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: ouOdds });
                                   }}>
-                                  {ouOdds != null ? Number(ouOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
+                                  {Number(ouOdds).toFixed(2)}
                                 </button>
                               );
                             })}
@@ -1359,20 +1349,17 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.btts && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => {
-                          const bttsOdds = preOdds.btts?.[val];
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].filter(({ val }) => preOdds.btts?.[val] != null).map(({ val, lbl }) => {
+                          const bttsOdds = preOdds.btts[val];
                           return (
                             <button key={val} type="button"
                               className={`market-option ${btts === val ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setField('btts', btts === val ? '' : val);
-                                // Always dispatch — slip adds or toggles off.
-                                if (bttsOdds != null) addToSlip({ betType: BET_TYPE.BTTS, pick: val === 'true' ? 'Yes' : 'No', odds: bttsOdds });
+                                addToSlip({ betType: BET_TYPE.BTTS, pick: val === 'true' ? 'Yes' : 'No', odds: bttsOdds });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">
-                                {bttsOdds != null ? Number(bttsOdds).toFixed(2) : preOddsLoading ? '…' : '—'}
-                              </div>
+                              <div className="market-option__odds">{Number(bttsOdds).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -1390,10 +1377,10 @@ export default function MatchesPage() {
                     {!collapsed.corners && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {CORNER_LINES.map(l => (
+                        {CORNER_LINES.filter(l => cornersPreOdds[l]?.Over != null || cornersPreOdds[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => cornersPreOdds[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.Corners}:${pick}:COR-${l}`;
                               return (
                               <button key={pick} type="button"
@@ -1402,13 +1389,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.Corners, pick, selKey: `COR-${l}`,
-                                    odds: cornersPreOdds[l]?.[pick],
+                                    odds: cornersPreOdds[l][pick],
                                     leg: { lineValue: Number(l), oUPick: pick },
                                     label: `Корнери ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {cornersPreOdds[l]?.[pick] != null ? Number(cornersPreOdds[l][pick]).toFixed(2) : '—'}
+                                {Number(cornersPreOdds[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -1428,10 +1415,10 @@ export default function MatchesPage() {
                     {!collapsed.yellows && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {YELLOW_LINES.map(l => (
+                        {YELLOW_LINES.filter(l => yellowsPreOdds[l]?.Over != null || yellowsPreOdds[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => yellowsPreOdds[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.YellowCards}:${pick}:YC-${l}`;
                               return (
                               <button key={pick} type="button"
@@ -1440,13 +1427,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.YellowCards, pick, selKey: `YC-${l}`,
-                                    odds: yellowsPreOdds[l]?.[pick],
+                                    odds: yellowsPreOdds[l][pick],
                                     leg: { lineValue: Number(l), oUPick: pick },
                                     label: `Жълти картони ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {yellowsPreOdds[l]?.[pick] != null ? Number(yellowsPreOdds[l][pick]).toFixed(2) : '—'}
+                                {Number(yellowsPreOdds[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -1465,7 +1452,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.oddEven && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].map(({ val, lbl }) => (
+                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].filter(({ val }) => preOdds.oddEven?.[val] != null).map(({ val, lbl }) => (
                           <button key={val} type="button"
                             className={`market-option ${oddEvenPick === val ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -1473,16 +1460,14 @@ export default function MatchesPage() {
                               setOddEvenPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.OddEven, pick: val === 'true' ? 'Odd' : 'Even',
-                                odds: preOdds.oddEven?.[val],
+                                odds: preOdds.oddEven[val],
                                 leg: { bTTSPick: val === 'true' },
                                 label: `Голове — ${val === 'true' ? 'Нечетен' : 'Четен'}`,
                                 chip: val === 'true' ? 'НЕЧ' : 'ЧЕТ',
                               });
                             }}>
                             <div className="market-option__label">{lbl}</div>
-                            <div className="market-option__odds">
-                              {preOdds.oddEven?.[val] != null ? Number(preOdds.oddEven[val]).toFixed(2) : '—'}
-                            </div>
+                            <div className="market-option__odds">{Number(preOdds.oddEven[val]).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1504,8 +1489,8 @@ export default function MatchesPage() {
                           { k: 'DrawNo',  lbl: 'Равен / Не' },
                           { k: 'AwayYes', lbl: `${selectedMatch.awayTeamName} / Да` },
                           { k: 'AwayNo',  lbl: `${selectedMatch.awayTeamName} / Не` },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.htrb?.[k];
+                        ].filter(({ k }) => preOdds.htrb?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.htrb[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.HtResultBtts}:${k}:HTRB`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -1513,7 +1498,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.HtResultBtts, pick: k, selKey: 'HTRB',
                                   odds: o,
@@ -1523,7 +1507,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -1544,8 +1528,8 @@ export default function MatchesPage() {
                           { k: 'YesNo',  lbl: 'Да / Не' },
                           { k: 'NoYes',  lbl: 'Не / Да' },
                           { k: 'NoNo',   lbl: 'Не / Не' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.bhh?.[k];
+                        ].filter(({ k }) => preOdds.bhh?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.bhh[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.BttsHalfByHalf}:${k}:BHH`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -1553,7 +1537,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.BttsHalfByHalf, pick: k, selKey: 'BHH',
                                   odds: o,
@@ -1563,7 +1546,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -1584,10 +1567,10 @@ export default function MatchesPage() {
                           { k: 'Home', lbl: selectedMatch.homeTeamName, o: preOdds.sh2?.Home },
                           { k: 'Draw', lbl: 'Равен',                   o: preOdds.sh2?.Draw },
                           { k: 'Away', lbl: selectedMatch.awayTeamName, o: preOdds.sh2?.Away },
-                        ].map(({ k, lbl, o }) => (
+                        ].filter(({ o }) => o != null).map(({ k, lbl, o }) => (
                           <button key={k} type="button" className="market-option" disabled>
                             <div className="market-option__label">{lbl}</div>
-                            <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1604,15 +1587,12 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.earlyGoal && (
                       <div className="market-options market-options--2">
-                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].map(({ k, lbl }) => {
-                          const o = preOdds.earlyGoal?.[k];
-                          return (
-                            <button key={k} type="button" className="market-option" disabled>
-                              <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
-                            </button>
-                          );
-                        })}
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.earlyGoal?.[k] != null).map(({ k, lbl }) => (
+                          <button key={k} type="button" className="market-option" disabled>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">{Number(preOdds.earlyGoal[k]).toFixed(2)}</div>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1627,15 +1607,12 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.lateGoal && (
                       <div className="market-options market-options--2">
-                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].map(({ k, lbl }) => {
-                          const o = preOdds.lateGoal?.[k];
-                          return (
-                            <button key={k} type="button" className="market-option" disabled>
-                              <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
-                            </button>
-                          );
-                        })}
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.lateGoal?.[k] != null).map(({ k, lbl }) => (
+                          <button key={k} type="button" className="market-option" disabled>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">{Number(preOdds.lateGoal[k]).toFixed(2)}</div>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1650,10 +1627,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.fgm && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.fgm).map(([k, o]) => (
+                        {Object.entries(preOdds.fgm).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1670,10 +1647,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.htExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.htExact).map(([k, o]) => (
+                        {Object.entries(preOdds.htExact).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1690,10 +1667,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.shExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.shExact).map(([k, o]) => (
+                        {Object.entries(preOdds.shExact).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1710,10 +1687,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.homeExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.homeExact).map(([k, o]) => (
+                        {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1730,10 +1707,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.awayExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.awayExact).map(([k, o]) => (
+                        {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1750,10 +1727,10 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.ttg && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.ttg).map(([k, o]) => (
+                        {Object.entries(preOdds.ttg).filter(([_, o]) => o != null).map(([k, o]) => (
                           <button key={k} type="button" className="exact-score-tile" disabled>
                             <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                           </button>
                         ))}
                       </div>
@@ -1893,8 +1870,8 @@ export default function MatchesPage() {
                           { k: 'Under2',     lbl: 'Под 2 голa' },
                           { k: 'TwoOrThree', lbl: '2 или 3 голa' },
                           { k: 'Over3',      lbl: 'Над 3 голa' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.nog?.[k];
+                        ].filter(({ k }) => preOdds.nog?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.nog[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.NumberOfGoals}:${k}:NOG`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -1902,7 +1879,6 @@ export default function MatchesPage() {
                               className={`market-option ${active ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.NumberOfGoals, pick: k, selKey: 'NOG',
                                   odds: o,
@@ -1912,7 +1888,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -1928,8 +1904,8 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.etg && (
                       <div className="exact-score-grid">
-                        {['0','1','2','3','4','5','6','7+'].map(k => {
-                          const o = preOdds.etg?.[k];
+                        {['0','1','2','3','4','5','6','7+'].filter(k => preOdds.etg?.[k] != null).map(k => {
+                          const o = preOdds.etg[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.ExactTotalGoals}:${k}:ETG`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -1937,7 +1913,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.ExactTotalGoals, pick: k, selKey: 'ETG',
                                   odds: o,
@@ -1947,7 +1922,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -1972,8 +1947,8 @@ export default function MatchesPage() {
                           { k: 'A3+',    lbl: `${selectedMatch.awayTeamName} +3` },
                           { k: 'Draw',   lbl: 'Score Draw' },
                           { k: 'NoGoal', lbl: '0-0' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.wm?.[k];
+                        ].filter(({ k }) => preOdds.wm?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.wm[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.WinningMargin}:${k}:WM`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -1981,7 +1956,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.WinningMargin, pick: k, selKey: 'WM',
                                   odds: o,
@@ -1991,7 +1965,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -2010,7 +1984,7 @@ export default function MatchesPage() {
                       <>
                         <div className="muted-text" style={{ fontSize: '0.74rem', padding: '4px 16px 0' }}>If the match ends in a draw, the bet is voided and stake returned.</div>
                         <div className="market-options market-options--2">
-                          {[{ val: 'Home', lbl: selectedMatch.homeTeamName }, { val: 'Away', lbl: selectedMatch.awayTeamName }].map(({ val, lbl }) => (
+                          {[{ val: 'Home', lbl: selectedMatch.homeTeamName }, { val: 'Away', lbl: selectedMatch.awayTeamName }].filter(({ val }) => preOdds.dnb?.[val] != null).map(({ val, lbl }) => (
                             <button key={val} type="button"
                               className={`market-option ${dnbPick === val ? 'market-option--active' : ''}`}
                               onClick={() => {
@@ -2018,7 +1992,7 @@ export default function MatchesPage() {
                                 setDnbPick(next);
                                 if (next) addToSlip({
                                   betType: BET_TYPE.DrawNoBet, pick: val,
-                                  odds: preOdds.dnb?.[val],
+                                  odds: preOdds.dnb[val],
                                   leg: { pick: val },
                                   label: `Без равен — ${lbl}`,
                                   chip: val === 'Home' ? '1' : '2',
@@ -2026,7 +2000,7 @@ export default function MatchesPage() {
                               }}>
                               <div className="market-option__label">{lbl}</div>
                               <div className="market-option__odds">
-                                {preOdds.dnb?.[val] != null ? Number(preOdds.dnb[val]).toFixed(2) : '—'}
+                                {Number(preOdds.dnb[val]).toFixed(2)}
                               </div>
                             </button>
                           ))}
@@ -2049,7 +2023,7 @@ export default function MatchesPage() {
                           <div key={val} style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
                             <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds.wtn?.[val]?.[yn] != null).map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
                                   className={`market-option ${wtnTeam === val && wtnYN === yn ? 'market-option--active' : ''}`}
                                   onClick={() => {
@@ -2058,7 +2032,7 @@ export default function MatchesPage() {
                                       setWtnTeam(val); setWtnYN(yn);
                                       addToSlip({
                                         betType: BET_TYPE.WinToNil, pick: val, selKey: `WTN-${val}`,
-                                        odds: preOdds.wtn?.[val]?.[yn],
+                                        odds: preOdds.wtn[val][yn],
                                         leg: { pick: val, bTTSPick: yn === 'true' },
                                         label: `Победа на нула — ${lbl} ${yn === 'true' ? 'Да' : 'Не'}`,
                                         chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
@@ -2067,7 +2041,7 @@ export default function MatchesPage() {
                                   }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">
-                                    {preOdds.wtn?.[val]?.[yn] != null ? Number(preOdds.wtn[val][yn]).toFixed(2) : '—'}
+                                    {Number(preOdds.wtn[val][yn]).toFixed(2)}
                                   </div>
                                 </button>
                               ))}
@@ -2091,7 +2065,7 @@ export default function MatchesPage() {
                           { key: 'Home', label: selectedMatch.homeTeamName },
                           { key: 'Draw', label: 'Draw' },
                           { key: 'Away', label: selectedMatch.awayTeamName },
-                        ].map(({ key, label }) => (
+                        ].filter(({ key }) => preOdds.hcp?.[key] != null).map(({ key, label }) => (
                           <button key={key} type="button"
                             className={`market-option ${hcpPick === key ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2099,7 +2073,7 @@ export default function MatchesPage() {
                               setHcpPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.Handicap, pick: key,
-                                odds: preOdds.hcp?.[key],
+                                odds: preOdds.hcp[key],
                                 leg: { pick: key, lineValue: Number(preOdds.hcp?.line ?? -1) },
                                 label: `Хандикап ${preOdds.hcp?.line ?? '-1'} — ${label}`,
                                 chip: key === 'Home' ? '1' : key === 'Away' ? '2' : 'X',
@@ -2107,7 +2081,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">
-                              {preOdds.hcp?.[key] != null ? Number(preOdds.hcp[key]).toFixed(2) : '—'}
+                              {Number(preOdds.hcp[key]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2125,10 +2099,10 @@ export default function MatchesPage() {
                     {!collapsed.homeGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.map(l => (
+                        {TEAM_GOAL_LINES.filter(l => preOdds.homeGoals?.[l]?.Over != null || preOdds.homeGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => preOdds.homeGoals?.[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
                               return (
                               <button key={pick} type="button"
@@ -2137,13 +2111,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
-                                    odds: preOdds.homeGoals?.[l]?.[pick],
+                                    odds: preOdds.homeGoals[l][pick],
                                     leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
                                     label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {preOdds.homeGoals?.[l]?.[pick] != null ? Number(preOdds.homeGoals[l][pick]).toFixed(2) : '—'}
+                                {Number(preOdds.homeGoals[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -2163,10 +2137,10 @@ export default function MatchesPage() {
                     {!collapsed.awayGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.map(l => (
+                        {TEAM_GOAL_LINES.filter(l => preOdds.awayGoals?.[l]?.Over != null || preOdds.awayGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => preOdds.awayGoals?.[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
                               return (
                               <button key={pick} type="button"
@@ -2175,13 +2149,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
-                                    odds: preOdds.awayGoals?.[l]?.[pick],
+                                    odds: preOdds.awayGoals[l][pick],
                                     leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
                                     label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {preOdds.awayGoals?.[l]?.[pick] != null ? Number(preOdds.awayGoals[l][pick]).toFixed(2) : '—'}
+                                {Number(preOdds.awayGoals[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -2204,7 +2178,7 @@ export default function MatchesPage() {
                           { key: 'Home', label: selectedMatch.homeTeamName },
                           { key: 'Draw', label: 'Draw' },
                           { key: 'Away', label: selectedMatch.awayTeamName },
-                        ].map(({ key, label }) => (
+                        ].filter(({ key }) => preOdds.ht?.[key] != null).map(({ key, label }) => (
                           <button key={key} type="button"
                             className={`market-option ${htPick === key ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2212,7 +2186,7 @@ export default function MatchesPage() {
                               setHtPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.HalfTime, pick: key,
-                                odds: preOdds.ht?.[key],
+                                odds: preOdds.ht[key],
                                 leg: { pick: key },
                                 label: `Полувреме — ${label}`,
                                 chip: key === 'Home' ? '1' : key === 'Away' ? '2' : 'X',
@@ -2220,7 +2194,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">
-                              {preOdds.ht?.[key] != null ? Number(preOdds.ht[key]).toFixed(2) : '—'}
+                              {Number(preOdds.ht[key]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2242,7 +2216,7 @@ export default function MatchesPage() {
                           <div key={val} style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
                             <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds.cs?.[val]?.[yn] != null).map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
                                   className={`market-option ${csPick === val && csYN === yn ? 'market-option--active' : ''}`}
                                   onClick={() => {
@@ -2251,7 +2225,7 @@ export default function MatchesPage() {
                                       setCsPick(val); setCsYN(yn);
                                       addToSlip({
                                         betType: BET_TYPE.CleanSheet, pick: val, selKey: `CS-${val}`,
-                                        odds: preOdds.cs?.[val]?.[yn],
+                                        odds: preOdds.cs[val][yn],
                                         leg: { pick: val, bTTSPick: yn === 'true' },
                                         label: `Суха мрежа — ${lbl} ${yn === 'true' ? 'Да' : 'Не'}`,
                                         chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
@@ -2260,7 +2234,7 @@ export default function MatchesPage() {
                                   }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">
-                                    {preOdds.cs?.[val]?.[yn] != null ? Number(preOdds.cs[val][yn]).toFixed(2) : '—'}
+                                    {Number(preOdds.cs[val][yn]).toFixed(2)}
                                   </div>
                                 </button>
                               ))}
@@ -2284,7 +2258,7 @@ export default function MatchesPage() {
                           { key: 'Home', label: selectedMatch.homeTeamName },
                           { key: 'Draw', label: 'No Goal' },
                           { key: 'Away', label: selectedMatch.awayTeamName },
-                        ].map(({ key, label }) => (
+                        ].filter(({ key }) => preOdds.fg?.[key] != null).map(({ key, label }) => (
                           <button key={key} type="button"
                             className={`market-option ${fgPick === key ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2292,7 +2266,7 @@ export default function MatchesPage() {
                               setFgPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.FirstGoal, pick: key,
-                                odds: preOdds.fg?.[key],
+                                odds: preOdds.fg[key],
                                 leg: { pick: key },
                                 label: `Първи гол — ${label}`,
                                 chip: key === 'Home' ? '1' : key === 'Away' ? '2' : 'НГ',
@@ -2300,7 +2274,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">
-                              {preOdds.fg?.[key] != null ? Number(preOdds.fg[key]).toFixed(2) : '—'}
+                              {Number(preOdds.fg[key]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2317,7 +2291,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.btts1h && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].filter(({ val }) => preOdds.btts1h?.[val] != null).map(({ val, lbl }) => (
                           <button key={val} type="button"
                             className={`market-option ${btts1hPick === val ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2325,7 +2299,7 @@ export default function MatchesPage() {
                               setBtts1hPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.Btts1stHalf, pick: val === 'true' ? 'Yes' : 'No',
-                                odds: preOdds.btts1h?.[val],
+                                odds: preOdds.btts1h[val],
                                 leg: { bTTSPick: val === 'true' },
                                 label: `И двата отбора бележат 1-во полувреме — ${val === 'true' ? 'Да' : 'Не'}`,
                                 chip: val === 'true' ? 'ДА' : 'НЕ',
@@ -2333,7 +2307,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{lbl}</div>
                             <div className="market-option__odds">
-                              {preOdds.btts1h?.[val] != null ? Number(preOdds.btts1h[val]).toFixed(2) : '—'}
+                              {Number(preOdds.btts1h[val]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2350,7 +2324,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.btts2h && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].map(({ val, lbl }) => (
+                        {[{ val: 'true', lbl: 'Yes' }, { val: 'false', lbl: 'No' }].filter(({ val }) => preOdds.btts2h?.[val] != null).map(({ val, lbl }) => (
                           <button key={val} type="button"
                             className={`market-option ${btts2hPick === val ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2358,7 +2332,7 @@ export default function MatchesPage() {
                               setBtts2hPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.Btts2ndHalf, pick: val === 'true' ? 'Yes' : 'No',
-                                odds: preOdds.btts2h?.[val],
+                                odds: preOdds.btts2h[val],
                                 leg: { bTTSPick: val === 'true' },
                                 label: `И двата отбора бележат 2-ро полувреме — ${val === 'true' ? 'Да' : 'Не'}`,
                                 chip: val === 'true' ? 'ДА' : 'НЕ',
@@ -2366,7 +2340,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{lbl}</div>
                             <div className="market-option__odds">
-                              {preOdds.btts2h?.[val] != null ? Number(preOdds.btts2h[val]).toFixed(2) : '—'}
+                              {Number(preOdds.btts2h[val]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2384,10 +2358,10 @@ export default function MatchesPage() {
                     {!collapsed.htGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => (
+                        {['0.5', '1.5', '2.5'].filter(l => preOdds.htGoals?.[l]?.Over != null || preOdds.htGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => preOdds.htGoals?.[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.HalfTimeGoals}:${pick}:HTG-${l}`;
                               return (
                               <button key={pick} type="button"
@@ -2396,13 +2370,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.HalfTimeGoals, pick, selKey: `HTG-${l}`,
-                                    odds: preOdds.htGoals?.[l]?.[pick],
+                                    odds: preOdds.htGoals[l][pick],
                                     leg: { oULine: lineToKey(l), oUPick: pick },
                                     label: `Голове 1-во полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {preOdds.htGoals?.[l]?.[pick] != null ? Number(preOdds.htGoals[l][pick]).toFixed(2) : '—'}
+                                {Number(preOdds.htGoals[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -2422,10 +2396,10 @@ export default function MatchesPage() {
                     {!collapsed.shGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => (
+                        {['0.5', '1.5', '2.5'].filter(l => preOdds.shGoals?.[l]?.Over != null || preOdds.shGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].map(pick => {
+                            {['Over', 'Under'].filter(pick => preOdds.shGoals?.[l]?.[pick] != null).map(pick => {
                               const k = `${selectedMatch.id}:${BET_TYPE.SecondHalfGoals}:${pick}:SHG-${l}`;
                               return (
                               <button key={pick} type="button"
@@ -2434,13 +2408,13 @@ export default function MatchesPage() {
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   addToSlip({
                                     betType: BET_TYPE.SecondHalfGoals, pick, selKey: `SHG-${l}`,
-                                    odds: preOdds.shGoals?.[l]?.[pick],
+                                    odds: preOdds.shGoals[l][pick],
                                     leg: { oULine: lineToKey(l), oUPick: pick },
                                     label: `Голове 2-ро полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
                                     chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
                                   });
                                 }}>
-                                {preOdds.shGoals?.[l]?.[pick] != null ? Number(preOdds.shGoals[l][pick]).toFixed(2) : '—'}
+                                {Number(preOdds.shGoals[l][pick]).toFixed(2)}
                               </button>
                               );
                             })}
@@ -2466,7 +2440,7 @@ export default function MatchesPage() {
                           <div key={val} style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
                             <div className="market-options market-options--2">
-                              {[{ oe: 'true', lbl2: 'Odd' }, { oe: 'false', lbl2: 'Even' }].map(({ oe, lbl2 }) => (
+                              {[{ oe: 'true', lbl2: 'Odd' }, { oe: 'false', lbl2: 'Even' }].filter(({ oe }) => preOdds[key]?.[oe] != null).map(({ oe, lbl2 }) => (
                                 <button key={oe} type="button"
                                   className={`market-option ${teamPick === oe ? 'market-option--active' : ''}`}
                                   onClick={() => {
@@ -2474,7 +2448,7 @@ export default function MatchesPage() {
                                     setPick(next);
                                     if (next) addToSlip({
                                       betType: BET_TYPE.TeamOddEven, pick: val, selKey: `TOE-${val}`,
-                                      odds: preOdds[key]?.[oe],
+                                      odds: preOdds[key][oe],
                                       leg: { pick: val, bTTSPick: oe === 'true' },
                                       label: `${lbl} голове — ${oe === 'true' ? 'Нечетен' : 'Четен'}`,
                                       chip: `${val === 'Home' ? '1' : '2'}${oe === 'true' ? 'Н' : 'Ч'}`,
@@ -2482,7 +2456,7 @@ export default function MatchesPage() {
                                   }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">
-                                    {preOdds[key]?.[oe] != null ? Number(preOdds[key][oe]).toFixed(2) : '—'}
+                                    {Number(preOdds[key][oe]).toFixed(2)}
                                   </div>
                                 </button>
                               ))}
@@ -2502,7 +2476,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.oe1h && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].map(({ val, lbl }) => (
+                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].filter(({ val }) => preOdds.oe1h?.[val] != null).map(({ val, lbl }) => (
                           <button key={val} type="button"
                             className={`market-option ${oe1hPick === val ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -2510,7 +2484,7 @@ export default function MatchesPage() {
                               setOe1hPick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.OddEven1stHalf, pick: val === 'true' ? 'Odd' : 'Even',
-                                odds: preOdds.oe1h?.[val],
+                                odds: preOdds.oe1h[val],
                                 leg: { bTTSPick: val === 'true' },
                                 label: `Голове 1-во полувреме — ${val === 'true' ? 'Нечетен' : 'Четен'}`,
                                 chip: val === 'true' ? 'НЕЧ' : 'ЧЕТ',
@@ -2518,7 +2492,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{lbl}</div>
                             <div className="market-option__odds">
-                              {preOdds.oe1h?.[val] != null ? Number(preOdds.oe1h[val]).toFixed(2) : '—'}
+                              {Number(preOdds.oe1h[val]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -2565,7 +2539,7 @@ export default function MatchesPage() {
                                   });
                                 }}>
                                 <div className="market-option__label">{lbl} {sign}{lineStr}</div>
-                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                               </button>
                             );
                           })}
@@ -2591,6 +2565,7 @@ export default function MatchesPage() {
                               { side: 'Home', line, odds: pair.home, lbl: selectedMatch.homeTeamName },
                               { side: 'Away', line: -line, homeLine: line, odds: pair.away, lbl: selectedMatch.awayTeamName },
                             ]))
+                            .filter(({ odds }) => odds != null)
                             .map(({ side, line, homeLine, odds, lbl }) => {
                               const storedLine = side === 'Home' ? line : homeLine;
                               const sign = line > 0 ? '+' : '';
@@ -2602,7 +2577,6 @@ export default function MatchesPage() {
                                   className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                                   onClick={() => {
                                     setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                    if (odds == null) return;
                                     addToSlip({
                                       betType: BET_TYPE.AsianHandicap, pick: side, selKey: `AH:${storedLine}`,
                                       odds,
@@ -2612,7 +2586,7 @@ export default function MatchesPage() {
                                     });
                                   }}>
                                   <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
-                                  <div className="exact-score-tile__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                                  <div className="exact-score-tile__odds">{Number(odds).toFixed(2)}</div>
                                 </button>
                               );
                             })}
@@ -2656,7 +2630,7 @@ export default function MatchesPage() {
                                   });
                                 }}>
                                 <div className="market-option__label">{lbl} {sign}{lineStr}</div>
-                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                               </button>
                             );
                           })}
@@ -2682,6 +2656,7 @@ export default function MatchesPage() {
                               { side: 'Home', line, odds: pair.home, lbl: selectedMatch.homeTeamName },
                               { side: 'Away', line: -line, homeLine: line, odds: pair.away, lbl: selectedMatch.awayTeamName },
                             ]))
+                            .filter(({ odds }) => odds != null)
                             .map(({ side, line, homeLine, odds, lbl }) => {
                               const storedLine = side === 'Home' ? line : homeLine;
                               const sign = line > 0 ? '+' : '';
@@ -2693,7 +2668,6 @@ export default function MatchesPage() {
                                   className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                                   onClick={() => {
                                     setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                    if (odds == null) return;
                                     addToSlip({
                                       betType: BET_TYPE.AsianHandicap1H, pick: side, selKey: `AH1H:${storedLine}`,
                                       odds,
@@ -2703,7 +2677,7 @@ export default function MatchesPage() {
                                     });
                                   }}>
                                   <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
-                                  <div className="exact-score-tile__odds">{odds != null ? Number(odds).toFixed(2) : '—'}</div>
+                                  <div className="exact-score-tile__odds">{Number(odds).toFixed(2)}</div>
                                 </button>
                               );
                             })}
@@ -2724,8 +2698,8 @@ export default function MatchesPage() {
                           {[
                             { side: 'Home', lbl: selectedMatch.homeTeamName },
                             { side: 'Away', lbl: selectedMatch.awayTeamName },
-                          ].map(({ side, lbl }) => {
-                            const o = preOdds.scorePen?.[side];
+                          ].filter(({ side }) => preOdds.scorePen?.[side] != null).map(({ side, lbl }) => {
+                            const o = preOdds.scorePen[side];
                             const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamToScorePenalty}:${side}:TSP`;
                             const active  = ouPicks.has(slipKey);
                             return (
@@ -2733,7 +2707,6 @@ export default function MatchesPage() {
                                 className={`market-option ${active ? 'market-option--active' : ''}`}
                                 onClick={() => {
                                   setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                  if (o == null) return;
                                   addToSlip({
                                     betType: BET_TYPE.TeamToScorePenalty, pick: side, selKey: 'TSP',
                                     odds: o,
@@ -2743,7 +2716,7 @@ export default function MatchesPage() {
                                   });
                                 }}>
                                 <div className="market-option__label">{lbl}</div>
-                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                               </button>
                             );
                           })}
@@ -2764,8 +2737,8 @@ export default function MatchesPage() {
                           {[
                             { side: 'Home', lbl: selectedMatch.homeTeamName },
                             { side: 'Away', lbl: selectedMatch.awayTeamName },
-                          ].map(({ side, lbl }) => {
-                            const o = preOdds.missPen?.[side];
+                          ].filter(({ side }) => preOdds.missPen?.[side] != null).map(({ side, lbl }) => {
+                            const o = preOdds.missPen[side];
                             const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamToMissPenalty}:${side}:TMP`;
                             const active  = ouPicks.has(slipKey);
                             return (
@@ -2773,7 +2746,6 @@ export default function MatchesPage() {
                                 className={`market-option ${active ? 'market-option--active' : ''}`}
                                 onClick={() => {
                                   setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                  if (o == null) return;
                                   addToSlip({
                                     betType: BET_TYPE.TeamToMissPenalty, pick: side, selKey: 'TMP',
                                     odds: o,
@@ -2783,7 +2755,7 @@ export default function MatchesPage() {
                                   });
                                 }}>
                                 <div className="market-option__label">{lbl}</div>
-                                <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                               </button>
                             );
                           })}
@@ -2803,8 +2775,8 @@ export default function MatchesPage() {
                         {[
                           { side: 'Home', lbl: selectedMatch.homeTeamName },
                           { side: 'Away', lbl: selectedMatch.awayTeamName },
-                        ].map(({ side, lbl }) => {
-                          const o = preOdds.weh?.[side];
+                        ].filter(({ side }) => preOdds.weh?.[side] != null).map(({ side, lbl }) => {
+                          const o = preOdds.weh[side];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.WinEitherHalf}:${side}:WEH`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -2812,7 +2784,6 @@ export default function MatchesPage() {
                               className={`market-option ${active ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.WinEitherHalf, pick: side, selKey: 'WEH',
                                   odds: o,
@@ -2822,7 +2793,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -2854,8 +2825,8 @@ export default function MatchesPage() {
                               {[
                                 { side: 'Home', lbl: selectedMatch.homeTeamName },
                                 { side: 'Away', lbl: selectedMatch.awayTeamName },
-                              ].map(({ side, lbl }) => {
-                                const o = preOdds.qualify?.[side];
+                              ].filter(({ side }) => preOdds.qualify?.[side] != null).map(({ side, lbl }) => {
+                                const o = preOdds.qualify[side];
                                 const slipKey = `${selectedMatch.id}:${BET_TYPE.ToQualify}:${side}:QUAL`;
                                 const active  = ouPicks.has(slipKey);
                                 return (
@@ -2863,7 +2834,6 @@ export default function MatchesPage() {
                                     className={`market-option ${active ? 'market-option--active' : ''}`}
                                     onClick={() => {
                                       setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                      if (o == null) return;
                                       addToSlip({
                                         betType: BET_TYPE.ToQualify, pick: side, selKey: 'QUAL',
                                         odds: o,
@@ -2873,7 +2843,7 @@ export default function MatchesPage() {
                                       });
                                     }}>
                                     <div className="market-option__label">{lbl}</div>
-                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                    <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                                   </button>
                                 );
                               })}
@@ -2892,8 +2862,8 @@ export default function MatchesPage() {
                               {[
                                 { val: 'true',  lbl: 'Да' },
                                 { val: 'false', lbl: 'Не' },
-                              ].map(({ val, lbl }) => {
-                                const o = preOdds.extraTime?.[val];
+                              ].filter(({ val }) => preOdds.extraTime?.[val] != null).map(({ val, lbl }) => {
+                                const o = preOdds.extraTime[val];
                                 const slipKey = `${selectedMatch.id}:${BET_TYPE.ExtraTime}:${val}:ET`;
                                 const active  = ouPicks.has(slipKey);
                                 return (
@@ -2901,7 +2871,6 @@ export default function MatchesPage() {
                                     className={`market-option ${active ? 'market-option--active' : ''}`}
                                     onClick={() => {
                                       setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                      if (o == null) return;
                                       addToSlip({
                                         betType: BET_TYPE.ExtraTime, pick: val, selKey: 'ET',
                                         odds: o,
@@ -2911,7 +2880,7 @@ export default function MatchesPage() {
                                       });
                                     }}>
                                     <div className="market-option__label">{lbl}</div>
-                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                    <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                                   </button>
                                 );
                               })}
@@ -2930,8 +2899,8 @@ export default function MatchesPage() {
                               {[
                                 { val: 'true',  lbl: 'Да' },
                                 { val: 'false', lbl: 'Не' },
-                              ].map(({ val, lbl }) => {
-                                const o = preOdds.penalties?.[val];
+                              ].filter(({ val }) => preOdds.penalties?.[val] != null).map(({ val, lbl }) => {
+                                const o = preOdds.penalties[val];
                                 const slipKey = `${selectedMatch.id}:${BET_TYPE.Penalties}:${val}:PEN`;
                                 const active  = ouPicks.has(slipKey);
                                 return (
@@ -2939,7 +2908,6 @@ export default function MatchesPage() {
                                     className={`market-option ${active ? 'market-option--active' : ''}`}
                                     onClick={() => {
                                       setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                      if (o == null) return;
                                       addToSlip({
                                         betType: BET_TYPE.Penalties, pick: val, selKey: 'PEN',
                                         odds: o,
@@ -2949,7 +2917,7 @@ export default function MatchesPage() {
                                       });
                                     }}>
                                     <div className="market-option__label">{lbl}</div>
-                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                    <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                                   </button>
                                 );
                               })}
@@ -2969,8 +2937,8 @@ export default function MatchesPage() {
                                 { k: 'Regulation', lbl: 'Редовно време' },
                                 { k: 'ExtraTime',  lbl: 'Продължения'   },
                                 { k: 'Penalties',  lbl: 'Дузпи'          },
-                              ].map(({ k, lbl }) => {
-                                const o = preOdds.methodVic?.[k];
+                              ].filter(({ k }) => preOdds.methodVic?.[k] != null).map(({ k, lbl }) => {
+                                const o = preOdds.methodVic[k];
                                 const slipKey = `${selectedMatch.id}:${BET_TYPE.MethodOfVictory}:${k}:MOV`;
                                 const active  = ouPicks.has(slipKey);
                                 return (
@@ -2978,7 +2946,6 @@ export default function MatchesPage() {
                                     className={`market-option ${active ? 'market-option--active' : ''}`}
                                     onClick={() => {
                                       setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                      if (o == null) return;
                                       addToSlip({
                                         betType: BET_TYPE.MethodOfVictory, pick: k, selKey: 'MOV',
                                         odds: o,
@@ -2988,7 +2955,7 @@ export default function MatchesPage() {
                                       });
                                     }}>
                                     <div className="market-option__label">{lbl}</div>
-                                    <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                                    <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                                   </button>
                                 );
                               })}
@@ -3014,8 +2981,8 @@ export default function MatchesPage() {
                           { k: 'DrawUnder25', lbl: 'Равен & под 2.5' },
                           { k: 'AwayOver25',  lbl: `${selectedMatch.awayTeamName} & над 2.5` },
                           { k: 'AwayUnder25', lbl: `${selectedMatch.awayTeamName} & под 2.5` },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.rtg?.[k];
+                        ].filter(({ k }) => preOdds.rtg?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.rtg[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.ResultTotalGoals}:${k}:RTG`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -3023,7 +2990,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.ResultTotalGoals, pick: k, selKey: 'RTG',
                                   odds: o,
@@ -3033,7 +2999,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -3053,8 +3019,8 @@ export default function MatchesPage() {
                           { k: '1stHalf', lbl: '1-во' },
                           { k: '2ndHalf', lbl: '2-ро' },
                           { k: 'Tie',     lbl: 'Равни' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.thsh?.Home?.[k];
+                        ].filter(({ k }) => preOdds.thsh?.Home?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.thsh.Home[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamHighestScoringHalf}:Home${k}:THSH`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -3062,7 +3028,6 @@ export default function MatchesPage() {
                               className={`market-option ${active ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.TeamHighestScoringHalf, pick: `Home${k}`, selKey: 'THSH',
                                   odds: o,
@@ -3072,7 +3037,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -3092,8 +3057,8 @@ export default function MatchesPage() {
                           { k: '1stHalf', lbl: '1-во' },
                           { k: '2ndHalf', lbl: '2-ро' },
                           { k: 'Tie',     lbl: 'Равни' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.thsh?.Away?.[k];
+                        ].filter(({ k }) => preOdds.thsh?.Away?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.thsh.Away[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.TeamHighestScoringHalf}:Away${k}:THSH`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -3101,7 +3066,6 @@ export default function MatchesPage() {
                               className={`market-option ${active ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.TeamHighestScoringHalf, pick: `Away${k}`, selKey: 'THSH',
                                   odds: o,
@@ -3111,7 +3075,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -3131,8 +3095,8 @@ export default function MatchesPage() {
                           { k: '1stHalf', lbl: '1-во полувреме' },
                           { k: '2ndHalf', lbl: '2-ро полувреме' },
                           { k: 'Tie',     lbl: 'Равни' },
-                        ].map(({ k, lbl }) => {
-                          const o = preOdds.hwmg?.[k];
+                        ].filter(({ k }) => preOdds.hwmg?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.hwmg[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.HalfWithMostGoals}:${k}:HWMG`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -3140,7 +3104,6 @@ export default function MatchesPage() {
                               className={`market-option ${active ? 'market-option--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.HalfWithMostGoals, pick: k, selKey: 'HWMG',
                                   odds: o,
@@ -3150,7 +3113,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="market-option__label">{lbl}</div>
-                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -3171,8 +3134,8 @@ export default function MatchesPage() {
                           { side: 'Home', yn: 'false', lbl: `${selectedMatch.homeTeamName} / Не` },
                           { side: 'Away', yn: 'true',  lbl: `${selectedMatch.awayTeamName} / Да` },
                           { side: 'Away', yn: 'false', lbl: `${selectedMatch.awayTeamName} / Не` },
-                        ].map(({ side, yn, lbl }) => {
-                          const o = preOdds.sbh?.[side]?.[yn];
+                        ].filter(({ side, yn }) => preOdds.sbh?.[side]?.[yn] != null).map(({ side, yn, lbl }) => {
+                          const o = preOdds.sbh[side][yn];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.ScoreBothHalves}:${side}${yn === 'true' ? 'Yes' : 'No'}:SBH`;
                           const active  = ouPicks.has(slipKey);
                           return (
@@ -3180,7 +3143,6 @@ export default function MatchesPage() {
                               className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                if (o == null) return;
                                 addToSlip({
                                   betType: BET_TYPE.ScoreBothHalves,
                                   pick: side, selKey: 'SBH',
@@ -3191,7 +3153,7 @@ export default function MatchesPage() {
                                 });
                               }}>
                               <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
                             </button>
                           );
                         })}
@@ -3207,8 +3169,8 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.oe2h && (
                       <div className="market-options market-options--2">
-                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].map(({ val, lbl }) => {
-                          const o = preOdds.oe2h?.[val];
+                        {[{ val: 'true', lbl: 'Odd' }, { val: 'false', lbl: 'Even' }].filter(({ val }) => preOdds.oe2h?.[val] != null).map(({ val, lbl }) => {
+                          const o = preOdds.oe2h[val];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.SecondHalfOddEven}:${val === 'true' ? 'Odd' : 'Even'}:OE2H`;
                           const active = ouPicks.has(slipKey);
                           return (
@@ -3216,7 +3178,6 @@ export default function MatchesPage() {
                             className={`market-option ${active ? 'market-option--active' : ''}`}
                             onClick={() => {
                               setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                              if (o == null) return;
                               addToSlip({
                                 betType: BET_TYPE.SecondHalfOddEven, pick: val === 'true' ? 'Odd' : 'Even', selKey: 'OE2H',
                                 odds: o,
@@ -3227,7 +3188,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{lbl}</div>
                             <div className="market-option__odds">
-                              {o != null ? Number(o).toFixed(2) : '—'}
+                              {Number(o).toFixed(2)}
                             </div>
                           </button>
                           );
@@ -3252,7 +3213,7 @@ export default function MatchesPage() {
                           <div key={val} style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
                             <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds[key]?.[yn] != null).map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
                                   className={`market-option ${teamPick === yn ? 'market-option--active' : ''}`}
                                   onClick={() => {
@@ -3260,7 +3221,7 @@ export default function MatchesPage() {
                                     setPick(next);
                                     if (next) addToSlip({
                                       betType: BET_TYPE.TeamToScore, pick: val, selKey: `TS-${val}`,
-                                      odds: preOdds[key]?.[yn],
+                                      odds: preOdds[key][yn],
                                       leg: { pick: val, bTTSPick: yn === 'true' },
                                       label: `${lbl} да отбележи — ${yn === 'true' ? 'Да' : 'Не'}`,
                                       chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
@@ -3268,7 +3229,7 @@ export default function MatchesPage() {
                                   }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">
-                                    {preOdds[key]?.[yn] != null ? Number(preOdds[key][yn]).toFixed(2) : '—'}
+                                    {Number(preOdds[key][yn]).toFixed(2)}
                                   </div>
                                 </button>
                               ))}
@@ -3296,7 +3257,7 @@ export default function MatchesPage() {
                           <div key={val} style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
                             <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].map(({ yn, lbl2 }) => (
+                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds.wbh?.[val]?.[yn] != null).map(({ yn, lbl2 }) => (
                                 <button key={yn} type="button"
                                   className={`market-option ${teamPick === yn ? 'market-option--active' : ''}`}
                                   onClick={() => {
@@ -3304,7 +3265,7 @@ export default function MatchesPage() {
                                     setPick(next);
                                     if (next) addToSlip({
                                       betType: BET_TYPE.WinBothHalves, pick: val, selKey: `WBH-${val}`,
-                                      odds: preOdds.wbh?.[val]?.[yn],
+                                      odds: preOdds.wbh[val][yn],
                                       leg: { pick: val, bTTSPick: yn === 'true' },
                                       label: `${lbl} печели и двете полувремена — ${yn === 'true' ? 'Да' : 'Не'}`,
                                       chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
@@ -3312,7 +3273,7 @@ export default function MatchesPage() {
                                   }}>
                                   <div className="market-option__label">{lbl2}</div>
                                   <div className="market-option__odds">
-                                    {preOdds.wbh?.[val]?.[yn] != null ? Number(preOdds.wbh[val][yn]).toFixed(2) : '—'}
+                                    {Number(preOdds.wbh[val][yn]).toFixed(2)}
                                   </div>
                                 </button>
                               ))}
@@ -3336,7 +3297,7 @@ export default function MatchesPage() {
                           { key: 'Home', label: selectedMatch.homeTeamName },
                           { key: 'Draw', label: 'No Goal' },
                           { key: 'Away', label: selectedMatch.awayTeamName },
-                        ].map(({ key, label }) => (
+                        ].filter(({ key }) => preOdds.lastScore?.[key] != null).map(({ key, label }) => (
                           <button key={key} type="button"
                             className={`market-option ${lastScorePick === key ? 'market-option--active' : ''}`}
                             onClick={() => {
@@ -3344,7 +3305,7 @@ export default function MatchesPage() {
                               setLastScorePick(next);
                               if (next) addToSlip({
                                 betType: BET_TYPE.LastToScore, pick: key,
-                                odds: preOdds.lastScore?.[key],
+                                odds: preOdds.lastScore[key],
                                 leg: { pick: key },
                                 label: `Последен гол — ${label}`,
                                 chip: key === 'Home' ? '1' : key === 'Away' ? '2' : 'НГ',
@@ -3352,7 +3313,7 @@ export default function MatchesPage() {
                             }}>
                             <div className="market-option__label">{label}</div>
                             <div className="market-option__odds">
-                              {preOdds.lastScore?.[key] != null ? Number(preOdds.lastScore[key]).toFixed(2) : '—'}
+                              {Number(preOdds.lastScore[key]).toFixed(2)}
                             </div>
                           </button>
                         ))}
@@ -3376,7 +3337,7 @@ export default function MatchesPage() {
                       ];
                       return (
                         <div className="market-options market-options--3">
-                          {htftOptions.map(({ key, ht, ft }) => (
+                          {htftOptions.filter(({ key }) => preOdds.htft?.[key] != null).map(({ key, ht, ft }) => (
                             <button key={key} type="button"
                               className={`market-option market-option--htft ${htftPick === key ? 'market-option--active' : ''}`}
                               title={`${ht} / ${ft}`}
@@ -3385,7 +3346,7 @@ export default function MatchesPage() {
                                 setHtftPick(next);
                                 if (next) addToSlip({
                                   betType: BET_TYPE.HtFt, pick: key,
-                                  odds: preOdds.htft?.[key],
+                                  odds: preOdds.htft[key],
                                   leg: { stringPick: key },
                                   label: `Полувреме/Край — ${ht} / ${ft}`,
                                   chip: key,
@@ -3397,7 +3358,7 @@ export default function MatchesPage() {
                                 <span className="htft-stack__line">{ft}</span>
                               </div>
                               <div className="market-option__odds">
-                                {preOdds.htft?.[key] != null ? Number(preOdds.htft[key]).toFixed(2) : '—'}
+                                {Number(preOdds.htft[key]).toFixed(2)}
                               </div>
                             </button>
                           ))}
@@ -3460,11 +3421,11 @@ export default function MatchesPage() {
 
                   {/* ── Phase 8: Team Shots on Target O/U ── */}
                   {[
-                    { key: 'teamSot',      bt: BET_TYPE.TeamShotsOnTarget,  lines: TEAM_SOT_LINES,     label: 'Удари в рамката (отбор)' },
-                    { key: 'teamShots',    bt: BET_TYPE.TeamShots,          lines: TEAM_SHOTS_LINES,   label: 'Удари (отбор)' },
-                    { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       lines: TEAM_OFFSIDES_LINES, label: 'Засади (отбор)' },
-                    { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        lines: TEAM_TACKLES_LINES,  label: 'Откраднати топки (отбор)' },
-                  ].map(({ key, bt, lines, label }) => (
+                    { key: 'teamSot',      bt: BET_TYPE.TeamShotsOnTarget,  label: 'Удари в рамката (отбор)' },
+                    { key: 'teamShots',    bt: BET_TYPE.TeamShots,          label: 'Удари (отбор)' },
+                    { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       label: 'Засади (отбор)' },
+                    { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        label: 'Откраднати топки (отбор)' },
+                  ].map(({ key, bt, label }) => (
                     <div key={key} data-cat="special" className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
                       <div className="market-section__header" onClick={() => toggleSection(key)}>
                         <span className="market-section__name">📊 {label}</span>
@@ -3477,32 +3438,26 @@ export default function MatchesPage() {
                               <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, opacity: 0.7 }}>{teamName}</div>
                               <div className="ou-table">
                                 <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                                {lines.map(l => (
+                                {Object.entries(statOdds[bt]?.[side] ?? {}).sort((a, b) => Number(a[0]) - Number(b[0])).map(([l, picks]) => (
                                   <div key={l} className="ou-table__row">
                                     <span className="ou-table__line">{l}</span>
-                                    {['Over', 'Under'].map(p => {
+                                    {['Over', 'Under'].filter(p => picks[p] != null).map(p => {
                                       const k = `${selectedMatch.id}:${bt}:${p}:${side}-${l}`;
-                                      const preO = statOdds[bt]?.[side]?.[l]?.[p];
+                                      const preO = picks[p];
                                       return (
                                         <button key={p} type="button"
                                           className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                          onClick={async () => {
-                                            let o = preO;
-                                            if (!o) {
-                                              const result = await fetchOdds(selectedMatch.id, bt, { pick: side, lineValue: l, ouPick: p });
-                                              if (!result) return;
-                                              o = result.odds;
-                                            }
+                                          onClick={() => {
                                             setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                             addToSlip({
                                               betType: bt, pick: p, selKey: `${side}-${l}`,
-                                              odds: o,
+                                              odds: preO,
                                               leg: { pick: side, lineValue: l, oUPick: p },
                                               label: `${teamName} ${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                               chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                             });
                                           }}>
-                                          {preO != null ? Number(preO).toFixed(2) : '—'}
+                                          {Number(preO).toFixed(2)}
                                         </button>
                                       );
                                     })}
@@ -3518,11 +3473,11 @@ export default function MatchesPage() {
 
                   {/* ── Phase 8: Match-level stat O/U ── */}
                   {[
-                    { key: 'matchSot',      bt: BET_TYPE.MatchShotsOnTarget, lines: MATCH_SOT_LINES,     label: 'Удари в рамката (мач)' },
-                    { key: 'matchShots',    bt: BET_TYPE.MatchShots,         lines: MATCH_SHOTS_LINES,   label: 'Удари (мач)' },
-                    { key: 'matchOffsides', bt: BET_TYPE.MatchOffsides,      lines: MATCH_OFFSIDES_LINES, label: 'Засади (мач)' },
-                    { key: 'matchTackles',  bt: BET_TYPE.MatchTackles,       lines: MATCH_TACKLES_LINES,  label: 'Откраднати топки (мач)' },
-                  ].map(({ key, bt, lines, label }) => (
+                    { key: 'matchSot',      bt: BET_TYPE.MatchShotsOnTarget, label: 'Удари в рамката (мач)' },
+                    { key: 'matchShots',    bt: BET_TYPE.MatchShots,         label: 'Удари (мач)' },
+                    { key: 'matchOffsides', bt: BET_TYPE.MatchOffsides,      label: 'Засади (мач)' },
+                    { key: 'matchTackles',  bt: BET_TYPE.MatchTackles,       label: 'Откраднати топки (мач)' },
+                  ].map(({ key, bt, label }) => (
                     <div key={key} data-cat="special" className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
                       <div className="market-section__header" onClick={() => toggleSection(key)}>
                         <span className="market-section__name">📊 {label}</span>
@@ -3531,32 +3486,26 @@ export default function MatchesPage() {
                       {!collapsed[key] && (
                         <div className="ou-table" style={{ padding: '10px 14px' }}>
                           <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                          {lines.map(l => (
+                          {Object.entries(statOdds[bt] ?? {}).sort((a, b) => Number(a[0]) - Number(b[0])).map(([l, picks]) => (
                             <div key={l} className="ou-table__row">
                               <span className="ou-table__line">{l}</span>
-                              {['Over', 'Under'].map(p => {
+                              {['Over', 'Under'].filter(p => picks[p] != null).map(p => {
                                 const k = `${selectedMatch.id}:${bt}:${p}:MST-${l}`;
-                                const preO = statOdds[bt]?.[l]?.[p];
+                                const preO = picks[p];
                                 return (
                                   <button key={p} type="button"
                                     className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                    onClick={async () => {
-                                      let o = preO;
-                                      if (!o) {
-                                        const result = await fetchOdds(selectedMatch.id, bt, { lineValue: l, ouPick: p });
-                                        if (!result) return;
-                                        o = result.odds;
-                                      }
+                                    onClick={() => {
                                       setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                       addToSlip({
                                         betType: bt, pick: p, selKey: `MST-${l}`,
-                                        odds: o,
+                                        odds: preO,
                                         leg: { lineValue: l, oUPick: p },
                                         label: `${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                         chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                       });
                                     }}>
-                                    {preO != null ? Number(preO).toFixed(2) : '—'}
+                                    {Number(preO).toFixed(2)}
                                   </button>
                                 );
                               })}
@@ -3588,7 +3537,8 @@ export default function MatchesPage() {
                               {(() => {
                                 const oddsMap = key === 'playerAssist' ? assistOdds : soaOdds;
                                 return [...scorerPlayers]
-                                  .sort((a, b) => (oddsMap[a.playerId] ?? 99) - (oddsMap[b.playerId] ?? 99))
+                                  .filter(p => oddsMap[p.playerId] != null)
+                                  .sort((a, b) => oddsMap[a.playerId] - oddsMap[b.playerId])
                                   .map(p => {
                                     const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
                                     const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
@@ -3597,13 +3547,11 @@ export default function MatchesPage() {
                                     const preOddsVal = oddsMap[p.playerId];
                                     return (
                                       <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
-                                        onClick={async () => {
-                                          const oddsVal = preOddsVal ?? (await fetchOdds(selectedMatch.id, bt, { goalscorerId: p.playerId }))?.odds;
-                                          if (!oddsVal) return;
+                                        onClick={() => {
                                           setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                           addToSlip({
                                             betType: bt, pick: String(p.playerId), selKey: `${chipLabel}-${p.playerId}`,
-                                            odds: oddsVal,
+                                            odds: preOddsVal,
                                             leg: { goalscorerId: p.playerId },
                                             label: `${label} — ${p.name}`,
                                             chip: chipLabel,
@@ -3615,7 +3563,7 @@ export default function MatchesPage() {
                                             : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
                                         </span>
                                         <span className="gs-row__name">{p.name}</span>
-                                        <span className="gs-row__odds">{preOddsVal ?? '—'}</span>
+                                        <span className="gs-row__odds">{Number(preOddsVal).toFixed(2)}</span>
                                       </button>
                                     );
                                   });
