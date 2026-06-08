@@ -103,7 +103,7 @@ export default function MatchesPage() {
   // Phase 8 stat market odds — fetched from API when section is expanded
   // Structure: { [betType]: { [side_or_match]: { [line]: { Over, Under } } } }
   const [statOdds, setStatOdds] = useState({});
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, corners: true, yellows: true, scorer: true, oddEven: true, dnb: true, wtn: true, hcp: true, homeGoals: true, awayGoals: true, ht: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, qualify: false, extraTime: true, penalties: true, methodVic: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true, sh2: true, earlyGoal: true, lateGoal: true, fgm: true, htExact: true, shExact: true, homeExact: true, awayExact: true, ttg: true, fgsSection: true, lgsSection: true, pbSection: true, fpbSection: true, tgsSection: true, assistSection: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -673,6 +673,22 @@ export default function MatchesPage() {
       bhh:       (() => { try { return m.bttsHalfByHalfOddsJson ? JSON.parse(m.bttsHalfByHalfOddsJson) : {}; } catch { return {}; } })(),
       // HT Result/BTTS combo (market 122).
       htrb:      (() => { try { return m.htResultBttsOddsJson ? JSON.parse(m.htResultBttsOddsJson) : {}; } catch { return {}; } })(),
+      // New Bet365 markets
+      sh2:       { Home: m.sh2Home ?? null, Draw: m.sh2Draw ?? null, Away: m.sh2Away ?? null },
+      earlyGoal: (() => { try { return m.earlyGoalOddsJson ? JSON.parse(m.earlyGoalOddsJson) : {}; } catch { return {}; } })(),
+      lateGoal:  (() => { try { return m.lateGoalOddsJson  ? JSON.parse(m.lateGoalOddsJson)  : {}; } catch { return {}; } })(),
+      fgm:       (() => { try { return m.firstGoalMethodOddsJson   ? JSON.parse(m.firstGoalMethodOddsJson)   : {}; } catch { return {}; } })(),
+      htExact:   (() => { try { return m.firstHalfExactGoalsJson   ? JSON.parse(m.firstHalfExactGoalsJson)   : {}; } catch { return {}; } })(),
+      shExact:   (() => { try { return m.secondHalfExactGoalsJson  ? JSON.parse(m.secondHalfExactGoalsJson)  : {}; } catch { return {}; } })(),
+      homeExact: (() => { try { return m.homeTeamExactGoalsJson    ? JSON.parse(m.homeTeamExactGoalsJson)    : {}; } catch { return {}; } })(),
+      awayExact: (() => { try { return m.awayTeamExactGoalsJson    ? JSON.parse(m.awayTeamExactGoalsJson)    : {}; } catch { return {}; } })(),
+      ttg:       (() => { try { return m.teamTotalGoalsOddsJson    ? JSON.parse(m.teamTotalGoalsOddsJson)    : {}; } catch { return {}; } })(),
+      fgsOdds:   (() => { try { return m.firstGoalScorerOddsJson   ? JSON.parse(m.firstGoalScorerOddsJson)   : {}; } catch { return {}; } })(),
+      lgsOdds:   (() => { try { return m.lastGoalScorerOddsJson    ? JSON.parse(m.lastGoalScorerOddsJson)    : {}; } catch { return {}; } })(),
+      pbOdds:    (() => { try { return m.playerBookedOddsJson      ? JSON.parse(m.playerBookedOddsJson)      : {}; } catch { return {}; } })(),
+      fpbOdds:   (() => { try { return m.firstPlayerBookedOddsJson ? JSON.parse(m.firstPlayerBookedOddsJson) : {}; } catch { return {}; } })(),
+      tgsOdds:   (() => { try { return m.teamGoalscorerOddsJson    ? JSON.parse(m.teamGoalscorerOddsJson)    : {}; } catch { return {}; } })(),
+      assistOdds:(() => { try { return m.assistOddsJson            ? JSON.parse(m.assistOddsJson)            : {}; } catch { return {}; } })(),
     });
     setCornersPreOdds({
       8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
@@ -1554,6 +1570,316 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Second Half Result (market 97) */}
+                  {(preOdds.sh2?.Home != null || preOdds.sh2?.Draw != null || preOdds.sh2?.Away != null) && (
+                  <div data-cat="halves" className={`market-section ${collapsed.sh2 ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('sh2')}>
+                      <span className="market-section__name">◑ Резултат 2-ро полувреме</span>
+                      <span className="market-section__toggle">{collapsed.sh2 ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.sh2 && (
+                      <div className="market-options market-options--3">
+                        {[
+                          { k: 'Home', lbl: selectedMatch.homeTeamName, o: preOdds.sh2?.Home },
+                          { k: 'Draw', lbl: 'Равен',                   o: preOdds.sh2?.Draw },
+                          { k: 'Away', lbl: selectedMatch.awayTeamName, o: preOdds.sh2?.Away },
+                        ].map(({ k, lbl, o }) => (
+                          <button key={k} type="button" className="market-option" disabled>
+                            <div className="market-option__label">{lbl}</div>
+                            <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Early Goal Yes/No (market 84) */}
+                  {(preOdds.earlyGoal?.Yes != null || preOdds.earlyGoal?.No != null) && (
+                  <div data-cat="goals" className={`market-section ${collapsed.earlyGoal ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('earlyGoal')}>
+                      <span className="market-section__name">⏱ Ранен гол (до 10 мин)</span>
+                      <span className="market-section__toggle">{collapsed.earlyGoal ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.earlyGoal && (
+                      <div className="market-options market-options--2">
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].map(({ k, lbl }) => {
+                          const o = preOdds.earlyGoal?.[k];
+                          return (
+                            <button key={k} type="button" className="market-option" disabled>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Late Goal Yes/No (market 85) */}
+                  {(preOdds.lateGoal?.Yes != null || preOdds.lateGoal?.No != null) && (
+                  <div data-cat="goals" className={`market-section ${collapsed.lateGoal ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('lateGoal')}>
+                      <span className="market-section__name">⏰ Късен гол (след 80 мин)</span>
+                      <span className="market-section__toggle">{collapsed.lateGoal ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.lateGoal && (
+                      <div className="market-options market-options--2">
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].map(({ k, lbl }) => {
+                          const o = preOdds.lateGoal?.[k];
+                          return (
+                            <button key={k} type="button" className="market-option" disabled>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* First Goal Method (market 250) */}
+                  {Object.keys(preOdds.fgm ?? {}).length > 0 && (
+                  <div data-cat="goals" className={`market-section ${collapsed.fgm ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('fgm')}>
+                      <span className="market-section__name">🎯 Метод за първи гол</span>
+                      <span className="market-section__toggle">{collapsed.fgm ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.fgm && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.fgm).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* 1st Half Exact Goals (market 33) */}
+                  {Object.keys(preOdds.htExact ?? {}).length > 0 && (
+                  <div data-cat="halves" className={`market-section ${collapsed.htExact ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('htExact')}>
+                      <span className="market-section__name">1️⃣ Точен брой голове 1-во полувреме</span>
+                      <span className="market-section__toggle">{collapsed.htExact ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.htExact && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.htExact).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* 2nd Half Exact Goals (market 38) */}
+                  {Object.keys(preOdds.shExact ?? {}).length > 0 && (
+                  <div data-cat="halves" className={`market-section ${collapsed.shExact ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('shExact')}>
+                      <span className="market-section__name">2️⃣ Точен брой голове 2-ро полувреме</span>
+                      <span className="market-section__toggle">{collapsed.shExact ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.shExact && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.shExact).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Home Team Exact Goals (market 18) */}
+                  {Object.keys(preOdds.homeExact ?? {}).length > 0 && (
+                  <div data-cat="goals" className={`market-section ${collapsed.homeExact ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('homeExact')}>
+                      <span className="market-section__name">🏠 Точен брой голове — {selectedMatch.homeTeamName}</span>
+                      <span className="market-section__toggle">{collapsed.homeExact ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.homeExact && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.homeExact).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Away Team Exact Goals (market 19) */}
+                  {Object.keys(preOdds.awayExact ?? {}).length > 0 && (
+                  <div data-cat="goals" className={`market-section ${collapsed.awayExact ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('awayExact')}>
+                      <span className="market-section__name">✈️ Точен брой голове — {selectedMatch.awayTeamName}</span>
+                      <span className="market-section__toggle">{collapsed.awayExact ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.awayExact && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.awayExact).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Team Total Goals (market 86) */}
+                  {Object.keys(preOdds.ttg ?? {}).length > 0 && (
+                  <div data-cat="goals" className={`market-section ${collapsed.ttg ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('ttg')}>
+                      <span className="market-section__name">⚽ Голове на отбор (над/под)</span>
+                      <span className="market-section__toggle">{collapsed.ttg ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.ttg && (
+                      <div className="exact-score-grid">
+                        {Object.entries(preOdds.ttg).map(([k, o]) => (
+                          <button key={k} type="button" className="exact-score-tile" disabled>
+                            <div className="exact-score-tile__label">{k}</div>
+                            <div className="exact-score-tile__odds">{o != null ? Number(o).toFixed(2) : '—'}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* First Goal Scorer (market 251) */}
+                  {Object.keys(preOdds.fgsOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.fgsSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('fgsSection')}>
+                      <span className="market-section__name">🥇 Първи голмайстор</span>
+                      <span className="market-section__toggle">{collapsed.fgsSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.fgsSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.fgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Last Goal Scorer (market 252) */}
+                  {Object.keys(preOdds.lgsOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.lgsSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('lgsSection')}>
+                      <span className="market-section__name">🏁 Последен голмайстор</span>
+                      <span className="market-section__toggle">{collapsed.lgsSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.lgsSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.lgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Player to be Booked (market 64) */}
+                  {Object.keys(preOdds.pbOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.pbSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('pbSection')}>
+                      <span className="market-section__name">🟨 Играч да получи картон</span>
+                      <span className="market-section__toggle">{collapsed.pbSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.pbSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.pbOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* First Player Booked (market 65) */}
+                  {Object.keys(preOdds.fpbOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.fpbSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('fpbSection')}>
+                      <span className="market-section__name">🟨 Първи играч с картон</span>
+                      <span className="market-section__toggle">{collapsed.fpbSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.fpbSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.fpbOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Team Goalscorer (market 92) */}
+                  {Object.keys(preOdds.tgsOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.tgsSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('tgsSection')}>
+                      <span className="market-section__name">⚽ Голмайстор на отбор</span>
+                      <span className="market-section__toggle">{collapsed.tgsSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.tgsSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.tgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Player to Assist (market 332) */}
+                  {Object.keys(preOdds.assistOdds ?? {}).length > 0 && (
+                  <div data-cat="special" className={`market-section ${collapsed.assistSection ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('assistSection')}>
+                      <span className="market-section__name">🅰️ Играч с асистенция</span>
+                      <span className="market-section__toggle">{collapsed.assistSection ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.assistSection && (
+                      <div className="gs-list">
+                        {Object.entries(preOdds.assistOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
+                          <div key={name} className="gs-row">
+                            <span className="gs-row__name">{name}</span>
+                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
 
                   {/* Number of Goals in Match (Sportmonks market 83) — 3 buckets */}
                   <div data-cat="goals" className={`market-section ${collapsed.nog ? 'market-section--collapsed' : ''}`}>
