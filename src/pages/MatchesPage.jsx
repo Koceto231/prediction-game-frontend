@@ -143,7 +143,7 @@ export default function MatchesPage() {
   const addToSlip = useCallback((detail) => {
     if (!selectedMatch || detail?.odds == null) return;
     const leagueLabel =
-      LEAGUE_LIST.find(l => l.code === selectedMatch.leagueCode)?.label ?? null;
+      LEAGUE_LIST.find(l => l.code === selectedMatch.leagueCode)?.label ?? selectedMatch.leagueCode ?? null;
     window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
       detail: {
         matchId:     selectedMatch.id,
@@ -261,7 +261,7 @@ export default function MatchesPage() {
     };
     const timer = setInterval(tick, 30_000);
     return () => clearInterval(timer);
-  }, [selectedMatch?.id, selectedMatch?.status, selectedMatch?.liveState]);
+  }, [selectedMatch?.id, selectedMatch?.status, selectedMatch?.liveState, selectedMatch?.matchDate]);
 
   // Load AI analysis when a match is selected — uses cache
   useEffect(() => {
