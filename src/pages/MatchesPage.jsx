@@ -1698,7 +1698,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.fgm ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.fgm && (
-                      <div className="exact-score-grid exact-score-grid--col">
+                      <div className="pick-list">
                         {(() => {
                           const ORDER = ['Header', 'Free Kick', 'Penalty', 'Own Goal', 'No Goal'];
                           return Object.entries(preOdds.fgm)
@@ -1708,9 +1708,9 @@ export default function MatchesPage() {
                               return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
                             })
                             .map(([k, o]) => (
-                              <button key={k} type="button" className="exact-score-tile" disabled>
-                                <div className="exact-score-tile__label">{k}</div>
-                                <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <button key={k} type="button" className="pick-list__row" disabled>
+                                <span className="pick-list__label">{k}</span>
+                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                               </button>
                             ));
                         })()}
@@ -1771,13 +1771,13 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.homeExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.homeExact && (
-                      <div className="exact-score-grid exact-score-grid--col">
+                      <div className="pick-list">
                         {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
-                            <button key={k} type="button" className="exact-score-tile" disabled>
-                              <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            <button key={k} type="button" className="pick-list__row" disabled>
+                              <span className="pick-list__label">{k}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           ))}
                       </div>
@@ -1793,13 +1793,13 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.awayExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.awayExact && (
-                      <div className="exact-score-grid exact-score-grid--col">
+                      <div className="pick-list">
                         {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
-                            <button key={k} type="button" className="exact-score-tile" disabled>
-                              <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            <button key={k} type="button" className="pick-list__row" disabled>
+                              <span className="pick-list__label">{k}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           ))}
                       </div>
