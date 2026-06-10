@@ -61,8 +61,22 @@ function shortPickDesc(bet, leg) {
   const ouPick    = src?.oUPick    ?? src?.ouPick;
   const lineValue = src?.lineValue;
   const stringPick = src?.stringPick;
-  const scoreHome = src?.scoreHome;
-  const scoreAway = src?.scoreAway;
+  const scoreHome = src?.scoreHome ?? bet?.scoreHome;
+  const scoreAway = src?.scoreAway ?? bet?.scoreAway;
+
+  const exactScoreLabel = (betType, h, a) => {
+    const score  = `${h}-${a}`;
+    const prefix = betType === 'HalfTimeCorrectScore'
+      ? 'Точен резултат на полувремето'
+      : 'Точен резултат';
+    return { chip: score, label: `${prefix} — ${score}` };
+  };
+
+  const parseScorePair = (text) => {
+    if (!text) return null;
+    const m = String(text).match(/(?:^|\s)(\d+)\s*[–-]\s*(\d+)(?:\s|$|[^\d])/);
+    return m ? [Number(m[1]), Number(m[2])] : null;
+  };
 
   const lineNum = (() => {
     if (typeof ouLine === 'string') {
@@ -101,13 +115,16 @@ function shortPickDesc(bet, leg) {
       if (pick === 'Away') return { chip: '2', label: 'Резултат на полувремето — 2' };
       if (pick === 'Draw') return { chip: 'X', label: 'Резултат на полувремето — X' };
       break;
-    case 'ExactScore': {
-      const score = `${scoreHome ?? '?'}-${scoreAway ?? '?'}`;
-      return { chip: score, label: `Точен резултат — ${score}` };
-    }
+    case 'ExactScore':
     case 'HalfTimeCorrectScore': {
-      const score = `${scoreHome ?? '?'}-${scoreAway ?? '?'}`;
-      return { chip: score, label: `Точен резултат на полувремето — ${score}` };
+      if (scoreHome != null && scoreAway != null) {
+        return exactScoreLabel(betType, scoreHome, scoreAway);
+      }
+      const fromPick = pick && String(pick).match(/^(?:HT\s+)?(\d+)-(\d+)$/);
+      if (fromPick) {
+        return exactScoreLabel(betType, fromPick[1], fromPick[2]);
+      }
+      break;
     }
     case 'OddEven':
       return bttsPick
@@ -198,6 +215,12 @@ function shortPickDesc(bet, leg) {
   // makes it through ("Home", "BTTS Yes", "Over 2.5", "2-1", etc.).
   // Parse the string to recover the chip+label split.
   const rawDesc = String(leg?.description ?? bet?.betDescription ?? '').trim();
+
+  // Exact score — parse from server description "Точен резултат 2–3"
+  if (betType === 'ExactScore' || betType === 'HalfTimeCorrectScore') {
+    const parsed = parseScorePair(rawDesc);
+    if (parsed) return exactScoreLabel(betType, parsed[0], parsed[1]);
+  }
 
   // 1X2
   if (rawDesc === 'Home')  return { chip: '1', label: 'Краен резултат — 1' };
@@ -497,7 +520,8 @@ function ActiveBetCard({ bet, onCashedOut }) {
     betType:        bet.betType,
     description:    bet.betDescription,
     goalscorerName: bet.goalscorerName,
-    pick:           bet.pick,
+    pick:           bet.pick ?? (bet.scoreHome != null && bet.scoreAway != null
+      ? `${bet.scoreHome}-${bet.scoreAway}` : undefined),
     lineValue:      bet.lineValue,
     dCPick:         bet.dCPick ?? bet.dcPick,
     bttsPick:       bet.bTTSPick ?? bet.bttsPick,
