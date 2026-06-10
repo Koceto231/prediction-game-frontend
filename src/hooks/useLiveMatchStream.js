@@ -18,8 +18,8 @@ export default function useLiveMatchStream() {
   const [loading,   setLoading]   = useState(true);
   const [connected, setConnected] = useState(false);
   const [mode,      setMode]      = useState('sse');
+  const [error,     setError]     = useState(null);
 
-  // Track failures to flip into polling fallback
   const failureCountRef = useRef(0);
   const esRef           = useRef(null);
   const pollIdRef       = useRef(null);
@@ -31,8 +31,20 @@ export default function useLiveMatchStream() {
       setMode('polling');
       const fetchOnce = () =>
         api.get('/Match/live')
-          .then(r => { if (!cancelled) { setMatches(r.data ?? []); setLoading(false); } })
-          .catch(() => {});
+          .then(r => {
+            if (!cancelled) {
+              setMatches(r.data ?? []);
+              setLoading(false);
+              setError(null);
+            }
+          })
+          .catch(err => {
+            if (!cancelled) {
+              // Stop the infinite spinner — show empty list with an error flag
+              setLoading(false);
+              setError(err?.message ?? 'Failed to load live matches');
+            }
+          });
       fetchOnce();
       pollIdRef.current = setInterval(fetchOnce, 5_000);
     };
@@ -87,5 +99,5 @@ export default function useLiveMatchStream() {
     };
   }, []);
 
-  return { matches, loading, connected, mode };
+  return { matches, loading, connected, mode, error };
 }

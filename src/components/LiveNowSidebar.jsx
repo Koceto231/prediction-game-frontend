@@ -16,7 +16,7 @@ import { isActive, isFinal } from '../utils/liveState';
  * Falls back to an empty-state pill when nothing is live right now.
  */
 export default function LiveNowSidebar() {
-  const { matches: rawLive, connected, mode } = useLiveMatchStream();
+  const { matches: rawLive, connected, mode, error } = useLiveMatchStream();
 
   // Pick the match furthest into play (highest liveMinute) so the most
   // exciting game is shown, not just whichever arrives first in the array.
@@ -91,7 +91,10 @@ export default function LiveNowSidebar() {
         <Link className="gvm-livenow__viewall" to="/live">VIEW ALL</Link>
       </div>
 
-      {!live && (
+      {!live && error && (
+        <div className="gvm-livenow__empty gvm-livenow__empty--error">Connection issue — retrying…</div>
+      )}
+      {!live && !error && (
         <div className="gvm-livenow__empty">No live matches right now.</div>
       )}
 
