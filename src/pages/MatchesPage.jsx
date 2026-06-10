@@ -896,6 +896,49 @@ export default function MatchesPage() {
 
   const dis = { winner: false, dc: false, dnb: false, htft: false, wtn: false, wbh: false, hcp: false, ht: false };
   const LiveLock = () => null;
+  const mHas = obj => obj != null && Object.values(obj).some(v => v != null);
+  const mHasKeys = obj => obj != null && Object.keys(obj).length > 0;
+
+  const mv = {
+    winner:    selectedMatch ? (selectedMatch.homeOdds != null || selectedMatch.drawOdds != null || selectedMatch.awayOdds != null) : false,
+    dc:        mHas(preOdds.dc),
+    dc1h:      mHas(preOdds.dc1h),
+    ou:        mHasKeys(preOdds.ou),
+    btts:      mHas(preOdds.btts),
+    corners:   mHasKeys(cornersPreOdds),
+    yellows:   mHasKeys(yellowsPreOdds),
+    oddEven:   mHas(preOdds.oddEven),
+    htrb:      mHas(preOdds.htrb),
+    bhh:       mHas(preOdds.bhh),
+    nog:       mHas(preOdds.nog),
+    etg:       mHas(preOdds.etg),
+    wm:        mHas(preOdds.wm),
+    dnb:       mHas(preOdds.dnb),
+    wtn:       mHas(preOdds.wtn?.Home) || mHas(preOdds.wtn?.Away),
+    hcp:       preOdds.hcp?.Home != null || preOdds.hcp?.Draw != null || preOdds.hcp?.Away != null,
+    homeGoals: mHasKeys(preOdds.homeGoals),
+    awayGoals: mHasKeys(preOdds.awayGoals),
+    ht:        mHas(preOdds.ht),
+    cs:        mHas(preOdds.cs?.Home) || mHas(preOdds.cs?.Away),
+    fg:        mHas(preOdds.fg),
+    btts1h:    mHas(preOdds.btts1h),
+    btts2h:    mHas(preOdds.btts2h),
+    htGoals:   mHasKeys(preOdds.htGoals),
+    shGoals:   mHasKeys(preOdds.shGoals),
+    teamOE:    mHas(preOdds.homeOE) || mHas(preOdds.awayOE),
+    oe1h:      mHas(preOdds.oe1h),
+    oe2h:      mHas(preOdds.oe2h),
+    weh:       mHas(preOdds.weh),
+    rtg:       mHasKeys(preOdds.rtg),
+    thshHome:  mHas(preOdds.thsh?.Home),
+    thshAway:  mHas(preOdds.thsh?.Away),
+    hwmg:      mHas(preOdds.hwmg),
+    sbh:       mHas(preOdds.sbh?.Home) || mHas(preOdds.sbh?.Away),
+    teamTs:    mHas(preOdds.homeTs) || mHas(preOdds.awayTs),
+    wbh:       mHas(preOdds.wbh?.Home) || mHas(preOdds.wbh?.Away),
+    lastScore: mHas(preOdds.lastScore),
+    htft:      mHasKeys(preOdds.htft),
+  };
 
   // ── Render ────────────────────────────────────────────────────
   const filteredMatches = selectedLeague
@@ -1176,6 +1219,7 @@ export default function MatchesPage() {
                 <div className="market-table" data-cat={marketCategory}>
 
                   {/* Match Result */}
+                  {mv.winner && (
                   <div data-cat="main" className={`market-section ${collapsed.winner ? 'market-section--collapsed' : ''}${dis.winner ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.winner && toggleSection('winner')} style={dis.winner ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Краен резултат (1Х2)</span>
@@ -1202,8 +1246,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Double Chance */}
+                  {mv.dc && (
                   <div data-cat="main" className={`market-section ${collapsed.dc ? 'market-section--collapsed' : ''}${dis.dc ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dc && toggleSection('dc')} style={dis.dc ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">Двоен шанс</span>
@@ -1239,8 +1285,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Double Chance — 1st Half */}
+                  {mv.dc1h && (
                   <div data-cat="halves" className={`market-section ${collapsed.dc1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('dc1h')}>
                       <span className="market-section__name">◐ Двоен шанс — 1-во полувреме</span>
@@ -1282,8 +1330,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Goals O/U */}
+                  {mv.ou && (
                   <div data-cat="goals" className={`market-section ${collapsed.goals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('goals')}>
                       <span className="market-section__name">Голове — Над / Под</span>
@@ -1322,8 +1372,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* BTTS */}
+                  {mv.btts && (
                   <div data-cat="main" className={`market-section ${collapsed.btts ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts')}>
                       <span className="market-section__name">И двата отбора бележат</span>
@@ -1349,8 +1401,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Corners */}
+                  {mv.corners && (
                   <div data-cat="corners" className={`market-section ${collapsed.corners ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('corners')}>
                       <span className="market-section__name">⌐ Корнери — Над / Под</span>
@@ -1387,8 +1441,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Yellow Cards */}
+                  {mv.yellows && (
                   <div data-cat="special" className={`market-section ${collapsed.yellows ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('yellows')}>
                       <span className="market-section__name">▬ Жълти картони — Над / Под</span>
@@ -1425,8 +1481,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Odd / Even Goals */}
+                  {mv.oddEven && (
                   <div data-cat="goals" className={`market-section ${collapsed.oddEven ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oddEven')}>
                       <span className="market-section__name">≈ Голове — Нечетен / Четен</span>
@@ -1456,8 +1514,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* HT Result / BTTS combo (Sportmonks market 122) — 6 tiles */}
+                  {mv.htrb && (
                   <div data-cat="halves" className={`market-section ${collapsed.htrb ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htrb')}>
                       <span className="market-section__name">◐ HT Резултат + BTTS 1-во полувреме</span>
@@ -1497,8 +1557,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* BTTS 1H/2H combo (Sportmonks market 125) — 4 tiles */}
+                  {mv.bhh && (
                   <div data-cat="halves" className={`market-section ${collapsed.bhh ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('bhh')}>
                       <span className="market-section__name">⊞ BTTS 1-во / 2-ро полувреме</span>
@@ -1536,6 +1598,7 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Second Half Result (market 97) */}
                   {(preOdds.sh2?.Home != null || preOdds.sh2?.Draw != null || preOdds.sh2?.Away != null) && (
@@ -1842,6 +1905,7 @@ export default function MatchesPage() {
                   )}
 
                   {/* Number of Goals in Match (Sportmonks market 83) — 3 buckets */}
+                  {mv.nog && (
                   <div data-cat="goals" className={`market-section ${collapsed.nog ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('nog')}>
                       <span className="market-section__name">⊜ Брой голове</span>
@@ -1878,8 +1942,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Exact Total Goals (Sportmonks market 93) — 0..7+ tile grid */}
+                  {mv.etg && (
                   <div data-cat="goals" className={`market-section ${collapsed.etg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('etg')}>
                       <span className="market-section__name">Σ Точен брой голове</span>
@@ -1912,8 +1978,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Winning Margin (Sportmonks market 126) — special tab */}
+                  {mv.wm && (
                   <div data-cat="special" className={`market-section ${collapsed.wm ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('wm')}>
                       <span className="market-section__name">▭ Печалба с разлика</span>
@@ -1955,8 +2023,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Draw No Bet */}
+                  {mv.dnb && (
                   <div data-cat="main" className={`market-section ${collapsed.dnb ? 'market-section--collapsed' : ''}${dis.dnb ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.dnb && toggleSection('dnb')} style={dis.dnb ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊖ Без равен</span>
@@ -1991,8 +2061,10 @@ export default function MatchesPage() {
                       </>
                     )}
                   </div>
+                  )}
 
                   {/* Win to Nil */}
+                  {mv.wtn && (
                   <div data-cat="special" className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wtn && toggleSection('wtn')} style={dis.wtn ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">⊘ Печели на нула</span>
@@ -2034,8 +2106,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Handicap */}
+                  {mv.hcp && (
                   <div data-cat="special" className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.hcp && toggleSection('hcp')} style={dis.hcp ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">± Хандикап {preOdds.hcp?.line ? `(${preOdds.hcp.line})` : '(-1)'}</span>
@@ -2071,8 +2145,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Home Team Goals O/U */}
+                  {mv.homeGoals && (
                   <div data-cat="goals" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
                       <span className="market-section__name">△ Голове на {selectedMatch.homeTeamName}</span>
@@ -2109,8 +2185,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Away Team Goals O/U */}
+                  {mv.awayGoals && (
                   <div data-cat="goals" className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
                       <span className="market-section__name">▽ Голове на {selectedMatch.awayTeamName}</span>
@@ -2147,8 +2225,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Half Time Result */}
+                  {mv.ht && (
                   <div data-cat="halves" className={`market-section ${collapsed.ht ? 'market-section--collapsed' : ''}${dis.ht ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.ht && toggleSection('ht')} style={dis.ht ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◑ Резултат на полувремето</span>
@@ -2184,8 +2264,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Clean Sheet */}
+                  {mv.cs && (
                   <div data-cat="special" className={`market-section ${collapsed.cs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('cs')}>
                       <span className="market-section__name">○ Суха мрежа</span>
@@ -2227,8 +2309,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* First Goal */}
+                  {mv.fg && (
                   <div data-cat="goals" className={`market-section ${collapsed.fg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('fg')}>
                       <span className="market-section__name">◎ Първи гол</span>
@@ -2264,8 +2348,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* BTTS 1st Half */}
+                  {mv.btts1h && (
                   <div data-cat="halves" className={`market-section ${collapsed.btts1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts1h')}>
                       <span className="market-section__name">◐ И двата бележат — 1-во полувреме</span>
@@ -2297,8 +2383,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* BTTS 2nd Half */}
+                  {mv.btts2h && (
                   <div data-cat="halves" className={`market-section ${collapsed.btts2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('btts2h')}>
                       <span className="market-section__name">◑ И двата бележат — 2-ро полувреме</span>
@@ -2330,8 +2418,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* 1st Half Goals O/U */}
+                  {mv.htGoals && (
                   <div data-cat="halves" className={`market-section ${collapsed.htGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('htGoals')}>
                       <span className="market-section__name">◐ Голове 1-во полувреме — Над / Под</span>
@@ -2368,8 +2458,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* 2nd Half Goals O/U */}
+                  {mv.shGoals && (
                   <div data-cat="halves" className={`market-section ${collapsed.shGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('shGoals')}>
                       <span className="market-section__name">◑ Голове 2-ро полувреме — Над / Под</span>
@@ -2406,8 +2498,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Team Odd / Even Goals */}
+                  {mv.teamOE && (
                   <div data-cat="goals" className={`market-section ${collapsed.teamOE ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamOE')}>
                       <span className="market-section__name">≈ Голове на отбор — Нечетен / Четен</span>
@@ -2449,8 +2543,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Odd / Even Goals — 1st Half */}
+                  {mv.oe1h && (
                   <div data-cat="halves" className={`market-section ${collapsed.oe1h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe1h')}>
                       <span className="market-section__name">≈ Голове — Нечетен / Четен — 1-во полувреме</span>
@@ -2482,6 +2578,7 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Asian Handicap (Sportmonks market 6) */}
                   {preOdds.ah?.line != null && preOdds.ah?.Home != null && preOdds.ah?.Away != null && (
@@ -2748,6 +2845,7 @@ export default function MatchesPage() {
                   )}
 
                   {/* To Win Either Half (Sportmonks market 266) */}
+                  {mv.weh && (
                   <div data-cat="special" className={`market-section ${collapsed.weh ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('weh')}>
                       <span className="market-section__name">⇉ Печели поне едно полувреме</span>
@@ -2783,6 +2881,7 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* ── WC Knockout: To Qualify (advance) ──
                       Whole knockout block is rendered only when at least
@@ -2950,6 +3049,7 @@ export default function MatchesPage() {
                   })()}
 
                   {/* Result / Total Goals 2.5 combo (Sportmonks market 37) */}
+                  {mv.rtg && (
                   <div data-cat="special" className={`market-section ${collapsed.rtg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('rtg')}>
                       <span className="market-section__name">⊗ Резултат + Голове 2.5</span>
@@ -2989,8 +3089,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Team Highest Scoring Half — Home (Sportmonks market 120) */}
+                  {mv.thshHome && (
                   <div data-cat="halves" className={`market-section ${collapsed.thshHome ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('thshHome')}>
                       <span className="market-section__name">⊕ {selectedMatch.homeTeamName} — полувреме с повече голове</span>
@@ -3027,8 +3129,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Team Highest Scoring Half — Away (Sportmonks market 121) */}
+                  {mv.thshAway && (
                   <div data-cat="halves" className={`market-section ${collapsed.thshAway ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('thshAway')}>
                       <span className="market-section__name">⊕ {selectedMatch.awayTeamName} — полувреме с повече голове</span>
@@ -3065,8 +3169,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Half with Most Goals (Sportmonks market 101) */}
+                  {mv.hwmg && (
                   <div data-cat="halves" className={`market-section ${collapsed.hwmg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('hwmg')}>
                       <span className="market-section__name">⊕ Полувреме с повече голове</span>
@@ -3103,8 +3209,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Score in Both Halves (Sportmonks market 88) */}
+                  {mv.sbh && (
                   <div data-cat="special" className={`market-section ${collapsed.sbh ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('sbh')}>
                       <span className="market-section__name">⋈ Отбор бележи в двете полувремена</span>
@@ -3143,8 +3251,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Odd / Even Goals — 2nd Half (Sportmonks market 124) */}
+                  {mv.oe2h && (
                   <div data-cat="halves" className={`market-section ${collapsed.oe2h ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('oe2h')}>
                       <span className="market-section__name">≈ Голове — Нечетен / Четен — 2-ро полувреме</span>
@@ -3179,8 +3289,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Team to Score */}
+                  {mv.teamTs && (
                   <div data-cat="special" className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
                       <span className="market-section__name">→ Отбор отбелязва</span>
@@ -3222,8 +3334,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Win Both Halves */}
+                  {mv.wbh && (
                   <div data-cat="halves" className={`market-section ${collapsed.wbh ? 'market-section--collapsed' : ''}${dis.wbh ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.wbh && toggleSection('wbh')} style={dis.wbh ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">◆ Печели и двете полувремена</span>
@@ -3266,8 +3380,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Last Team to Score */}
+                  {mv.lastScore && (
                   <div data-cat="main" className={`market-section ${collapsed.lastScore ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('lastScore')}>
                       <span className="market-section__name">◇ Последен гол на</span>
@@ -3303,8 +3419,10 @@ export default function MatchesPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* HT / FT */}
+                  {mv.htft && (
                   <div data-cat="main" className={`market-section ${collapsed.htft ? 'market-section--collapsed' : ''}${dis.htft ? ' market-section--locked' : ''}`}>
                     <div className="market-section__header" onClick={() => !dis.htft && toggleSection('htft')} style={dis.htft ? { cursor: 'default', opacity: 0.45 } : {}}>
                       <span className="market-section__name">↕ Полувреме / Краен резултат</span>
@@ -3349,6 +3467,7 @@ export default function MatchesPage() {
                       );
                     })()}
                   </div>
+                  )}
 
                   {/* Goalscorer */}
                   <div data-cat="goals" className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
