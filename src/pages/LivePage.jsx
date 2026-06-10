@@ -410,12 +410,12 @@ function MatchTracker({ match }) {
 // ── Enums ────────────────────────────────────────────────────────
 const BET_TYPE    = { Winner: 'Winner', ExactScore: 'ExactScore', BTTS: 'BTTS', OverUnder: 'OverUnder', Goalscorer: 'Goalscorer', Corners: 'Corners', YellowCards: 'YellowCards', DoubleChance: 'DoubleChance', OddEven: 'OddEven', DrawNoBet: 'DrawNoBet', Handicap: 'Handicap', WinToNil: 'WinToNil', TeamGoals: 'TeamGoals', HalfTime: 'HalfTime', CleanSheet: 'CleanSheet', FirstGoal: 'FirstGoal', Btts1stHalf: 'Btts1stHalf', Btts2ndHalf: 'Btts2ndHalf', HalfTimeGoals: 'HalfTimeGoals', SecondHalfGoals: 'SecondHalfGoals', TeamOddEven: 'TeamOddEven', OddEven1stHalf: 'OddEven1stHalf', TeamToScore: 'TeamToScore', WinBothHalves: 'WinBothHalves', LastToScore: 'LastToScore', HtFt: 'HtFt' };
 const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
-const OU_LINE_MAP = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const OU_LINE_MAP     = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+const OU_LINE_DECIMAL = { Line05: '0.5', Line15: '1.5', Line25: '2.5', Line35: '3.5' };
+const OU_DECIMAL_TO_LINE = { '0.5': 'Line05', '1.5': 'Line15', '2.5': 'Line25', '3.5': 'Line35' };
 const lineToKey   = l => `Line${String(l).replace('.', '')}`;
 const OU_PICK_MAP = { Over: 'Over', Under: 'Under' };
 const DC_OPTIONS  = [{ key: 'HomeOrDraw', label: '1X' }, { key: 'HomeOrAway', label: '12' }, { key: 'DrawOrAway', label: 'X2' }];
-const CORNER_LINES  = [8.5, 9.5, 10.5];
-const YELLOW_LINES  = [2.5, 3.5, 4.5];
 const TEAM_GOAL_LINES = [0.5, 1.5, 2.5];
 
 const parseScore = v => { if (v === '' || v == null) return null; const n = Number(v); return Number.isNaN(n) ? null : n; };
@@ -1046,11 +1046,7 @@ export default function LivePage() {
     setPreOdds({
       dc: { HomeOrDraw: m.dcHomeOrDraw ?? null, DrawOrAway: m.dcDrawOrAway ?? null, HomeOrAway: m.dcHomeOrAway ?? null },
       btts: { true: m.bttsYes ?? null, false: m.bttsNo ?? null },
-      ou: {
-        Line15: { Over: m.over15 ?? null, Under: m.under15 ?? null },
-        Line25: { Over: m.over25 ?? null, Under: m.under25 ?? null },
-        Line35: { Over: m.over35 ?? null, Under: m.under35 ?? null },
-      },
+      ou: (() => { try { return m.goalsOuOddsJson ? JSON.parse(m.goalsOuOddsJson) : {}; } catch { return {}; } })(),
       oddEven: { true: m.oddGoals ?? null, false: m.evenGoals ?? null },
       dnb: { Home: m.dnbHome ?? null, Away: m.dnbAway ?? null },
       wtn: {
@@ -1058,16 +1054,8 @@ export default function LivePage() {
         Away: { true: m.wtnAwayYes ?? null, false: m.wtnAwayNo ?? null },
       },
       hcp: { Home: m.hcpHomeOdds ?? null, Draw: m.hcpDrawOdds ?? null, Away: m.hcpAwayOdds ?? null, line: m.hcpLine ?? null },
-      homeGoals: {
-        0.5: { Over: m.homeGoalsOver05 ?? null, Under: m.homeGoalsUnder05 ?? null },
-        1.5: { Over: m.homeGoalsOver15 ?? null, Under: m.homeGoalsUnder15 ?? null },
-        2.5: { Over: m.homeGoalsOver25 ?? null, Under: m.homeGoalsUnder25 ?? null },
-      },
-      awayGoals: {
-        0.5: { Over: m.awayGoalsOver05 ?? null, Under: m.awayGoalsUnder05 ?? null },
-        1.5: { Over: m.awayGoalsOver15 ?? null, Under: m.awayGoalsUnder15 ?? null },
-        2.5: { Over: m.awayGoalsOver25 ?? null, Under: m.awayGoalsUnder25 ?? null },
-      },
+      homeGoals: (() => { try { return m.homeGoalsOuOddsJson ? JSON.parse(m.homeGoalsOuOddsJson) : {}; } catch { return {}; } })(),
+      awayGoals: (() => { try { return m.awayGoalsOuOddsJson ? JSON.parse(m.awayGoalsOuOddsJson) : {}; } catch { return {}; } })(),
       ht: { Home: m.htHomeOdds ?? null, Draw: m.htDrawOdds ?? null, Away: m.htAwayOdds ?? null },
       cs: {
         Home: { true: m.csHomeYes ?? null, false: m.csHomeNo ?? null },
@@ -1076,16 +1064,8 @@ export default function LivePage() {
       fg: { Home: m.fgHome ?? null, Draw: m.fgNone ?? null, Away: m.fgAway ?? null },
       btts1h:    { true: m.btts1HYes ?? null, false: m.btts1HNo ?? null },
       btts2h:    { true: m.btts2HYes ?? null, false: m.btts2HNo ?? null },
-      htGoals: {
-        '0.5': { Over: m.htGoalsOver05 ?? null, Under: m.htGoalsUnder05 ?? null },
-        '1.5': { Over: m.htGoalsOver15 ?? null, Under: m.htGoalsUnder15 ?? null },
-        '2.5': { Over: m.htGoalsOver25 ?? null, Under: m.htGoalsUnder25 ?? null },
-      },
-      shGoals: {
-        '0.5': { Over: m.shGoalsOver05 ?? null, Under: m.shGoalsUnder05 ?? null },
-        '1.5': { Over: m.shGoalsOver15 ?? null, Under: m.shGoalsUnder15 ?? null },
-        '2.5': { Over: m.shGoalsOver25 ?? null, Under: m.shGoalsUnder25 ?? null },
-      },
+      htGoals: (() => { try { return m.htGoalsOuOddsJson ? JSON.parse(m.htGoalsOuOddsJson) : {}; } catch { return {}; } })(),
+      shGoals: (() => { try { return m.shGoalsOuOddsJson ? JSON.parse(m.shGoalsOuOddsJson) : {}; } catch { return {}; } })(),
       homeOE:    { true: m.homeOddGoals ?? null, false: m.homeEvenGoals ?? null },
       awayOE:    { true: m.awayOddGoals ?? null, false: m.awayEvenGoals ?? null },
       oe1h:      { true: m.oddGoals1H   ?? null, false: m.evenGoals1H   ?? null },
@@ -1098,16 +1078,8 @@ export default function LivePage() {
       lastScore: { Home: m.lastTeamHome ?? null, Draw: m.lastTeamNone ?? null, Away: m.lastTeamAway ?? null },
       htft: (() => { try { return m.htFtOddsJson ? JSON.parse(m.htFtOddsJson) : {}; } catch { return {}; } })(),
     });
-    setCornersPreOdds({
-      8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
-      9.5:  { Over: m.cornersOver95  ?? null, Under: m.cornersUnder95  ?? null },
-      10.5: { Over: m.cornersOver105 ?? null, Under: m.cornersUnder105 ?? null },
-    });
-    setYellowsPreOdds({
-      2.5: { Over: m.yellowOver25 ?? null, Under: m.yellowUnder25 ?? null },
-      3.5: { Over: m.yellowOver35 ?? null, Under: m.yellowUnder35 ?? null },
-      4.5: { Over: m.yellowOver45 ?? null, Under: m.yellowUnder45 ?? null },
-    });
+    setCornersPreOdds((() => { try { return m.cornersOuOddsJson ? JSON.parse(m.cornersOuOddsJson) : {}; } catch { return {}; } })());
+    setYellowsPreOdds((() => { try { return m.yellowsOuOddsJson ? JSON.parse(m.yellowsOuOddsJson) : {}; } catch { return {}; } })());
   }, [selectedMatch?.id]);
 
   // mpOdds derivation
@@ -1115,7 +1087,7 @@ export default function LivePage() {
     if (!isMarket) return;
     const winnerOdds = winner === 'Home' ? selectedMatch?.homeOdds : winner === 'Draw' ? selectedMatch?.drawOdds : winner === 'Away' ? selectedMatch?.awayOdds : null;
     const bttsOdds   = btts === 'true' ? (preOdds.btts?.['true'] ?? null) : btts === 'false' ? (preOdds.btts?.['false'] ?? null) : null;
-    const ouOdds     = (ouLine && ouPick) ? (preOdds.ou?.[ouLine]?.[ouPick] ?? null) : null;
+    const ouOdds     = (ouLine && ouPick) ? (preOdds.ou?.[OU_LINE_DECIMAL[ouLine]]?.[ouPick] ?? null) : null;
     setMpOdds(p => ({ ...p, winner: winnerOdds, btts: bttsOdds, ou: ouOdds }));
   }, [isMarket, selectedMatch?.id, winner, btts, ouLine, ouPick, preOdds]);
 
@@ -1695,22 +1667,21 @@ export default function LivePage() {
                     {!collapsed.goals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }].map(({ line, label }) => {
+                        {Object.keys(preOdds.ou ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).map(label => {
+                          const line = OU_DECIMAL_TO_LINE[label] ?? null;
                           const cellLocked = isOULocked(label, totalGoals);
                           return (
-                          <div key={line} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
+                          <div key={label} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{label}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => {
-                              const cellOdds = preOdds.ou?.[line]?.[pick];
-                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
+                              const cellOdds = preOdds.ou?.[label]?.[pick];
+                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
                               return (
                               <button key={pick} type="button"
-                                disabled={cellLocked}
-                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
+                                disabled={cellLocked || !line}
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${(cellLocked || !line) ? ' ou-cell--disabled' : ''}`}
                                 onClick={() => {
-                                  if (cellLocked) return;
-                                  // Accumulator: toggle this line in the global slip (which
-                                  // enforces conflict rules) and mirror the highlight.
+                                  if (cellLocked || !line) return;
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   if (cellOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: cellOdds });
                                 }}>
@@ -1759,8 +1730,8 @@ export default function LivePage() {
                     {!collapsed.corners && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {CORNER_LINES.map(l => {
-                          const cellLocked = liveCorners != null && isOULocked(l, liveCorners);
+                        {Object.keys(cornersPreOdds).sort((a,b) => parseFloat(a)-parseFloat(b)).map(l => {
+                          const cellLocked = liveCorners != null && isOULocked(parseFloat(l), liveCorners);
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
@@ -1802,8 +1773,8 @@ export default function LivePage() {
                     {!collapsed.yellows && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {YELLOW_LINES.map(l => {
-                          const cellLocked = liveYellows != null && isOULocked(l, liveYellows);
+                        {Object.keys(yellowsPreOdds).sort((a,b) => parseFloat(a)-parseFloat(b)).map(l => {
+                          const cellLocked = liveYellows != null && isOULocked(parseFloat(l), liveYellows);
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
                             <span className="ou-table__line">{l}{cellLocked && ' 🔒'}</span>
@@ -2173,7 +2144,7 @@ export default function LivePage() {
                     {!collapsed.htGoals && !isSecondHalf && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => {
+                        {Object.keys(preOdds.htGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).map(l => {
                           const cellLocked = isOULocked(l, total1H);
                           return (
                           <div key={l} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
@@ -2216,7 +2187,7 @@ export default function LivePage() {
                     {!collapsed.shGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].map(l => {
+                        {Object.keys(preOdds.shGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).map(l => {
                           // Only meaningful when 2H has started — otherwise total2H is 0 and nothing locks
                           const cellLocked = isSecondHalf && isOULocked(l, total2H);
                           return (

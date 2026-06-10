@@ -77,8 +77,10 @@ export const EXACT_TOTAL_GOALS_PICKS = ['0', '1', '2', '3', '4', '5', '6', '7+']
 /** Winning Margin picks — short codes the backend understands. */
 export const WINNING_MARGIN_PICKS = ['H1', 'H2', 'H3+', 'A1', 'A2', 'A3+', 'Draw', 'NoGoal'];
 
-export const WINNER_MAP  = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
-export const OU_LINE_MAP = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+export const WINNER_MAP      = { Home: 'Home', Draw: 'Draw', Away: 'Away' };
+export const OU_LINE_MAP     = { Line05: 'Line05', Line15: 'Line15', Line25: 'Line25', Line35: 'Line35' };
+export const OU_LINE_DECIMAL = { Line05: '0.5', Line15: '1.5', Line25: '2.5', Line35: '3.5' };
+export const OU_DECIMAL_TO_LINE = { '0.5': 'Line05', '1.5': 'Line15', '2.5': 'Line25', '3.5': 'Line35' };
 export const OU_PICK_MAP = { Over: 'Over', Under: 'Under' };
 
 export const DC_OPTIONS = [

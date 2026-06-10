@@ -7,8 +7,7 @@ import QuickBetPanel from '../components/QuickBetPanel';
 import { useWallet } from '../context/WalletContext';
 import { useAuth } from '../context/AuthContext';
 import {
-  BET_TYPE, WINNER_MAP, OU_LINE_MAP, OU_PICK_MAP, DC_OPTIONS,
-  CORNER_LINES, YELLOW_LINES, TEAM_GOAL_LINES,
+  BET_TYPE, WINNER_MAP, OU_LINE_MAP, OU_LINE_DECIMAL, OU_DECIMAL_TO_LINE, OU_PICK_MAP, DC_OPTIONS,
   TEAM_SOT_LINES, TEAM_SHOTS_LINES, TEAM_OFFSIDES_LINES, TEAM_TACKLES_LINES,
   MATCH_SOT_LINES, MATCH_SHOTS_LINES, MATCH_OFFSIDES_LINES, MATCH_TACKLES_LINES,
   EMPTY_FORM as EMPTY, lineToKey, parseScore, fetchOdds, LEAGUE_LIST,
@@ -397,7 +396,7 @@ export default function MatchesPage() {
                      : winner === 'Away' ? selectedMatch?.awayOdds : null;
     const bttsOdds = btts === 'true'  ? (preOdds.btts?.['true']  ?? null)
                    : btts === 'false' ? (preOdds.btts?.['false'] ?? null) : null;
-    const ouOdds   = (ouLine && ouPick) ? (preOdds.ou?.[ouLine]?.[ouPick] ?? null) : null;
+    const ouOdds   = (ouLine && ouPick) ? (preOdds.ou?.[OU_LINE_DECIMAL[ouLine]]?.[ouPick] ?? null) : null;
     setMpOdds(prev => ({ ...prev, winner: winnerOdds, btts: bttsOdds, ou: ouOdds }));
   }, [isMarket, selectedMatch?.id, winner, btts, ouLine, ouPick, preOdds]);
 
@@ -574,11 +573,7 @@ export default function MatchesPage() {
         true:  m.bttsYes ?? null,
         false: m.bttsNo  ?? null,
       },
-      ou: {
-        Line15: { Over: m.over15 ?? null, Under: m.under15 ?? null },
-        Line25: { Over: m.over25 ?? null, Under: m.under25 ?? null },
-        Line35: { Over: m.over35 ?? null, Under: m.under35 ?? null },
-      },
+      ou: (() => { try { return m.goalsOuOddsJson ? JSON.parse(m.goalsOuOddsJson) : {}; } catch { return {}; } })(),
       oddEven: { true: m.oddGoals ?? null, false: m.evenGoals ?? null },
       dnb:     { Home: m.dnbHome ?? null, Away: m.dnbAway ?? null },
       wtn: {
@@ -586,16 +581,8 @@ export default function MatchesPage() {
         Away: { true: m.wtnAwayYes ?? null, false: m.wtnAwayNo ?? null },
       },
       hcp: { Home: m.hcpHomeOdds ?? null, Draw: m.hcpDrawOdds ?? null, Away: m.hcpAwayOdds ?? null, line: m.hcpLine ?? null },
-      homeGoals: {
-        0.5: { Over: m.homeGoalsOver05 ?? null, Under: m.homeGoalsUnder05 ?? null },
-        1.5: { Over: m.homeGoalsOver15 ?? null, Under: m.homeGoalsUnder15 ?? null },
-        2.5: { Over: m.homeGoalsOver25 ?? null, Under: m.homeGoalsUnder25 ?? null },
-      },
-      awayGoals: {
-        0.5: { Over: m.awayGoalsOver05 ?? null, Under: m.awayGoalsUnder05 ?? null },
-        1.5: { Over: m.awayGoalsOver15 ?? null, Under: m.awayGoalsUnder15 ?? null },
-        2.5: { Over: m.awayGoalsOver25 ?? null, Under: m.awayGoalsUnder25 ?? null },
-      },
+      homeGoals: (() => { try { return m.homeGoalsOuOddsJson ? JSON.parse(m.homeGoalsOuOddsJson) : {}; } catch { return {}; } })(),
+      awayGoals: (() => { try { return m.awayGoalsOuOddsJson ? JSON.parse(m.awayGoalsOuOddsJson) : {}; } catch { return {}; } })(),
       ht: { Home: m.htHomeOdds ?? null, Draw: m.htDrawOdds ?? null, Away: m.htAwayOdds ?? null },
       cs: {
         Home: { true: m.csHomeYes ?? null, false: m.csHomeNo ?? null },
@@ -605,24 +592,23 @@ export default function MatchesPage() {
       // Phase 3
       btts1h:    { true: m.btts1HYes ?? null, false: m.btts1HNo ?? null },
       btts2h:    { true: m.btts2HYes ?? null, false: m.btts2HNo ?? null },
-      htGoals: {
-        '0.5': { Over: m.htGoalsOver05 ?? null, Under: m.htGoalsUnder05 ?? null },
-        '1.5': { Over: m.htGoalsOver15 ?? null, Under: m.htGoalsUnder15 ?? null },
-        '2.5': { Over: m.htGoalsOver25 ?? null, Under: m.htGoalsUnder25 ?? null },
-      },
-      shGoals: {
-        '0.5': { Over: m.shGoalsOver05 ?? null, Under: m.shGoalsUnder05 ?? null },
-        '1.5': { Over: m.shGoalsOver15 ?? null, Under: m.shGoalsUnder15 ?? null },
-        '2.5': { Over: m.shGoalsOver25 ?? null, Under: m.shGoalsUnder25 ?? null },
-      },
+      htGoals: (() => { try { return m.htGoalsOuOddsJson ? JSON.parse(m.htGoalsOuOddsJson) : {}; } catch { return {}; } })(),
+      shGoals: (() => { try { return m.shGoalsOuOddsJson ? JSON.parse(m.shGoalsOuOddsJson) : {}; } catch { return {}; } })(),
       homeOE:    { true: m.homeOddGoals ?? null, false: m.homeEvenGoals ?? null },
       awayOE:    { true: m.awayOddGoals ?? null, false: m.awayEvenGoals ?? null },
       oe1h:      { true: m.oddGoals1H   ?? null, false: m.evenGoals1H   ?? null },
       oe2h:      { true: m.oddGoals2H   ?? null, false: m.evenGoals2H   ?? null },
-      sbh: {
-        Home: { true: m.scoreBothHomeYes ?? null, false: m.scoreBothHomeNo ?? null },
-        Away: { true: m.scoreBothAwayYes ?? null, false: m.scoreBothAwayNo ?? null },
-      },
+      sbh: (() => {
+        try {
+          const d = m.scoreInHalfOddsJson ? JSON.parse(m.scoreInHalfOddsJson) : null;
+          if (!d) return {};
+          const pick = (team, yn) => d[team]?.['1H']?.[yn] ?? d[team]?.['2H']?.[yn] ?? null;
+          return {
+            Home: { true: pick('Home', 'Yes'), false: pick('Home', 'No') },
+            Away: { true: pick('Away', 'Yes'), false: pick('Away', 'No') },
+          };
+        } catch { return {}; }
+      })(),
       hwmg: { '1stHalf': m.hwMG1H ?? null, '2ndHalf': m.hwMG2H ?? null, Tie: m.hwMGTie ?? null },
       thsh: {
         Home: { '1stHalf': m.homeHsH1H ?? null, '2ndHalf': m.homeHsH2H ?? null, Tie: m.homeHsHTie ?? null },
@@ -690,16 +676,8 @@ export default function MatchesPage() {
       tgsOdds:   (() => { try { return m.teamGoalscorerOddsJson    ? JSON.parse(m.teamGoalscorerOddsJson)    : {}; } catch { return {}; } })(),
       assistOdds:(() => { try { return m.assistOddsJson            ? JSON.parse(m.assistOddsJson)            : {}; } catch { return {}; } })(),
     });
-    setCornersPreOdds({
-      8.5:  { Over: m.cornersOver85  ?? null, Under: m.cornersUnder85  ?? null },
-      9.5:  { Over: m.cornersOver95  ?? null, Under: m.cornersUnder95  ?? null },
-      10.5: { Over: m.cornersOver105 ?? null, Under: m.cornersUnder105 ?? null },
-    });
-    setYellowsPreOdds({
-      2.5: { Over: m.yellowOver25 ?? null, Under: m.yellowUnder25 ?? null },
-      3.5: { Over: m.yellowOver35 ?? null, Under: m.yellowUnder35 ?? null },
-      4.5: { Over: m.yellowOver45 ?? null, Under: m.yellowUnder45 ?? null },
-    });
+    setCornersPreOdds((() => { try { return m.cornersOuOddsJson ? JSON.parse(m.cornersOuOddsJson) : {}; } catch { return {}; } })());
+    setYellowsPreOdds((() => { try { return m.yellowsOuOddsJson ? JSON.parse(m.yellowsOuOddsJson) : {}; } catch { return {}; } })());
     setPreOddsLoading(false);
 
     // Parse stat market odds directly from match JSON — no API calls needed
@@ -1315,27 +1293,32 @@ export default function MatchesPage() {
                     {!collapsed.goals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {[{ line: 'Line15', label: '1.5' }, { line: 'Line25', label: '2.5' }, { line: 'Line35', label: '3.5' }]
-                          .filter(({ line }) => preOdds.ou?.[line]?.Over != null || preOdds.ou?.[line]?.Under != null)
-                          .map(({ line, label }) => (
-                          <div key={line} className="ou-table__row">
+                        {Object.keys(preOdds.ou ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b))
+                          .filter(label => preOdds.ou[label]?.Over != null || preOdds.ou[label]?.Under != null)
+                          .map(label => {
+                          const line = OU_DECIMAL_TO_LINE[label] ?? null;
+                          return (
+                          <div key={label} className="ou-table__row">
                             <span className="ou-table__line">{label}</span>
-                            {['Over', 'Under'].filter(pick => preOdds.ou?.[line]?.[pick] != null).map(pick => {
-                              const ouOdds = preOdds.ou[line][pick];
-                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
+                            {['Over', 'Under'].filter(pick => preOdds.ou[label]?.[pick] != null).map(pick => {
+                              const cellOdds = preOdds.ou[label][pick];
+                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
                               return (
                                 <button key={pick} type="button"
-                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                  disabled={!line}
+                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${!line ? ' ou-cell--disabled' : ''}`}
                                   onClick={() => {
+                                    if (!line) return;
                                     setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                    addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: ouOdds });
+                                    addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: cellOdds });
                                   }}>
-                                  {Number(ouOdds).toFixed(2)}
+                                  {Number(cellOdds).toFixed(2)}
                                 </button>
                               );
                             })}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1377,7 +1360,7 @@ export default function MatchesPage() {
                     {!collapsed.corners && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {CORNER_LINES.filter(l => cornersPreOdds[l]?.Over != null || cornersPreOdds[l]?.Under != null).map(l => (
+                        {Object.keys(cornersPreOdds).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => cornersPreOdds[l]?.Over != null || cornersPreOdds[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => cornersPreOdds[l]?.[pick] != null).map(pick => {
@@ -1415,7 +1398,7 @@ export default function MatchesPage() {
                     {!collapsed.yellows && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {YELLOW_LINES.filter(l => yellowsPreOdds[l]?.Over != null || yellowsPreOdds[l]?.Under != null).map(l => (
+                        {Object.keys(yellowsPreOdds).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => yellowsPreOdds[l]?.Over != null || yellowsPreOdds[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => yellowsPreOdds[l]?.[pick] != null).map(pick => {
@@ -2099,7 +2082,7 @@ export default function MatchesPage() {
                     {!collapsed.homeGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.filter(l => preOdds.homeGoals?.[l]?.Over != null || preOdds.homeGoals?.[l]?.Under != null).map(l => (
+                        {Object.keys(preOdds.homeGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.homeGoals?.[l]?.Over != null || preOdds.homeGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => preOdds.homeGoals?.[l]?.[pick] != null).map(pick => {
@@ -2137,7 +2120,7 @@ export default function MatchesPage() {
                     {!collapsed.awayGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {TEAM_GOAL_LINES.filter(l => preOdds.awayGoals?.[l]?.Over != null || preOdds.awayGoals?.[l]?.Under != null).map(l => (
+                        {Object.keys(preOdds.awayGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.awayGoals?.[l]?.Over != null || preOdds.awayGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => preOdds.awayGoals?.[l]?.[pick] != null).map(pick => {
@@ -2358,7 +2341,7 @@ export default function MatchesPage() {
                     {!collapsed.htGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].filter(l => preOdds.htGoals?.[l]?.Over != null || preOdds.htGoals?.[l]?.Under != null).map(l => (
+                        {Object.keys(preOdds.htGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.htGoals?.[l]?.Over != null || preOdds.htGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => preOdds.htGoals?.[l]?.[pick] != null).map(pick => {
@@ -2396,7 +2379,7 @@ export default function MatchesPage() {
                     {!collapsed.shGoals && (
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {['0.5', '1.5', '2.5'].filter(l => preOdds.shGoals?.[l]?.Over != null || preOdds.shGoals?.[l]?.Under != null).map(l => (
+                        {Object.keys(preOdds.shGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.shGoals?.[l]?.Over != null || preOdds.shGoals?.[l]?.Under != null).map(l => (
                           <div key={l} className="ou-table__row">
                             <span className="ou-table__line">{l}</span>
                             {['Over', 'Under'].filter(pick => preOdds.shGoals?.[l]?.[pick] != null).map(pick => {
