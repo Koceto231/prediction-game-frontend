@@ -558,6 +558,31 @@ export default function MatchesPage() {
   useEffect(() => {
     if (!selectedMatch) { setPreOdds({}); setCornersPreOdds({}); setYellowsPreOdds({}); setStatOdds({}); return; }
     const m = selectedMatch;
+
+    // Parse market 86 TTG — supports both old flat format {"HomeOver05":x} and
+    // new nested format {"Home":{"0.5":{"Over":x,"Under":y}}}
+    const ttgNorm = (() => {
+      try {
+        if (!m.teamTotalGoalsOddsJson) return {};
+        const raw = JSON.parse(m.teamTotalGoalsOddsJson);
+        if (raw.Home && typeof raw.Home === 'object') return raw; // new nested format
+        // Old flat format: convert HomeOver05 → Home.0.5.Over
+        const result = {};
+        for (const [k, v] of Object.entries(raw)) {
+          const team = k.startsWith('Home') ? 'Home' : k.startsWith('Away') ? 'Away' : null;
+          if (!team) continue;
+          const rest = k.slice(team.length);
+          const pick = rest.startsWith('Over') ? 'Over' : rest.startsWith('Under') ? 'Under' : null;
+          const lp = rest.replace(/^(Over|Under)/, '');
+          const line = lp.length === 2 ? `${lp[0]}.${lp[1]}` : null;
+          if (!pick || !line) continue;
+          if (!result[team]) result[team] = {};
+          if (!result[team][line]) result[team][line] = {};
+          result[team][line][pick] = v;
+        }
+        return result;
+      } catch { return {}; }
+    })();
     setPreOdds({
       dc: {
         HomeOrDraw: m.dcHomeOrDraw ?? null,
@@ -581,8 +606,8 @@ export default function MatchesPage() {
         Away: { true: m.wtnAwayYes ?? null, false: m.wtnAwayNo ?? null },
       },
       hcp: { Home: m.hcpHomeOdds ?? null, Draw: m.hcpDrawOdds ?? null, Away: m.hcpAwayOdds ?? null, line: m.hcpLine ?? null },
-      homeGoals: (() => { try { return m.homeGoalsOuOddsJson ? JSON.parse(m.homeGoalsOuOddsJson) : {}; } catch { return {}; } })(),
-      awayGoals: (() => { try { return m.awayGoalsOuOddsJson ? JSON.parse(m.awayGoalsOuOddsJson) : {}; } catch { return {}; } })(),
+      homeGoals: (() => { try { return m.homeGoalsOuOddsJson ? JSON.parse(m.homeGoalsOuOddsJson) : (ttgNorm.Home ?? {}); } catch { return ttgNorm.Home ?? {}; } })(),
+      awayGoals: (() => { try { return m.awayGoalsOuOddsJson ? JSON.parse(m.awayGoalsOuOddsJson) : (ttgNorm.Away ?? {}); } catch { return ttgNorm.Away ?? {}; } })(),
       ht: { Home: m.htHomeOdds ?? null, Draw: m.htDrawOdds ?? null, Away: m.htAwayOdds ?? null },
       cs: {
         Home: { true: m.csHomeYes ?? null, false: m.csHomeNo ?? null },
@@ -668,7 +693,7 @@ export default function MatchesPage() {
       shExact:   (() => { try { return m.secondHalfExactGoalsJson  ? JSON.parse(m.secondHalfExactGoalsJson)  : {}; } catch { return {}; } })(),
       homeExact: (() => { try { return m.homeTeamExactGoalsJson    ? JSON.parse(m.homeTeamExactGoalsJson)    : {}; } catch { return {}; } })(),
       awayExact: (() => { try { return m.awayTeamExactGoalsJson    ? JSON.parse(m.awayTeamExactGoalsJson)    : {}; } catch { return {}; } })(),
-      ttg:       (() => { try { return m.teamTotalGoalsOddsJson    ? JSON.parse(m.teamTotalGoalsOddsJson)    : {}; } catch { return {}; } })(),
+      ttg:       ttgNorm,
       fgsOdds:   (() => { try { return m.firstGoalScorerOddsJson   ? JSON.parse(m.firstGoalScorerOddsJson)   : {}; } catch { return {}; } })(),
       lgsOdds:   (() => { try { return m.lastGoalScorerOddsJson    ? JSON.parse(m.lastGoalScorerOddsJson)    : {}; } catch { return {}; } })(),
       pbOdds:    (() => { try { return m.playerBookedOddsJson      ? JSON.parse(m.playerBookedOddsJson)      : {}; } catch { return {}; } })(),
@@ -938,7 +963,7 @@ export default function MatchesPage() {
     wbh:       mHas(preOdds.wbh?.Home) || mHas(preOdds.wbh?.Away),
     lastScore: mHas(preOdds.lastScore),
     htft:      mHasKeys(preOdds.htft),
-    ttg:       mHasKeys(preOdds.ttg?.Home) || mHasKeys(preOdds.ttg?.Away),
+    ttg:       false, // market 86 data is shown via homeGoals/awayGoals fallback
   };
 
   // ── Render ────────────────────────────────────────────────────
