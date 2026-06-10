@@ -69,6 +69,10 @@ export const BET_TYPE = {
   MatchTackles:         'MatchTackles',
   PlayerAssist:         'PlayerAssist',
   PlayerScoreOrAssist:  'PlayerScoreOrAssist',
+  // ── Phase 9 (First Goal / Team Exact Goals) ──────────────────────────
+  FirstGoalMethod:      'FirstGoalMethod',
+  HomeTeamExactGoals:   'HomeTeamExactGoals',
+  AwayTeamExactGoals:   'AwayTeamExactGoals',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */

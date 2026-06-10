@@ -1707,12 +1707,27 @@ export default function MatchesPage() {
                               const ai = ORDER.indexOf(a[0]); const bi = ORDER.indexOf(b[0]);
                               return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
                             })
-                            .map(([k, o]) => (
-                              <button key={k} type="button" className="pick-list__row" disabled>
-                                <span className="pick-list__label">{k}</span>
-                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                              </button>
-                            ));
+                            .map(([k, o]) => {
+                              const slipKey = `${selectedMatch.id}:${BET_TYPE.FirstGoalMethod}:${k}:FGM`;
+                              const active  = ouPicks.has(slipKey);
+                              return (
+                                <button key={k} type="button"
+                                  className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
+                                  onClick={() => {
+                                    setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                    addToSlip({
+                                      betType: BET_TYPE.FirstGoalMethod, pick: k, selKey: 'FGM',
+                                      odds: o,
+                                      leg: { stringPick: k },
+                                      label: `Метод за първи гол — ${k}`,
+                                      chip: k.slice(0, 3),
+                                    });
+                                  }}>
+                                  <span className="pick-list__label">{k}</span>
+                                  <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
+                                </button>
+                              );
+                            });
                         })()}
                       </div>
                     )}
@@ -1774,12 +1789,27 @@ export default function MatchesPage() {
                       <div className="pick-list">
                         {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                          .map(([k, o]) => (
-                            <button key={k} type="button" className="pick-list__row" disabled>
-                              <span className="pick-list__label">{k}</span>
-                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                            </button>
-                          ))}
+                          .map(([k, o]) => {
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.HomeTeamExactGoals}:${k}:HTEG`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={k} type="button"
+                                className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.HomeTeamExactGoals, pick: k, selKey: 'HTEG',
+                                    odds: o,
+                                    leg: { stringPick: k },
+                                    label: `${selectedMatch.homeTeamName} — точно ${k} гола`,
+                                    chip: `Д${k}⚽`,
+                                  });
+                                }}>
+                                <span className="pick-list__label">{k}</span>
+                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
@@ -1796,12 +1826,27 @@ export default function MatchesPage() {
                       <div className="pick-list">
                         {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                          .map(([k, o]) => (
-                            <button key={k} type="button" className="pick-list__row" disabled>
-                              <span className="pick-list__label">{k}</span>
-                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                            </button>
-                          ))}
+                          .map(([k, o]) => {
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.AwayTeamExactGoals}:${k}:ATEG`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={k} type="button"
+                                className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.AwayTeamExactGoals, pick: k, selKey: 'ATEG',
+                                    odds: o,
+                                    leg: { stringPick: k },
+                                    label: `${selectedMatch.awayTeamName} — точно ${k} гола`,
+                                    chip: `Г${k}⚽`,
+                                  });
+                                }}>
+                                <span className="pick-list__label">{k}</span>
+                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
