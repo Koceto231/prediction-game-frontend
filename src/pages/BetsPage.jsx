@@ -160,6 +160,34 @@ function shortPickDesc(bet, leg) {
         chip:  pick === 'Home' ? '1 ✗' : '2 ✗',
         label: pick === 'Home' ? 'Домакин пропуска дузпа' : 'Гост пропуска дузпа',
       };
+    case 'Goalscorer': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '⚽', label: `${name} отбелязва` };
+    }
+    case 'FirstGoalScorer': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '🥇', label: `Първи голмайстор — ${name}` };
+    }
+    case 'LastGoalScorer': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '🏁', label: `Последен голмайстор — ${name}` };
+    }
+    case 'PlayerBooked': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '🟨', label: `Картон — ${name}` };
+    }
+    case 'FirstPlayerBooked': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '🟨', label: `Първи картон — ${name}` };
+    }
+    case 'PlayerAssist': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '🅰', label: `Асистенция — ${name}` };
+    }
+    case 'PlayerScoreOrAssist': {
+      const name = leg?.goalscorerName ?? bet?.goalscorerName ?? 'Играч';
+      return { chip: '⚽', label: `Гол или асистенция — ${name}` };
+    }
     default:
       break;
   }
@@ -463,10 +491,12 @@ function ActiveBetCard({ bet, onCashedOut }) {
   // Build the picks list — for single bets we synthesise a single-leg
   // entry so the same component renders both shapes the same way.
   const renderedLegs = isAccum ? legs : [{
-    description: formatPick(bet),
-    odds:        Number(bet.oddsAtBetTime),
-    homeTeam:    bet.homeTeam,
-    awayTeam:    bet.awayTeam,
+    betType:      bet.betType,
+    description:  bet.betDescription,
+    goalscorerName: bet.goalscorerName,
+    odds:         Number(bet.oddsAtBetTime),
+    homeTeam:     bet.homeTeam,
+    awayTeam:     bet.awayTeam,
     homeTeamLogo: bet.homeTeamLogo,
     awayTeamLogo: bet.awayTeamLogo,
   }];

@@ -375,8 +375,16 @@ export default function BetSlipPanel() {
         return `Точен резултат — ${p.pick}`;
       case 'HalfTimeCorrectScore':
         return `Резултат на полувремето — ${p.scoreHome}-${p.scoreAway}`;
+      case 'Goalscorer':
+      case 'FirstGoalScorer':
+      case 'LastGoalScorer':
+      case 'PlayerBooked':
+      case 'FirstPlayerBooked':
+      case 'PlayerAssist':
+      case 'PlayerScoreOrAssist':
+        return p.label || p.pick || p.betType;
       default:
-        return p.pick;
+        return p.label || p.pick;
     }
   };
   const pickChip = (p) => {

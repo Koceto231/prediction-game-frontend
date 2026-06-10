@@ -346,6 +346,20 @@ export default function MatchesPage() {
   const isExact    = mode === 'exact';
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
+  const isLiveMatch =
+    selectedMatch?.status === 'IN_PLAY' ||
+    isActive(selectedMatch?.liveState) ||
+    (selectedMatch?.status === 'TIMED' &&
+      selectedMatch?.matchDate &&
+      (Date.now() - new Date(selectedMatch.matchDate).getTime()) / 60000 > 5);
+
+  // Exact score is pre-match only — bounce back to markets if the fixture goes live.
+  useEffect(() => {
+    if (isLiveMatch && mode === 'exact') {
+      setMode('market');
+      setMarketCategory('main');
+    }
+  }, [isLiveMatch, mode]);
 
   // Pre-fetch players as soon as a match is selected so the scorer / assist /
   // score-or-assist sections show instantly when expanded.
@@ -1230,11 +1244,13 @@ export default function MatchesPage() {
               className={`gvmd-tab${marketCategory === 'main' && !isExact ? ' gvmd-tab--active' : ''}`}
               onClick={() => { setMode('market'); setMarketCategory('main'); setFields(EMPTY); }}
             >Главни</button>
+            {!isLiveMatch && (
             <button
               type="button"
               className={`gvmd-tab${isExact ? ' gvmd-tab--active' : ''}`}
               onClick={() => { setMode('exact'); }}
             >Точен резултат</button>
+            )}
             {[
               { key: 'goals',   label: 'Голове'      },
               { key: 'teams',   label: 'Отбори'      },
@@ -1254,8 +1270,8 @@ export default function MatchesPage() {
 
           <div className="prediction-form">
 
-            {/* ── Exact Score ── */}
-            {isExact && (
+            {/* ── Exact Score (pre-match only) ── */}
+            {isExact && !isLiveMatch && (
               <>
                 {/* The legacy "EXACT SCORE — 5 PTS" header + "Change type"
                     button are hidden because the top-level Gridiron Velocity

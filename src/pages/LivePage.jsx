@@ -1531,74 +1531,7 @@ export default function LivePage() {
 
           <div className="prediction-form">
 
-            {/* Exact Score */}
-            {isExact && (
-              <>
-                <div className="mode-card mode-card--exact">
-                  <div className="mode-card__top"><span className="mode-badge">EXACT SCORE — 5 PTS</span></div>
-                  <div className="mode-card__title">Predict the exact final score</div>
-                  <button type="button" className="mode-card__button" onClick={() => { setMode(''); setFields(EMPTY); }}>Change type</button>
-                </div>
-
-                {/* Quick-pick tile grid — matches stitch mockup upgraded_my_bets_overview_5 */}
-                <div className="exact-score-grid">
-                  {[
-                    ['1','0'],['2','0'],['2','1'],['3','0'],['3','1'],['3','2'],
-                    ['0','0'],['1','1'],['2','2'],['3','3'],['0','1'],['1','2'],
-                    ['0','2'],['0','3'],['1','3'],['2','3'],
-                  ].map(([h, a]) => {
-                    const selected = String(homeScore) === h && String(awayScore) === a;
-                    return (
-                      <button
-                        key={`${h}-${a}`}
-                        type="button"
-                        className={`exact-score-tile${selected ? ' exact-score-tile--selected' : ''}`}
-                        onClick={() => { setField('homeScore', h); setField('awayScore', a); }}
-                      >
-                        <span className="exact-score-tile__score">{h}-{a}</span>
-                        {selected && exactOdds && (
-                          <span className="exact-score-tile__odds">{Number(exactOdds.odds).toFixed(2)}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <details className="exact-score-custom">
-                  <summary>Custom score (not in the grid)</summary>
-                  <div className="scoreboard-card">
-                    <div className="scoreboard-card__head"><span className="scoreboard-card__eyebrow">Enter predicted result</span></div>
-                    <div className="scoreboard">
-                      <div className="scoreboard-team">
-                        <div className="scoreboard-team__name">{selectedMatch.homeTeamName}</div>
-                        <div className="scorebox"><input type="number" min="0" max="20" placeholder="0" value={homeScore} onChange={e => setField('homeScore', e.target.value)} /></div>
-                      </div>
-                      <div className="scoreboard__separator">:</div>
-                      <div className="scoreboard-team">
-                        <div className="scoreboard-team__name">{selectedMatch.awayTeamName}</div>
-                        <div className="scorebox"><input type="number" min="0" max="20" placeholder="0" value={awayScore} onChange={e => setField('awayScore', e.target.value)} /></div>
-                      </div>
-                    </div>
-                  </div>
-                </details>
-                {hasBetOdds && hasScore && (
-                  <div className="inline-bet-wrapper">
-                    {exactOddsLoading && <div className="muted-text" style={{ textAlign: 'center' }}>Calculating odds...</div>}
-                    {exactOdds && !exactOddsLoading && (
-                      <>
-                        <div className="mp-odds-row">
-                          <span>Odds for {homeScore}–{awayScore}</span>
-                          <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>{Number(exactOdds.odds).toFixed(2)}</strong>
-                        </div>
-                        <BetSlipStake amount={amount} setAmount={setAmount} potential={exactPotential} onPlace={placeBet} loading={loading} disabled={!hasScore} />
-                      </>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Market Pick */}
+            {/* Market Pick — exact score is pre-match only (see MatchesPage) */}
             {isMarket && (
               <>
                 <div className="market-tabs">
