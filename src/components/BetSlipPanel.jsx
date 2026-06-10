@@ -1,6 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import api, { newIdempotencyKey } from '../api/apiClient';
 import { useWallet } from '../context/WalletContext';
+import LiveBetStatusPanel from './LiveBetStatusPanel';
+import useBetStatusHub from '../hooks/useBetStatusHub';
 
 /**
  * Global floating Bet Slip — collects picks from any match and places one
@@ -38,6 +40,38 @@ export default function BetSlipPanel() {
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState('');
   const [success,        setSuccess]        = useState('');
+
+  // ── Live bet queue panels ───────────────────────────────────────────────
+  // Each entry: { id, expiresAt, odds, fixture, _handlers }
+  const [queuedBets, setQueuedBets] = useState([]);
+  const panelRefs = useRef({}); // betId → ref to LiveBetStatusPanel handlers
+
+  const dismissQueued = useCallback((betId) => {
+    setQueuedBets(prev => prev.filter(b => b.id !== betId));
+    delete panelRefs.current[betId];
+  }, []);
+
+  const { ensureWatching } = useBetStatusHub({
+    onAccepted: useCallback((payload) => {
+      const betId = payload?.betId ?? payload?.BetId;
+      panelRefs.current[betId]?.handleAccepted();
+      refreshBalance();
+    }, [refreshBalance]),
+    onRejected: useCallback((payload) => {
+      const betId = payload?.betId ?? payload?.BetId;
+      panelRefs.current[betId]?.handleRejected({
+        reason:            payload?.reason           ?? payload?.Reason           ?? '',
+        offeredOdds:       payload?.offeredOdds      ?? payload?.OfferedOdds      ?? null,
+        offeredOddsExpiry: payload?.offeredOddsExpiry ?? payload?.OfferedOddsExpiry ?? null,
+      });
+      refreshBalance(); // refund credited
+    }, [refreshBalance]),
+    onCancelled: useCallback((payload) => {
+      const betId = payload?.betId ?? payload?.BetId;
+      panelRefs.current[betId]?.handleCancelled();
+      refreshBalance();
+    }, [refreshBalance]),
+  });
 
   // ── Hydrate ────────────────────────────────────────────────────────
   // Read the new multi-column shape if present; otherwise migrate the
@@ -246,9 +280,9 @@ export default function BetSlipPanel() {
 
     setLoading(true); setError(''); setSuccess('');
     try {
-      const placements = columnSummaries
-        .filter(s => !s.isEmpty && s.stakeNum > 0)
-        .map(async (s) => {
+      const toPlace = columnSummaries.filter(s => !s.isEmpty && s.stakeNum > 0);
+      const results = await Promise.all(
+        toPlace.map(async (s) => {
           if (s.isAccum) {
             const dto = {
               matchId: s.picks[0].matchId,
@@ -265,18 +299,54 @@ export default function BetSlipPanel() {
             { matchId: p.matchId, ...toLegPayload(p), amount: s.stakeNum },
             { headers: { 'X-Idempotency-Key': newIdempotencyKey() } },
           );
-        });
-      await Promise.all(placements);
-      await refreshBalance();
-      setSuccess(
-        placeableCount === 1
-          ? 'Залогът е приет!'
-          : `${placeableCount} колонки приети!`,
+        }),
       );
+
+      await refreshBalance();
+
+      // ── Detect live-queued bets — show countdown panels instead of clearing
+      const newQueued = [];
+      results.forEach((res, i) => {
+        const data   = res?.data;
+        const status = data?.status ?? data?.Status;
+        if (status === 'Queued') {
+          const col = toPlace[i];
+          newQueued.push({
+            id:        data.id       ?? data.Id,
+            expiresAt: data.expiresAt ?? data.ExpiresAt,
+            odds:      data.oddsAtBetTime ?? data.OddsAtBetTime ?? col.combined,
+            fixture:   col.picks[0]?.fixture ?? `Мач #${data.matchId ?? data.MatchId}`,
+          });
+        }
+      });
+
+      const immediateCount = results.length - newQueued.length;
+
+      if (newQueued.length > 0) {
+        // Open slip so panels are visible and activate polling fallback
+        setOpen(true);
+        setQueuedBets(prev => [...prev, ...newQueued]);
+        newQueued.forEach(b => ensureWatching(b.id));
+      }
+
+      if (immediateCount > 0) {
+        setSuccess(
+          immediateCount === 1
+            ? newQueued.length > 0 ? 'Залогът е приет! Живият залог се обработва…' : 'Залогът е приет!'
+            : `${immediateCount} залога приети!`,
+        );
+      }
+
+      // Clear the slip of non-live columns (live picks stay visible via panels)
       const fresh = newColumn();
       setColumns([fresh]);
       setActiveColumnId(fresh.id);
-      setTimeout(() => { setSuccess(''); setOpen(false); }, 1600);
+
+      if (immediateCount > 0 && newQueued.length === 0) {
+        setTimeout(() => { setSuccess(''); setOpen(false); }, 1600);
+      } else if (immediateCount > 0) {
+        setTimeout(() => setSuccess(''), 3000);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Грешка при залагане.');
     } finally {
@@ -526,6 +596,19 @@ export default function BetSlipPanel() {
           </>
         )}
       </div>
+
+      {/* ── Live bet status panels ── shown while bets are in the 15s queue */}
+      {queuedBets.map(bet => (
+        <LiveBetStatusPanel
+          key={bet.id}
+          bet={bet}
+          onDismiss={dismissQueued}
+          ref={el => {
+            if (el) panelRefs.current[bet.id] = el;
+            else    delete panelRefs.current[bet.id];
+          }}
+        />
+      ))}
 
       {/* Always-visible bottom pill — toggles the panel above */}
       <div
