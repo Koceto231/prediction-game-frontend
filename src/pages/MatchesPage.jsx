@@ -1590,7 +1590,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.htrb ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.htrb && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {[
                           { k: 'HomeYes', lbl: `${selectedMatch.homeTeamName} / Да` },
                           { k: 'HomeNo',  lbl: `${selectedMatch.homeTeamName} / Не` },
@@ -1604,7 +1604,7 @@ export default function MatchesPage() {
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={k} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -1615,8 +1615,8 @@ export default function MatchesPage() {
                                   chip: `${k.startsWith('Home') ? '1' : k.startsWith('Draw') ? 'X' : '2'}/${k.endsWith('Yes') ? 'Y' : 'N'}`,
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{lbl}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
@@ -1633,7 +1633,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.bhh ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.bhh && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {[
                           { k: 'YesYes', lbl: 'Да / Да' },
                           { k: 'YesNo',  lbl: 'Да / Не' },
@@ -1645,7 +1645,7 @@ export default function MatchesPage() {
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={k} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -1656,8 +1656,8 @@ export default function MatchesPage() {
                                   chip: lbl.replace(/\s/g, ''),
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{lbl}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
@@ -1819,13 +1819,13 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.htExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.htExact && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {Object.entries(preOdds.htExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
-                            <button key={k} type="button" className="exact-score-tile" disabled>
-                              <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            <button key={k} type="button" className="pick-list__row" disabled>
+                              <span className="pick-list__label">{k} {k === '1' ? 'гол' : 'гола'}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           ))}
                       </div>
@@ -1841,13 +1841,13 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.shExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.shExact && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {Object.entries(preOdds.shExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
-                            <button key={k} type="button" className="exact-score-tile" disabled>
-                              <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            <button key={k} type="button" className="pick-list__row" disabled>
+                              <span className="pick-list__label">{k} {k === '1' ? 'гол' : 'гола'}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           ))}
                       </div>
