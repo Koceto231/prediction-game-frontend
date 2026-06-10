@@ -2926,7 +2926,7 @@ export default function MatchesPage() {
                                     odds: o,
                                     leg: { pick: side, lineValue: preOdds.ah1h.line },
                                     label: `${lbl} ${sign}${lineStr} (AH 1H)`,
-                                    chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr} 1H`,
+                                    chip: `${side === 'Home' ? '1' : '2'} · ${sign}${lineStr} · 1H`,
                                   });
                                 }}>
                                 <div className="market-option__label">{lbl} {sign}{lineStr}</div>
@@ -2973,7 +2973,7 @@ export default function MatchesPage() {
                                       odds,
                                       leg: { pick: side, lineValue: storedLine },
                                       label: `${lbl} ${sign}${lineStr} (AH 1H)`,
-                                      chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr} 1H`,
+                                      chip: `${side === 'Home' ? '1' : '2'} · ${sign}${lineStr} · 1H`,
                                     });
                                   }}>
                                   <span className="pick-list__label">{lbl} {sign}{lineStr}</span>

@@ -729,17 +729,25 @@ function modeLabel(n) {
  * Mirrors PlaceBetDTO / AccumulatorLegDTO.
  */
 function toLegPayload(p) {
-  // Generic markets ship a fully-formed leg payload from the caller.
-  if (p.leg) return { betType: p.betType, ...p.leg };
   const base = { betType: p.betType || 'Winner' };
   switch (base.betType) {
+    case 'AsianHandicap':
+    case 'AsianHandicap1H':
+      return {
+        betType: base.betType,
+        pick: p.leg?.pick ?? p.pick,
+        lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
+      };
     case 'Winner':       return { ...base, pick: p.pick };
     case 'DoubleChance': return { ...base, dCPick: p.pick };
     case 'BTTS':         return { ...base, bTTSPick: p.pick === 'Yes' };
     case 'OverUnder':    return { ...base, oULine: p.line, oUPick: p.pick };
     case 'ExactScore':           return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
     case 'HalfTimeCorrectScore': return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
-    default:                     return { ...base, pick: p.pick };
+    default:
+      // Generic markets ship a fully-formed leg payload from the caller.
+      if (p.leg) return { betType: p.betType, ...p.leg };
+      return { ...base, pick: p.pick };
   }
 }
 
