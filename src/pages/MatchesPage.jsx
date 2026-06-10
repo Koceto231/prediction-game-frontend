@@ -2109,12 +2109,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.tgsSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.tgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
-                          <div key={name} className="gs-row">
-                            <span className="gs-row__name">{name}</span>
-                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
-                          </div>
-                        ))}
+                        {Object.entries(preOdds.tgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
                       </div>
                     )}
                   </div>
@@ -2129,12 +2124,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.assistSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.assistOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => (
-                          <div key={name} className="gs-row">
-                            <span className="gs-row__name">{name}</span>
-                            <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
-                          </div>
-                        ))}
+                        {Object.entries(preOdds.assistOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
                       </div>
                     )}
                   </div>
