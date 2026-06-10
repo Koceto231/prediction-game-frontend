@@ -1959,52 +1959,6 @@ export default function MatchesPage() {
                   </div>
                   )}
 
-                  {/* Team Total Goals O/U (market 86) */}
-                  {mv.ttg && (
-                  <div data-cat="goals" className={`market-section ${collapsed.ttg ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('ttg')}>
-                      <span className="market-section__name">⚽ Голове на отбор (над/под)</span>
-                      <span className="market-section__toggle">{collapsed.ttg ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.ttg && (
-                      <div>
-                        {[['Home', selectedMatch.homeTeamName, 'TTH'], ['Away', selectedMatch.awayTeamName, 'TTA']].map(([team, name, prefix]) =>
-                          preOdds.ttg?.[team] && Object.keys(preOdds.ttg[team]).length > 0 ? (
-                          <div key={team}>
-                            <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{name}</span><span>OVER</span><span>UNDER</span></div>
-                            <div className="ou-table">
-                              {Object.keys(preOdds.ttg[team]).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.ttg[team][l]?.Over != null || preOdds.ttg[team][l]?.Under != null).map(l => (
-                                <div key={l} className="ou-table__row">
-                                  <span className="ou-table__line">{l}</span>
-                                  {['Over', 'Under'].filter(pick => preOdds.ttg[team][l]?.[pick] != null).map(pick => {
-                                    const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:${team}:${prefix}-${l}-${pick}`;
-                                    return (
-                                    <button key={pick} type="button"
-                                      className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                      onClick={() => {
-                                        setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                        addToSlip({
-                                          betType: BET_TYPE.TeamGoals, pick: team, selKey: `${prefix}-${l}-${pick}`,
-                                          odds: preOdds.ttg[team][l][pick],
-                                          leg: { pick: team, lineValue: Number(l), oUPick: pick },
-                                          label: `${name} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                          chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
-                                        });
-                                      }}>
-                                      {Number(preOdds.ttg[team][l][pick]).toFixed(2)}
-                                    </button>
-                                    );
-                                  })}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          ) : null
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  )}
 
                   {/* First Goal Scorer (market 251) */}
                   {Object.keys(preOdds.fgsOdds ?? {}).length > 0 && (
@@ -2369,81 +2323,87 @@ export default function MatchesPage() {
                   </div>
                   )}
 
-                  {/* Home Team Goals O/U */}
-                  {mv.homeGoals && (
+                  {/* Team Goals O/U — combined (markets 20, 21, 86) */}
+                  {(mv.homeGoals || mv.awayGoals || Object.keys(preOdds.ttg?.Home ?? {}).length > 0 || Object.keys(preOdds.ttg?.Away ?? {}).length > 0) && (
                   <div data-cat="goals" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
-                      <span className="market-section__name">△ Голове на {selectedMatch.homeTeamName}</span>
-                      {hGoalsLine && hGoalsOU && <span className="market-section__badge">{hGoalsOU} {hGoalsLine}</span>}
+                      <span className="market-section__name">⚽ Голове на отбор</span>
                       <span className="market-section__toggle">{collapsed.homeGoals ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.homeGoals && (
-                      <div className="ou-table">
-                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {Object.keys(preOdds.homeGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.homeGoals?.[l]?.Over != null || preOdds.homeGoals?.[l]?.Under != null).map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].filter(pick => preOdds.homeGoals?.[l]?.[pick] != null).map(pick => {
-                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
-                              return (
-                              <button key={pick} type="button"
-                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                onClick={() => {
-                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                  addToSlip({
-                                    betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
-                                    odds: preOdds.homeGoals[l][pick],
-                                    leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
-                                    label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
-                                  });
-                                }}>
-                                {Number(preOdds.homeGoals[l][pick]).toFixed(2)}
-                              </button>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  )}
-
-                  {/* Away Team Goals O/U */}
-                  {mv.awayGoals && (
-                  <div data-cat="goals" className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
-                      <span className="market-section__name">▽ Голове на {selectedMatch.awayTeamName}</span>
-                      {aGoalsLine && aGoalsOU && <span className="market-section__badge">{aGoalsOU} {aGoalsLine}</span>}
-                      <span className="market-section__toggle">{collapsed.awayGoals ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.awayGoals && (
-                      <div className="ou-table">
-                        <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
-                        {Object.keys(preOdds.awayGoals ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.awayGoals?.[l]?.Over != null || preOdds.awayGoals?.[l]?.Under != null).map(l => (
-                          <div key={l} className="ou-table__row">
-                            <span className="ou-table__line">{l}</span>
-                            {['Over', 'Under'].filter(pick => preOdds.awayGoals?.[l]?.[pick] != null).map(pick => {
-                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
-                              return (
-                              <button key={pick} type="button"
-                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                onClick={() => {
-                                  setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                  addToSlip({
-                                    betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
-                                    odds: preOdds.awayGoals[l][pick],
-                                    leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
-                                    label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
-                                  });
-                                }}>
-                                {Number(preOdds.awayGoals[l][pick]).toFixed(2)}
-                              </button>
-                              );
-                            })}
-                          </div>
-                        ))}
+                      <div>
+                        {(() => {
+                          const combined = { ...(preOdds.ttg?.Home ?? {}), ...(preOdds.homeGoals ?? {}) };
+                          const lines = Object.keys(combined).filter(l => combined[l]?.Over != null || combined[l]?.Under != null).sort((a, b) => parseFloat(a) - parseFloat(b));
+                          if (lines.length === 0) return null;
+                          return (
+                            <div>
+                              <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{selectedMatch.homeTeamName}</span><span>OVER</span><span>UNDER</span></div>
+                              <div className="ou-table">
+                                {lines.map(l => (
+                                  <div key={l} className="ou-table__row">
+                                    <span className="ou-table__line">{l}</span>
+                                    {['Over', 'Under'].filter(pick => combined[l]?.[pick] != null).map(pick => {
+                                      const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
+                                      return (
+                                        <button key={pick} type="button"
+                                          className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                          onClick={() => {
+                                            setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                            addToSlip({
+                                              betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
+                                              odds: combined[l][pick],
+                                              leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
+                                              label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                              chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                            });
+                                          }}>
+                                          {Number(combined[l][pick]).toFixed(2)}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        {(() => {
+                          const combined = { ...(preOdds.ttg?.Away ?? {}), ...(preOdds.awayGoals ?? {}) };
+                          const lines = Object.keys(combined).filter(l => combined[l]?.Over != null || combined[l]?.Under != null).sort((a, b) => parseFloat(a) - parseFloat(b));
+                          if (lines.length === 0) return null;
+                          return (
+                            <div>
+                              <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{selectedMatch.awayTeamName}</span><span>OVER</span><span>UNDER</span></div>
+                              <div className="ou-table">
+                                {lines.map(l => (
+                                  <div key={l} className="ou-table__row">
+                                    <span className="ou-table__line">{l}</span>
+                                    {['Over', 'Under'].filter(pick => combined[l]?.[pick] != null).map(pick => {
+                                      const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
+                                      return (
+                                        <button key={pick} type="button"
+                                          className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                          onClick={() => {
+                                            setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                            addToSlip({
+                                              betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
+                                              odds: combined[l][pick],
+                                              leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
+                                              label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                              chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                            });
+                                          }}>
+                                          {Number(combined[l][pick]).toFixed(2)}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
