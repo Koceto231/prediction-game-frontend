@@ -938,6 +938,7 @@ export default function MatchesPage() {
     wbh:       mHas(preOdds.wbh?.Home) || mHas(preOdds.wbh?.Away),
     lastScore: mHas(preOdds.lastScore),
     htft:      mHasKeys(preOdds.htft),
+    ttg:       mHasKeys(preOdds.ttg?.Home) || mHasKeys(preOdds.ttg?.Away),
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -1764,21 +1765,48 @@ export default function MatchesPage() {
                   </div>
                   )}
 
-                  {/* Team Total Goals (market 86) */}
-                  {Object.keys(preOdds.ttg ?? {}).length > 0 && (
+                  {/* Team Total Goals O/U (market 86) */}
+                  {mv.ttg && (
                   <div data-cat="goals" className={`market-section ${collapsed.ttg ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('ttg')}>
                       <span className="market-section__name">⚽ Голове на отбор (над/под)</span>
                       <span className="market-section__toggle">{collapsed.ttg ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.ttg && (
-                      <div className="exact-score-grid">
-                        {Object.entries(preOdds.ttg).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                      <div>
+                        {[['Home', selectedMatch.homeTeamName, 'TTH'], ['Away', selectedMatch.awayTeamName, 'TTA']].map(([team, name, prefix]) =>
+                          preOdds.ttg?.[team] && Object.keys(preOdds.ttg[team]).length > 0 ? (
+                          <div key={team}>
+                            <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{name}</span><span>OVER</span><span>UNDER</span></div>
+                            <div className="ou-table">
+                              {Object.keys(preOdds.ttg[team]).sort((a,b) => parseFloat(a)-parseFloat(b)).filter(l => preOdds.ttg[team][l]?.Over != null || preOdds.ttg[team][l]?.Under != null).map(l => (
+                                <div key={l} className="ou-table__row">
+                                  <span className="ou-table__line">{l}</span>
+                                  {['Over', 'Under'].filter(pick => preOdds.ttg[team][l]?.[pick] != null).map(pick => {
+                                    const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:${team}:${prefix}-${l}-${pick}`;
+                                    return (
+                                    <button key={pick} type="button"
+                                      className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                      onClick={() => {
+                                        setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                        addToSlip({
+                                          betType: BET_TYPE.TeamGoals, pick: team, selKey: `${prefix}-${l}-${pick}`,
+                                          odds: preOdds.ttg[team][l][pick],
+                                          leg: { pick: team, lineValue: Number(l), oUPick: pick },
+                                          label: `${name} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                          chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                        });
+                                      }}>
+                                      {Number(preOdds.ttg[team][l][pick]).toFixed(2)}
+                                    </button>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          ) : null
+                        )}
                       </div>
                     )}
                   </div>
