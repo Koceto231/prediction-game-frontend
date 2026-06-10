@@ -1,31 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import useLiveMatchStream from '../hooks/useLiveMatchStream';
 import { isActive, isFinal } from '../utils/liveState';
 
 /**
- * Right-rail "Live Now" sidebar for the MatchesPage — stitch
- * "Gridiron Velocity" Matches design.
+ * Right-rail "Live Now" sidebar for the MatchesPage.
  *
- * Shows the FIRST currently-live match (if any) with:
- *   • Fixture + score + minute header
+ * Shows the most-advanced currently-live match (if any) with:
+ *   • Fixture + score + ticking-minute header
  *   • Possession bar
  *   • Match Events timeline (goals + cards, newest first, max 4)
  *   • Match Statistics (Corners / Shots on Target / Cards)
+ *   • Connection mode badge (SSE / polling)
  *
  * Falls back to an empty-state pill when nothing is live right now.
  */
 export default function LiveNowSidebar() {
-  const { matches: rawLive } = useLiveMatchStream();
-  // First active (in-play) match — pick the freshest live game
+  const { matches: rawLive, connected, mode } = useLiveMatchStream();
+
+  // Pick the match furthest into play (highest liveMinute) so the most
+  // exciting game is shown, not just whichever arrives first in the array.
   const live = (() => {
+    const now = Date.now();
     const list = (rawLive ?? []).filter(m => {
       if (isFinal(m.liveState)) return false;
-      const elapsed = (Date.now() - new Date(m.matchDate).getTime()) / 60000;
+      const elapsed = (now - new Date(m.matchDate).getTime()) / 60000;
       if (elapsed > 150) return false;
-      return m.status === 'IN_PLAY' || isActive(m.liveState);
+      // Match LivePage filter: IN_PLAY, active liveState, or TIMED-but-kicked-off
+      return (
+        m.status === 'IN_PLAY' ||
+        isActive(m.liveState) ||
+        (m.status === 'TIMED' && elapsed > 5)
+      );
     });
+    // Sort by liveMinute descending — show furthest-advanced match first
+    list.sort((a, b) => (b.liveMinute ?? 0) - (a.liveMinute ?? 0));
     return list[0] ?? null;
   })();
+
+  // Ticking clock: increment every 60 s from the server-supplied minute so
+  // the display feels live even between 5-second sync cycles.
+  const [tickMinute, setTickMinute] = useState(live?.liveMinute ?? null);
+  const tickRef = useRef(null);
+  useEffect(() => {
+    setTickMinute(live?.liveMinute ?? null);
+    if (tickRef.current) clearInterval(tickRef.current);
+    if (live?.liveMinute != null &&
+        live.liveState !== 'HT' && live.liveState !== 'BREAK') {
+      tickRef.current = setInterval(
+        () => setTickMinute(m => (m != null ? m + 1 : m)),
+        60_000,
+      );
+    }
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, [live?.id, live?.liveMinute, live?.liveState]);
 
   const stats = live?.liveStats;
   const goals = live?.goalScorers ?? [];
@@ -40,7 +68,7 @@ export default function LiveNowSidebar() {
     if (!live) return '';
     if (live.liveState === 'HT' || live.liveState === 'BREAK') return 'HT';
     if (live.liveState === 'FT') return 'FT';
-    if (live.liveMinute != null) return `${live.liveMinute}'`;
+    if (tickMinute != null) return `${tickMinute}'`;
     return 'LIVE';
   })();
 
@@ -54,11 +82,13 @@ export default function LiveNowSidebar() {
     <aside className="gvm-livenow">
       <div className="gvm-livenow__head">
         <span className="gvm-livenow__title">
-          <span className="gvm-livenow__pulse" />
+          <span className={`gvm-livenow__pulse${connected ? '' : ' gvm-livenow__pulse--offline'}`} />
           LIVE NOW
+          {!connected && (
+            <span className="gvm-livenow__mode" title={`Data via ${mode}`}> ·  {mode}</span>
+          )}
         </span>
-        {/* VIEW ALL → /live */}
-        <a className="gvm-livenow__viewall" href="/live">VIEW ALL</a>
+        <Link className="gvm-livenow__viewall" to="/live">VIEW ALL</Link>
       </div>
 
       {!live && (

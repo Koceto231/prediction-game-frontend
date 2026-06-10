@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api, { newIdempotencyKey } from '../api/apiClient';
+import { isActive } from '../utils/liveState';
 import MatchCard from '../components/MatchCard';
 import LiveNowSidebar from '../components/LiveNowSidebar';
 import QuickStakeModal from '../components/QuickStakeModal';
@@ -141,11 +142,13 @@ export default function MatchesPage() {
    */
   const addToSlip = useCallback((detail) => {
     if (!selectedMatch || detail?.odds == null) return;
+    const leagueLabel =
+      LEAGUE_LIST.find(l => l.code === selectedMatch.leagueCode)?.label ?? null;
     window.dispatchEvent(new CustomEvent('bpfl:slip:add', {
       detail: {
         matchId:     selectedMatch.id,
         fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-        leagueLabel: selectedMatch.leagueName ?? null,
+        leagueLabel,
         ...detail,
         odds: Number(detail.odds),
       },
@@ -234,11 +237,18 @@ export default function MatchesPage() {
     return () => clearTimeout(t);
   }, [selectedMatch?.id]);
 
-  // Live odds refresh — when an IN_PLAY match is open, poll GET /Match/{id}
+  // Live odds refresh — when a live or active-state match is open, poll GET /Match/{id}
   // every 30 seconds so preOdds stays in sync with the backend's 30s odds cycle.
+  // Guard covers IN_PLAY, TIMED-within-active-window (e.g. BGL slow status flip),
+  // and any liveState the isActive util knows about.
   // The endpoint reads directly from DB (no output cache) so odds are always fresh.
   useEffect(() => {
-    if (!selectedMatch || selectedMatch.status !== 'IN_PLAY') return;
+    const isLiveMatch =
+      selectedMatch?.status === 'IN_PLAY' ||
+      isActive(selectedMatch?.liveState) ||
+      (selectedMatch?.status === 'TIMED' &&
+        (Date.now() - new Date(selectedMatch.matchDate).getTime()) / 60000 > 5);
+    if (!selectedMatch || !isLiveMatch) return;
     const id = selectedMatch.id;
     const tick = () => {
       api.get(`/Match/${id}`)
@@ -251,7 +261,7 @@ export default function MatchesPage() {
     };
     const timer = setInterval(tick, 30_000);
     return () => clearInterval(timer);
-  }, [selectedMatch?.id, selectedMatch?.status]);
+  }, [selectedMatch?.id, selectedMatch?.status, selectedMatch?.liveState]);
 
   // Load AI analysis when a match is selected — uses cache
   useEffect(() => {
@@ -776,7 +786,10 @@ export default function MatchesPage() {
       [BET_TYPE.MatchOffsides]:      parseMatchStatJson(m.matchOffsidesOddsJson),
       [BET_TYPE.MatchTackles]:       parseMatchStatJson(m.matchTacklesOddsJson),
     });
-  }, [selectedMatch?.id]);
+  // Depend on the full object, not just id, so live 30s polls that update odds
+  // fields (homeOdds, bttsYes, goalsOuOddsJson, …) trigger a rebuild of preOdds.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMatch]);
 
   // All selected odds (for combined slip)
   // Only include a market's odds if that market is actually chosen AND the odds value
@@ -1194,7 +1207,7 @@ export default function MatchesPage() {
                             scoreAway:   a,
                             odds:        Number(r.odds),
                             fixture:     `${selectedMatch.homeTeamName} vs ${selectedMatch.awayTeamName}`,
-                            leagueLabel: selectedMatch.leagueName ?? null,
+                            leagueLabel: LEAGUE_LIST.find(l => l.code === selectedMatch.leagueCode)?.label ?? null,
                           },
                         }));
                       }
@@ -1760,6 +1773,8 @@ export default function MatchesPage() {
                       <div className="pick-list">
                         {(() => {
                           const ORDER = ['Header', 'Free Kick', 'Penalty', 'Own Goal', 'No Goal'];
+                          // Header & Free Kick cannot be settled from Sportmonks event data
+                          const UNSETTLEABLE = new Set(['Header', 'Free Kick']);
                           return Object.entries(preOdds.fgm)
                             .filter(([_, o]) => o != null)
                             .sort((a, b) => {
@@ -1767,12 +1782,15 @@ export default function MatchesPage() {
                               return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
                             })
                             .map(([k, o]) => {
+                              const unavailable = UNSETTLEABLE.has(k);
                               const slipKey = `${selectedMatch.id}:${BET_TYPE.FirstGoalMethod}:${k}:FGM`;
                               const active  = ouPicks.has(slipKey);
                               return (
                                 <button key={k} type="button"
                                   className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
-                                  onClick={() => {
+                                  disabled={unavailable}
+                                  title={unavailable ? 'Неналичен — данните не позволяват определяне на метода' : undefined}
+                                  onClick={unavailable ? undefined : () => {
                                     setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                     addToSlip({
                                       betType: BET_TYPE.FirstGoalMethod, pick: k, selKey: 'FGM',
