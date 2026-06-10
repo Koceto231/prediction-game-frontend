@@ -3038,17 +3038,7 @@ export default function MatchesPage() {
                     </div>
                   )}
 
-
-                  {/* ── WC Knockout markets ── */}
-                  {(() => {
-                    const hasKnockout =
-                      preOdds.extraTime?.true != null || preOdds.extraTime?.false != null ||
-                      preOdds.penalties?.true != null || preOdds.penalties?.false != null ||
-                      preOdds.methodVic?.Regulation != null ||
-                      preOdds.qualify?.Home != null || preOdds.qualify?.Away != null ||
-                      preOdds.scorePen?.Home != null || preOdds.scorePen?.Away != null ||
-                      preOdds.missPen?.Home != null  || preOdds.missPen?.Away != null;
-                    if (!hasKnockout) return null;
+                  {false && (() => {
                     return (
                       <>
                         {/* Going to Extra Time */}
