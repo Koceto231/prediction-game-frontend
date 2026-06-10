@@ -234,6 +234,25 @@ export default function MatchesPage() {
     return () => clearTimeout(t);
   }, [selectedMatch?.id]);
 
+  // Live odds refresh — when an IN_PLAY match is open, poll GET /Match/{id}
+  // every 30 seconds so preOdds stays in sync with the backend's 30s odds cycle.
+  // The endpoint reads directly from DB (no output cache) so odds are always fresh.
+  useEffect(() => {
+    if (!selectedMatch || selectedMatch.status !== 'IN_PLAY') return;
+    const id = selectedMatch.id;
+    const tick = () => {
+      api.get(`/Match/${id}`)
+        .then(r => {
+          if (r.data && r.data.id === id) {
+            setSelectedMatch(prev => (prev?.id === id ? { ...prev, ...r.data } : prev));
+          }
+        })
+        .catch(() => { /* ignore transient errors — stale odds are better than a crash */ });
+    };
+    const timer = setInterval(tick, 30_000);
+    return () => clearInterval(timer);
+  }, [selectedMatch?.id, selectedMatch?.status]);
+
   // Load AI analysis when a match is selected — uses cache
   useEffect(() => {
     if (!selectedMatch) return;

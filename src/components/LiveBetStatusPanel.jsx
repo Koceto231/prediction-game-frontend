@@ -110,7 +110,7 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
   const handleCancel = async () => {
     setActionLoading(true); setActionError('');
     try {
-      await api.post(`/Bet/${id}/cancel`);
+      await api.delete(`/Bet/${id}`);
       handleCancelled();
     } catch (e) {
       setActionError(e?.response?.data?.message || 'Грешка при отказ.');
