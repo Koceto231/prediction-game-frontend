@@ -2060,7 +2060,7 @@ export default function MatchesPage() {
                                       odds: teamGoalsHomeOu[l][pick],
                                       leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
                                       label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                      chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                      chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                     });
                                   }}>
                                   {Number(teamGoalsHomeOu[l][pick]).toFixed(2)}
@@ -2102,7 +2102,7 @@ export default function MatchesPage() {
                                       odds: teamGoalsAwayOu[l][pick],
                                       leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
                                       label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                      chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                      chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                     });
                                   }}>
                                   {Number(teamGoalsAwayOu[l][pick]).toFixed(2)}

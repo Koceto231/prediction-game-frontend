@@ -1748,7 +1748,7 @@ export default function LivePage() {
                                     odds: cornersPreOdds[l]?.[pick],
                                     leg: { lineValue: Number(l), oUPick: pick },
                                     label: `Корнери ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {cornersPreOdds[l]?.[pick] != null ? Number(cornersPreOdds[l][pick]).toFixed(2) : '—'}
@@ -1793,7 +1793,7 @@ export default function LivePage() {
                                     odds: yellowsPreOdds[l]?.[pick],
                                     leg: { lineValue: Number(l), oUPick: pick },
                                     label: `Жълти картони ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {yellowsPreOdds[l]?.[pick] != null ? Number(yellowsPreOdds[l][pick]).toFixed(2) : '—'}
@@ -1919,7 +1919,7 @@ export default function LivePage() {
                                     odds: preOdds.homeGoals[l][pick],
                                     leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
                                     label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {Number(preOdds.homeGoals[l][pick]).toFixed(2)}
@@ -1967,7 +1967,7 @@ export default function LivePage() {
                                     odds: preOdds.awayGoals[l][pick],
                                     leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
                                     label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {Number(preOdds.awayGoals[l][pick]).toFixed(2)}
@@ -2157,7 +2157,7 @@ export default function LivePage() {
                                     odds: preOdds.htGoals?.[l]?.[pick],
                                     leg: { oULine: lineToKey(l), oUPick: pick },
                                     label: `Голове 1-во полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {preOdds.htGoals?.[l]?.[pick] != null ? Number(preOdds.htGoals[l][pick]).toFixed(2) : '—'}
@@ -2203,7 +2203,7 @@ export default function LivePage() {
                                     odds: preOdds.shGoals?.[l]?.[pick],
                                     leg: { oULine: lineToKey(l), oUPick: pick },
                                     label: `Голове 2-ро полувреме ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                    chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    chip: `${pick === 'Over' ? 'O' : 'U'} · ${l}`,
                                   });
                                 }}>
                                 {preOdds.shGoals?.[l]?.[pick] != null ? Number(preOdds.shGoals[l][pick]).toFixed(2) : '—'}

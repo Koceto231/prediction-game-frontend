@@ -730,6 +730,7 @@ function modeLabel(n) {
  */
 function toLegPayload(p) {
   const base = { betType: p.betType || 'Winner' };
+  const ouDir = p.leg?.oUPick ?? p.leg?.ouPick ?? (base.betType === 'OverUnder' ? p.pick : null);
   switch (base.betType) {
     case 'AsianHandicap':
     case 'AsianHandicap1H':
@@ -737,6 +738,22 @@ function toLegPayload(p) {
         betType: base.betType,
         pick: p.leg?.pick ?? p.pick,
         lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
+      };
+    case 'TeamGoals':
+    case 'Corners':
+    case 'YellowCards':
+      return {
+        betType: base.betType,
+        pick: p.leg?.pick ?? p.pick ?? null,
+        lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
+        oUPick: ouDir,
+      };
+    case 'HalfTimeGoals':
+    case 'SecondHalfGoals':
+      return {
+        betType: base.betType,
+        oULine: p.leg?.oULine ?? p.leg?.ouLine ?? p.line ?? null,
+        oUPick: ouDir,
       };
     case 'Winner':       return { ...base, pick: p.pick };
     case 'DoubleChance': return { ...base, dCPick: p.pick };
