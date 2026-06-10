@@ -311,23 +311,18 @@ export default function MatchesPage() {
     setScorerPlayers([]); setScorerLoading(true);
     const mid = selectedMatch.id;
     api.get(`/Match/${mid}/players`)
-      .then(async r => {
+      .then(r => {
         const players = r.data ?? [];
         setScorerPlayers(players);
         if (players.length === 0) return;
-        // Pre-fetch Assist and SoA odds for every player in parallel
-        const [astEntries, soaEntries] = await Promise.all([
-          Promise.all(players.map(p =>
-            fetchOdds(mid, BET_TYPE.PlayerAssist, { goalscorerId: p.playerId })
-              .then(res => [p.playerId, res?.odds])
-          )),
-          Promise.all(players.map(p =>
-            fetchOdds(mid, BET_TYPE.PlayerScoreOrAssist, { goalscorerId: p.playerId })
-              .then(res => [p.playerId, res?.odds])
-          )),
-        ]);
-        setAssistOdds(Object.fromEntries(astEntries.filter(([, v]) => v != null)));
-        setSoaOdds(Object.fromEntries(soaEntries.filter(([, v]) => v != null)));
+        // AssistOdds and SoaOdds are now returned directly in each player object —
+        // no extra per-player API calls needed.
+        setAssistOdds(Object.fromEntries(
+          players.filter(p => p.assistOdds != null).map(p => [p.playerId, p.assistOdds])
+        ));
+        setSoaOdds(Object.fromEntries(
+          players.filter(p => p.soaOdds != null).map(p => [p.playerId, p.soaOdds])
+        ));
       })
       .catch(() => setScorerPlayers([]))
       .finally(() => setScorerLoading(false));
