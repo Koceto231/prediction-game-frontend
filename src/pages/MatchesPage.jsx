@@ -1659,12 +1659,28 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.earlyGoal && (
                       <div className="market-options market-options--2">
-                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.earlyGoal?.[k] != null).map(({ k, lbl }) => (
-                          <button key={k} type="button" className="market-option" disabled>
-                            <div className="market-option__label">{lbl}</div>
-                            <div className="market-option__odds">{Number(preOdds.earlyGoal[k]).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.earlyGoal?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.earlyGoal[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.EarlyGoal}:${k}:EG`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                addToSlip({
+                                  betType: BET_TYPE.EarlyGoal, pick: k, selKey: 'EG',
+                                  odds: o,
+                                  leg: { bTTSPick: k === 'Yes' },
+                                  label: `Ранен гол — ${lbl}`,
+                                  chip: k === 'Yes' ? 'РГ✓' : 'РГ✗',
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1679,12 +1695,28 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.lateGoal && (
                       <div className="market-options market-options--2">
-                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.lateGoal?.[k] != null).map(({ k, lbl }) => (
-                          <button key={k} type="button" className="market-option" disabled>
-                            <div className="market-option__label">{lbl}</div>
-                            <div className="market-option__odds">{Number(preOdds.lateGoal[k]).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {[{ k: 'Yes', lbl: 'Да' }, { k: 'No', lbl: 'Не' }].filter(({ k }) => preOdds.lateGoal?.[k] != null).map(({ k, lbl }) => {
+                          const o = preOdds.lateGoal[k];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.LateGoal}:${k}:LG`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={k} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                addToSlip({
+                                  betType: BET_TYPE.LateGoal, pick: k, selKey: 'LG',
+                                  odds: o,
+                                  leg: { bTTSPick: k === 'Yes' },
+                                  label: `Късен гол — ${lbl}`,
+                                  chip: k === 'Yes' ? 'КГ✓' : 'КГ✗',
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
