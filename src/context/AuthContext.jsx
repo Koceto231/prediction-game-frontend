@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import api, { setAccessToken, clearAccessToken } from '../api/apiClient';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import api, { setAccessToken, clearAccessToken, bootstrapSession } from '../api/apiClient';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +16,20 @@ if (_savedToken) setAccessToken(_savedToken);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser);
+  // Gate wallet / profile calls until startup refresh finishes so an expired
+  // access token doesn't flash a 401 before the refresh cookie is exchanged.
+  const [authReady, setAuthReady] = useState(() => !loadUser());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await bootstrapSession();
+      if (cancelled) return;
+      if (!ok) setUser(null);
+      setAuthReady(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const isAuthenticated = !!user;
   const isAdmin         = user?.role === 'Admin';
@@ -59,8 +73,8 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, isAuthenticated, isAdmin, login, register, logout }),
-    [user, isAuthenticated, isAdmin]
+    () => ({ user, authReady, isAuthenticated, isAdmin, login, register, logout }),
+    [user, authReady, isAuthenticated, isAdmin]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -29,6 +29,34 @@ export function clearAccessToken() {
   _accessToken = null;
 }
 
+export function getAccessToken() {
+  return _accessToken ?? localStorage.getItem('bpfl_token');
+}
+
+/** Restore a valid access token before protected calls on page load. */
+export async function bootstrapSession() {
+  if (!localStorage.getItem('bpfl_user')) return true;
+
+  try {
+    const refreshRes = await axios.post(
+      `${API_BASE_URL}/Auth/refresh`,
+      {},
+      { withCredentials: true }
+    );
+    const newToken = refreshRes.data?.accessToken;
+    if (newToken) {
+      _accessToken = newToken;
+      localStorage.setItem('bpfl_token', newToken);
+    }
+    return true;
+  } catch {
+    localStorage.removeItem('bpfl_user');
+    localStorage.removeItem('bpfl_token');
+    _accessToken = null;
+    return false;
+  }
+}
+
 // ── Request interceptor: attach Bearer header when cookie may be blocked ──────
 api.interceptors.request.use((config) => {
   if (_accessToken && !config.headers['Authorization']) {
