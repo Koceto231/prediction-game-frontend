@@ -39,6 +39,86 @@ const LEAGUE_LABEL = {
 // ── Helpers ──────────────────────────────────────────────────────────────
 // Frontend safety-net translation for descriptions that were written
 // before the backend was localised. New bets already ship Bulgarian text.
+
+const BET_TYPE_BY_NUM = {
+  46: 'AsianHandicap',
+  47: 'AsianHandicap1H',
+};
+
+function normalizeBetType(bt) {
+  if (bt == null) return bt;
+  if (typeof bt === 'number') return BET_TYPE_BY_NUM[bt] ?? bt;
+  const s = String(bt);
+  if (/^\d+$/.test(s)) return BET_TYPE_BY_NUM[Number(s)] ?? s;
+  return bt;
+}
+
+function normalizeMatchWinner(pick) {
+  if (pick == null || pick === '') return null;
+  if (typeof pick === 'number') {
+    if (pick === 1) return 'Home';
+    if (pick === 2) return 'Draw';
+    if (pick === 3) return 'Away';
+    return null;
+  }
+  const s = String(pick).trim();
+  if (s === '1' || /^home$/i.test(s)) return 'Home';
+  if (s === '2' || /^draw$/i.test(s)) return 'Draw';
+  if (s === '3' || /^away$/i.test(s)) return 'Away';
+  return s;
+}
+
+function coerceLineValue(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatAhLabel(pick, lineValue, is1H) {
+  const side = normalizeMatchWinner(pick);
+  const lv = coerceLineValue(lineValue);
+  if (!side || (side !== 'Home' && side !== 'Away') || lv == null) return null;
+  const ln = side === 'Away' ? -lv : lv;
+  const sign = ln >= 0 ? '+' : '';
+  const teamChip = side === 'Home' ? '1' : '2';
+  const halfSuffix = is1H ? ' 1H' : '';
+  const lineStr = `${sign}${ln}`;
+  return {
+    chip: `${teamChip} ${lineStr}`,
+    label: `Азиатски хендикап${halfSuffix} — ${teamChip} ${lineStr}`,
+  };
+}
+
+function parseAhDescription(desc, homeName, awayName) {
+  const text = String(desc ?? '').trim();
+  if (!text || !/Азиатски хендикап/i.test(text)) return null;
+
+  const is1H = /1-во полувреме/i.test(text);
+  const full = text.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)\s+(?:1-во полувреме\s+)?\(Азиатски хендикап\)/i);
+  if (full) {
+    const team = full[1].trim();
+    const displayed = parseFloat(full[2]);
+    if (homeName && team.toLowerCase() === homeName.toLowerCase()) {
+      return formatAhLabel('Home', displayed, is1H);
+    }
+    if (awayName && team.toLowerCase() === awayName.toLowerCase()) {
+      return formatAhLabel('Away', -displayed, is1H);
+    }
+    const halfSuffix = is1H ? ' 1H' : '';
+    const sign = displayed >= 0 ? '+' : '';
+    return { chip: `${sign}${displayed}`, label: `Азиатски хендикап${halfSuffix} — ${sign}${displayed}` };
+  }
+
+  const stripped = text.match(/^([+-]?\d+(?:\.\d+)?)\s+(?:1-во полувреме\s+)?\(Азиатски хендикап\)/i);
+  if (stripped) {
+    const displayed = parseFloat(stripped[1]);
+    const halfSuffix = is1H ? ' 1H' : '';
+    const sign = displayed >= 0 ? '+' : '';
+    return { chip: `${sign}${displayed}`, label: `Азиатски хендикап${halfSuffix} — ${sign}${displayed}` };
+  }
+  return null;
+}
+
 // ──────────────────────────────────────────────────────────────────
 // shortPickDesc — chip + clean Bulgarian label WITHOUT team names.
 // When a bet card already shows the fixture header at the top, we don't
@@ -53,13 +133,13 @@ function shortPickDesc(bet, leg) {
   // For single bets, the relevant fields live on the bet; for accumulator
   // legs, the API ships them on each leg entry.
   const src       = leg ?? bet;
-  const betType   = src?.betType ?? bet?.betType;
-  const pick      = src?.pick;
+  const betType   = normalizeBetType(src?.betType ?? bet?.betType);
+  const pick      = normalizeMatchWinner(src?.pick);
   const bttsPick  = src?.bttsPick;
   const dcPick    = src?.dCPick    ?? src?.dcPick;
   const ouLine    = src?.oULine    ?? src?.ouLine;
   const ouPick    = src?.oUPick    ?? src?.ouPick;
-  const lineValue = src?.lineValue;
+  const lineValue = coerceLineValue(src?.lineValue);
   const stringPick = src?.stringPick;
   const scoreHome = src?.scoreHome ?? bet?.scoreHome;
   const scoreAway = src?.scoreAway ?? bet?.scoreAway;
@@ -156,16 +236,8 @@ function shortPickDesc(bet, leg) {
       break;
     case 'AsianHandicap':
     case 'AsianHandicap1H': {
-      if (pick && lineValue != null) {
-        const ln = pick === 'Away' ? -Number(lineValue) : Number(lineValue);
-        const sign = ln >= 0 ? '+' : '';
-        const teamChip = pick === 'Home' ? '1' : '2';
-        const halfSuffix = betType === 'AsianHandicap1H' ? ' 1H' : '';
-        return {
-          chip:  `${teamChip} ${sign}${ln}`,
-          label: `Азиатски хендикап${halfSuffix} — ${teamChip} ${sign}${ln}`,
-        };
-      }
+      const ah = formatAhLabel(pick, lineValue, betType === 'AsianHandicap1H');
+      if (ah) return ah;
       break;
     }
     case 'TeamToScorePenalty':
@@ -255,6 +327,15 @@ function shortPickDesc(bet, leg) {
   // Odd/Even
   if (/Odd\s+Goals/i.test(rawDesc))  return { chip: 'НЕЧ', label: 'Нечетен брой голове' };
   if (/Even\s+Goals/i.test(rawDesc)) return { chip: 'ЧЕТ', label: 'Четен брой голове' };
+
+  // Asian Handicap — parse Bulgarian descriptions like
+  // "Mexico +1.5 1-во полувреме (Азиатски хендикап)"
+  if (betType === 'AsianHandicap' || betType === 'AsianHandicap1H' || /Азиатски хендикап/i.test(rawDesc)) {
+    const homeName = bet?.homeTeam || leg?.homeTeam;
+    const awayName = bet?.awayTeam || leg?.awayTeam;
+    const parsedAh = parseAhDescription(rawDesc, homeName, awayName);
+    if (parsedAh) return parsedAh;
+  }
 
   // Last-ditch: strip team names from description so we don't repeat
   // what the fixture row already says.
