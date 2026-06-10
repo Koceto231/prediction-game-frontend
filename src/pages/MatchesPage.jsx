@@ -1015,11 +1015,43 @@ export default function MatchesPage() {
   // (First/Last Goalscorer, Carded, First Carded, Team Goalscorer,
   // Assist). The odds dicts only carry { name: odds } so we
   // cross-reference scorerPlayers — loaded by /Match/{id}/players —
-  // which carries an `isHome` flag per player. Returns null when
-  // the player isn't in the squad map; the row falls back to a
-  // 2-column layout (name + odds).
+  // which carries an `isHome` flag per player. Sportmonks odds names
+  // ("M. Salah") frequently don't equal squad names ("Mohamed Salah"),
+  // so the lookup is intentionally lenient: strip accents/punctuation,
+  // try exact → "<last>" → "<initial>. <last>" matches.
+  const normaliseName = (s) =>
+    (s || '')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const findScorer = (rawName) => {
+    if (!scorerPlayers?.length) return null;
+    const target = normaliseName(rawName);
+    if (!target) return null;
+    const exact = scorerPlayers.find(p => normaliseName(p.name) === target);
+    if (exact) return exact;
+    const targetParts = target.split(' ');
+    const targetLast = targetParts[targetParts.length - 1];
+    const targetInitial = targetParts[0]?.[0];
+    return scorerPlayers.find(p => {
+      const parts = normaliseName(p.name).split(' ');
+      if (!parts.length) return false;
+      const last = parts[parts.length - 1];
+      if (last !== targetLast) return false;
+      // If both have a first token, also require initial-of-first to match
+      // — prevents "M. Smith" matching "John Smith" when both are in squad.
+      const initial = parts[0]?.[0];
+      if (targetInitial && initial && targetParts.length > 1 && parts.length > 1)
+        return initial === targetInitial;
+      return true;
+    });
+  };
+
   const renderPlayerRow = (name, odds) => {
-    const sp   = scorerPlayers?.find(p => p.name === name);
+    const sp   = findScorer(name);
     const logo = sp ? (sp.isHome ? selectedMatch?.homeTeamLogo : selectedMatch?.awayTeamLogo) : null;
     const team = sp ? (sp.isHome ? selectedMatch?.homeTeamName : selectedMatch?.awayTeamName) : null;
     return (
