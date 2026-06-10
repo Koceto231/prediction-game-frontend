@@ -1699,12 +1699,21 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.fgm && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.fgm).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {(() => {
+                          const ORDER = ['Header', 'Free Kick', 'Penalty', 'Own Goal', 'No Goal'];
+                          return Object.entries(preOdds.fgm)
+                            .filter(([_, o]) => o != null)
+                            .sort((a, b) => {
+                              const ai = ORDER.indexOf(a[0]); const bi = ORDER.indexOf(b[0]);
+                              return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+                            })
+                            .map(([k, o]) => (
+                              <button key={k} type="button" className="exact-score-tile" disabled>
+                                <div className="exact-score-tile__label">{k}</div>
+                                <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              </button>
+                            ));
+                        })()}
                       </div>
                     )}
                   </div>
@@ -1719,12 +1728,14 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.htExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.htExact).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {Object.entries(preOdds.htExact).filter(([_, o]) => o != null)
+                          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                          .map(([k, o]) => (
+                            <button key={k} type="button" className="exact-score-tile" disabled>
+                              <div className="exact-score-tile__label">{k}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -1739,12 +1750,14 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.shExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.shExact).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {Object.entries(preOdds.shExact).filter(([_, o]) => o != null)
+                          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                          .map(([k, o]) => (
+                            <button key={k} type="button" className="exact-score-tile" disabled>
+                              <div className="exact-score-tile__label">{k}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -1759,12 +1772,14 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.homeExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null)
+                          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                          .map(([k, o]) => (
+                            <button key={k} type="button" className="exact-score-tile" disabled>
+                              <div className="exact-score-tile__label">{k}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          ))}
                       </div>
                     )}
                   </div>
@@ -1779,12 +1794,14 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.awayExact && (
                       <div className="exact-score-grid">
-                        {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null).map(([k, o]) => (
-                          <button key={k} type="button" className="exact-score-tile" disabled>
-                            <div className="exact-score-tile__label">{k}</div>
-                            <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
-                          </button>
-                        ))}
+                        {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null)
+                          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                          .map(([k, o]) => (
+                            <button key={k} type="button" className="exact-score-tile" disabled>
+                              <div className="exact-score-tile__label">{k}</div>
+                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          ))}
                       </div>
                     )}
                   </div>
