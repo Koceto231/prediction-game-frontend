@@ -2170,22 +2170,6 @@ export default function MatchesPage() {
                   )}
 
                   {/* Player to Assist (market 332) */}
-                  {Object.keys(preOdds.assistOdds ?? {}).length > 0 && (
-                  <div data-cat="special" className={`market-section ${collapsed.assistSection ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('assistSection')}>
-                      <span className="market-section__name">🅰️ Играч с асистенция</span>
-                      <span className="market-section__toggle">{collapsed.assistSection ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.assistSection && (
-                      <div style={{ padding: '12px 16px' }}>
-                        <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.assistOdds)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  )}
-
                   {/* Number of Goals in Match (Sportmonks market 83) — 3 buckets */}
                   {mv.nog && (
                   <div data-cat="goals" className={`market-section ${collapsed.nog ? 'market-section--collapsed' : ''}`}>
