@@ -3630,7 +3630,7 @@ export default function MatchesPage() {
                                             addToSlip({
                                               betType: bt, pick: p, selKey: `${side}-${l}`,
                                               odds: preO,
-                                              leg: { pick: side, lineValue: l, oUPick: p },
+                                              leg: { pick: side, lineValue: Number(l), oUPick: p },
                                               label: `${teamName} ${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                               chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                             });
@@ -3678,7 +3678,7 @@ export default function MatchesPage() {
                                       addToSlip({
                                         betType: bt, pick: p, selKey: `MST-${l}`,
                                         odds: preO,
-                                        leg: { lineValue: l, oUPick: p },
+                                        leg: { lineValue: Number(l), oUPick: p },
                                         label: `${label} ${p === 'Over' ? 'над' : 'под'} ${l}`,
                                         chip: `${p === 'Over' ? 'O' : 'U'}${l}`,
                                       });

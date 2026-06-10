@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BPFL Live — Levski vs CSKA (Mockup)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:ital,wght@1,700;1,800;1,900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design tokens (from global.css) ── */
+    :root {
+      font-family: 'JetBrains Mono', 'Courier New', 'Lucida Console', monospace;
+      color: #e0d8c0;
+      background: #0a0a0a;
+
+      --bg-page: #0a0a0a;
+      --text-main: #e0d8c0;
+      --text-muted: rgba(224, 216, 192, 0.55);
+      --text-soft: rgba(224, 216, 192, 0.40);
+      --accent: #f0c519;
+      --accent-soft: rgba(240, 197, 25, 0.12);
+      --surface-2: rgba(255, 255, 255, 0.06);
+      --surface-shell: rgba(12, 12, 12, 0.96);
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(240, 197, 25, 0.20);
+      --radius-2xl: 8px;
+      --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.7);
+      --surface-container: #201f1f;
+      --outline-variant: #4d4633;
+      --outline: #999079;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text-main);
+      background: var(--bg-page);
+    }
+
+    body {
+      padding-bottom: 42px;
+      background-image: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.018) 0px,
+        rgba(255, 255, 255, 0.018) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    }
+
+    .container {
+      max-width: 2005px;
+      margin: 0 auto;
+      padding: 20px 24px;
+    }
+
+    .mockup-banner {
+      text-align: center;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      background: rgba(240, 197, 25, 0.08);
+      border: 1px dashed rgba(240, 197, 25, 0.35);
+      border-radius: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .shell-card {
+      background: var(--surface-shell);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .panel { padding: 24px; }
+    .shell-card.panel { background: #000; scroll-margin-top: 64px; }
+
+    /* ── 3-column live grid ── */
+    .gv-live-grid {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr) 320px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .gv-live-center { min-width: 0; }
+
+    /* ── Live Stats sidebar ── */
+    .gv-livestats {
+      background: var(--surface-container);
+      border: 1px solid var(--outline-variant);
+      border-radius: 14px;
+      padding: 22px 18px;
+      position: sticky;
+      top: 80px;
+      box-shadow: 0 0 15px rgba(240, 197, 25, 0.10);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .gv-livestats__title {
+      margin: 0;
+      color: var(--accent);
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .gv-livestats__beat {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(240, 197, 25, 0.6);
+      flex-shrink: 0;
+      animation: gv-stats-pulse 1.2s ease-out infinite;
+    }
+
+    @keyframes gv-stats-pulse {
+      0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 197, 25, 0.7); }
+      60%  { transform: scale(1.6); box-shadow: 0 0 0 10px rgba(240, 197, 25, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(240, 197, 25, 0); }
+    }
+
+    .gv-livestats__age {
+      margin-left: auto;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+    }
+
+    .gv-livestats__subtitle {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .gv-livestats__block {
+      border-top: 1px solid var(--outline-variant);
+      padding-top: 16px;
+    }
+    .gv-livestats__block:first-of-type { border-top: none; padding-top: 0; }
+
+    .gv-livestats__row-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    .gv-livestats__possbar {
+      display: flex;
+      height: 6px;
+      width: 100%;
+      background: #353534;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .gv-livestats__possbar-home { background: var(--accent); }
+    .gv-livestats__possbar-away { background: var(--outline); }
+
+    .gv-livestats__poss-numbers {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gv-livestats__poss-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      align-self: end;
+      padding-bottom: 4px;
+    }
+
+    .gv-livestats__events {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .gv-livestats__event {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .gv-livestats__event--away { direction: rtl; }
+    .gv-livestats__event--away > * { direction: ltr; }
+
+    .gv-livestats__event-min {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      color: var(--text-muted);
+      font-weight: 700;
+      min-width: 26px;
+      flex-shrink: 0;
+    }
+
+    .gv-livestats__event-score {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .gv-livestats__event-icon { font-size: 0.9rem; line-height: 1; flex-shrink: 0; }
+
+    .gv-livestats__event-name {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.7rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .gv-livestats__event-assist {
+      flex-shrink: 0;
+      color: var(--text-muted);
+      font-size: 0.62rem;
+      font-style: italic;
+    }
+
+    .gv-livestats__statrow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+    }
+    .gv-livestats__statrow + .gv-livestats__statrow {
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .gv-livestats__statval {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    .gv-livestats__statlabel {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    /* ── Pitch Tracker ── */
+    .gv-pitch-tracker { margin-bottom: 22px; }
+
+    .gv-pitch-tracker__bg {
+      position: relative;
+      height: 460px;
+      padding: 18px 22px;
+      border-radius: 22px;
+      background: radial-gradient(circle at center, #2a2a2a 0%, #131313 100%);
+      border: 1px solid var(--outline-variant);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .gv-pitch-tracker__pitch {
+      position: absolute;
+      inset: 16px;
+      border: 1px solid rgba(77, 70, 51, 0.32);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .gv-pitch-tracker__halfline {
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 1px;
+      background: rgba(77, 70, 51, 0.32);
+    }
+    .gv-pitch-tracker__centercircle {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 96px; height: 96px;
+      margin: -48px 0 0 -48px;
+      border: 1px solid rgba(77, 70, 51, 0.32);
+      border-radius: 50%;
+    }
+    .gv-pitch-tracker__box {
+      position: absolute;
+      top: 25%; bottom: 25%;
+      width: 48px;
+      border: 1px solid rgba(77, 70, 51, 0.32);
+    }
+    .gv-pitch-tracker__box--left  { left: 0;  border-left: none; }
+    .gv-pitch-tracker__box--right { right: 0; border-right: none; }
+
+    .gv-pitch-tracker__pressure {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .gv-pitch-tracker__pressure--home {
+      background: radial-gradient(ellipse 55% 80% at 100% 50%, rgba(240, 197, 25, 0.20), transparent 70%);
+    }
+
+    .gv-pitch-tracker__topbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: auto;
+    }
+
+    .gv-pitch-tracker__league {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(240, 197, 25, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(240, 197, 25, 0.28);
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .gv-pitch-tracker__venue {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      background: rgba(19, 19, 19, 0.55);
+      border: 1px solid var(--outline-variant);
+      border-radius: 999px;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+    .gv-pitch-tracker__venue span { color: var(--accent); margin-left: 2px; }
+
+    .gv-pitch-tracker__live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: #e53e3e;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 0 12px rgba(229, 62, 62, 0.4);
+    }
+
+    .gv-pitch-tracker__live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fff;
+      animation: gv-live-pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes gv-live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .gv-pitch-tracker__main {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 32px;
+      margin: auto 0;
+    }
+
+    .gv-pitch-tracker__team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gv-pitch-tracker__shield {
+      width: 72px; height: 72px;
+      background: #1c1b1b;
+      border: 1px solid var(--outline-variant);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .gv-pitch-tracker__shield--home {
+      border-color: var(--accent);
+      box-shadow: 0 0 14px rgba(240, 197, 25, 0.22);
+    }
+
+    .gv-pitch-tracker__shield-fallback {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .gv-pitch-tracker__teamname {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      text-align: center;
+      max-width: 160px;
+      line-height: 1.15;
+    }
+
+    .gv-pitch-tracker__scorecol {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .gv-pitch-tracker__score {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: clamp(2.4rem, 5vw, 3.4rem);
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      font-variant-numeric: tabular-nums;
+    }
+    .gv-pitch-tracker__score span {
+      color: var(--text-muted);
+      margin: 0 6px;
+      font-weight: 700;
+    }
+
+    .gv-pitch-tracker__minute {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #06120a;
+      font-weight: 900;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gv-pitch-tracker__status {
+      position: relative;
+      z-index: 2;
+      margin: auto auto 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: rgba(19, 19, 19, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(240, 197, 25, 0.3);
+      border-radius: 999px;
+      align-self: center;
+    }
+
+    .gv-pitch-tracker__status-dot {
+      position: relative;
+      width: 10px;
+      height: 10px;
+    }
+    .gv-pitch-tracker__status-dot::before,
+    .gv-pitch-tracker__status-dot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .gv-pitch-tracker__status-dot::before {
+      animation: gv-status-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+      opacity: 0.7;
+    }
+    @keyframes gv-status-ping {
+      0%   { transform: scale(1);    opacity: 0.7; }
+      75%, 100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    .gv-pitch-tracker__status-text {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      color: var(--text-main);
+    }
+
+    /* ── Market tabs & sections ── */
+    .market-tabs {
+      display: flex;
+      gap: 4px;
+      margin: 0 0 14px;
+      padding: 4px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    .market-tab {
+      flex: 1;
+      min-width: 80px;
+      padding: 8px 14px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .market-tab:hover { color: var(--text-main); }
+    .market-tab--active {
+      background: var(--accent);
+      color: #06120a;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(240, 197, 25, 0.25);
+    }
+
+    .market-table-wrap { position: relative; }
+
+    .market-section {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .market-section:last-child { border-bottom: none; }
+
+    .market-section__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .market-section__header:hover { background: rgba(240, 197, 25, 0.07); }
+
+    .market-section__name {
+      font-size: 1.10rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      flex: 1;
+    }
+
+    .market-section__toggle {
+      font-size: 0.70rem;
+      color: var(--text-soft);
+      min-width: 14px;
+      text-align: center;
+    }
+
+    .market-options {
+      display: grid;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .market-options--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .market-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 14px 10px;
+      background: #0e0e0e;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-align: center;
+      font-family: inherit;
+    }
+    .market-option:hover { background: rgba(240, 197, 25, 0.08); }
+    .market-option--active {
+      background: rgba(240, 197, 25, 0.14) !important;
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .market-option__label {
+      font-size: 1.02rem;
+      color: #ddd;
+      letter-spacing: .04em;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .market-option__odds {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .ou-table {
+      display: flex;
+      flex-direction: column;
+      background: #0e0e0e;
+    }
+    .ou-table__subheader {
+      display: grid;
+      grid-template-columns: 60px 1fr 1fr;
+      padding: 6px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .ou-table__subheader span {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      text-align: center;
+    }
+    .ou-table__subheader span:first-child { text-align: left; }
+
+    .ou-table__row {
+      display: grid;
+      grid-template-columns: 60px 1fr 1fr;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      align-items: stretch;
+    }
+    .ou-table__row:last-child { border-bottom: none; }
+
+    .ou-table__line {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 0.80rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .ou-cell {
+      padding: 13px 8px;
+      background: transparent;
+      border: none;
+      border-left: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: inherit;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .ou-cell:hover { background: rgba(240, 197, 25, 0.09); }
+
+    /* ── Bet Slip sidebar ── */
+    .gv-betslip {
+      background: var(--surface-container);
+      border: 1px solid var(--outline-variant);
+      border-radius: 14px;
+      overflow: hidden;
+      position: sticky;
+      top: 80px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .gv-betslip__head {
+      background: var(--accent);
+      color: #06120a;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gv-betslip__title {
+      margin: 0;
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 800;
+      font-size: 0.84rem;
+      letter-spacing: 0.08em;
+    }
+
+    .gv-betslip__count {
+      background: #06120a;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.7rem;
+      padding: 2px 9px;
+      border-radius: 999px;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    .gv-betslip__body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .gvb-bet {
+      background: #1c1b1b;
+      border-radius: 0;
+      overflow: hidden;
+    }
+
+    .gvb-bet__body { padding: 14px; }
+
+    .gvb-bet__legs {
+      margin-top: 0;
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+
+    .gvb-bet__legs-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 13px;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .gvb-bet__legs-sum {
+      color: var(--accent);
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gvb-bet__legs-list { border-top: 1px solid var(--outline-variant); }
+
+    .gvb-bet__leg {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 13px;
+      font-size: 0.84rem;
+    }
+
+    .gvb-bet__leg-no {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .gvb-bet__leg-desc {
+      color: var(--text-main);
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gvb-bet__leg-odds {
+      font-family: 'Anybody', 'JetBrains Mono', sans-serif;
+      font-style: italic;
+      font-weight: 900;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.96rem;
+    }
+
+    .gvb-bet__stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 16px;
+      background: var(--surface-container);
+      font-size: 0.9rem;
+    }
+
+    .gvb-bet__stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .gvb-bet__stat-label {
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .gvb-bet__stat-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .gvb-cashout-btn {
+      border: 1px solid transparent;
+      padding: 9px 22px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .gvb-cashout-btn--gold {
+      background: var(--accent);
+      color: #06120a;
+      box-shadow: 0 4px 14px rgba(240, 197, 25, 0.30);
+    }
+
+    .gv-betslip__footer {
+      padding: 10px 14px 14px;
+      border-top: 1px solid var(--outline-variant);
+      text-align: center;
+    }
+
+    .gv-betslip__secure {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.10em;
+    }
+
+    .gv-back-btn {
+      background: #1c1b1b;
+      color: var(--text-main);
+      border: 1px solid var(--outline-variant);
+      border-radius: 0;
+      padding: 12px 22px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 18px;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .gv-back-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 1280px) {
+      .gv-live-grid { grid-template-columns: 340px minmax(0, 1fr); }
+      .gv-betslip { display: none; }
+    }
+    @media (max-width: 1100px) {
+      .gv-live-grid { grid-template-columns: 1fr; }
+      .gv-live-center { order: 1; }
+      .gv-livestats { order: 2; position: static; }
+      .gv-betslip { display: flex; order: 3; position: static; }
+    }
+    @media (max-width: 640px) {
+      .gv-pitch-tracker__venue { display: none; }
+      .container { padding: 14px; }
+      .panel { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="mockup-banner">Static mockup — Live page detail view · Levski vs CSKA · 67′ · EFBET LIGA</div>
+
+    <section class="shell-card panel gv-live-grid">
+
+      <!-- LEFT: Live Stats -->
+      <aside class="gv-livestats">
+        <h3 class="gv-livestats__title">
+          LIVE STATS
+          <span class="gv-livestats__beat" title="Last update now"></span>
+          <span class="gv-livestats__age">now</span>
+        </h3>
+
+        <div class="gv-livestats__block">
+          <div class="gv-livestats__row-labels">
+            <span>LEVSKI</span>
+            <span>CSKA</span>
+          </div>
+          <div class="gv-livestats__possbar">
+            <div class="gv-livestats__possbar-home" style="width: 54%"></div>
+            <div class="gv-livestats__possbar-away" style="width: 46%"></div>
+          </div>
+          <div class="gv-livestats__poss-numbers">
+            <span>54%</span>
+            <span class="gv-livestats__poss-label">POSSESSION</span>
+            <span>46%</span>
+          </div>
+        </div>
+
+        <div class="gv-livestats__block">
+          <h4 class="gv-livestats__subtitle">MATCH EVENTS</h4>
+          <div class="gv-livestats__events">
+            <div class="gv-livestats__event gv-livestats__event--away gv-livestats__event--goal">
+              <span class="gv-livestats__event-min">23'</span>
+              <span class="gv-livestats__event-score">0 - 1</span>
+              <span class="gv-livestats__event-icon">⚽</span>
+              <span class="gv-livestats__event-name">К. Малинов</span>
+            </div>
+            <div class="gv-livestats__event gv-livestats__event--home gv-livestats__event--goal">
+              <span class="gv-livestats__event-min">41'</span>
+              <span class="gv-livestats__event-score">1 - 1</span>
+              <span class="gv-livestats__event-icon">⚽</span>
+              <span class="gv-livestats__event-name">Р. Камбуров</span>
+              <span class="gv-livestats__event-assist">асист: Т. Георгиев</span>
+            </div>
+            <div class="gv-livestats__event gv-livestats__event--home gv-livestats__event--goal">
+              <span class="gv-livestats__event-min">58'</span>
+              <span class="gv-livestats__event-score">2 - 1</span>
+              <span class="gv-livestats__event-icon">⚽</span>
+              <span class="gv-livestats__event-name">Р. Камбуров</span>
+            </div>
+            <div class="gv-livestats__event gv-livestats__event--away gv-livestats__event--yellow">
+              <span class="gv-livestats__event-min">62'</span>
+              <span class="gv-livestats__event-icon">🟨</span>
+              <span class="gv-livestats__event-name">Б. Тайван</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gv-livestats__block">
+          <h4 class="gv-livestats__subtitle">MATCH STATISTICS</h4>
+          <div class="gv-livestats__statrow">
+            <span class="gv-livestats__statval">5</span>
+            <span class="gv-livestats__statlabel">CORNERS</span>
+            <span class="gv-livestats__statval">3</span>
+          </div>
+          <div class="gv-livestats__statrow">
+            <span class="gv-livestats__statval">6</span>
+            <span class="gv-livestats__statlabel">SHOTS ON TARGET</span>
+            <span class="gv-livestats__statval">4</span>
+          </div>
+          <div class="gv-livestats__statrow">
+            <span class="gv-livestats__statval">11</span>
+            <span class="gv-livestats__statlabel">SHOTS TOTAL</span>
+            <span class="gv-livestats__statval">8</span>
+          </div>
+          <div class="gv-livestats__statrow">
+            <span class="gv-livestats__statval">2</span>
+            <span class="gv-livestats__statlabel">CARDS</span>
+            <span class="gv-livestats__statval">3</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER: Pitch tracker + markets -->
+      <div class="gv-live-center">
+
+        <div class="gv-pitch-tracker">
+          <div class="gv-pitch-tracker__bg">
+            <div class="gv-pitch-tracker__pitch">
+              <div class="gv-pitch-tracker__halfline"></div>
+              <div class="gv-pitch-tracker__centercircle"></div>
+              <div class="gv-pitch-tracker__box gv-pitch-tracker__box--left"></div>
+              <div class="gv-pitch-tracker__box gv-pitch-tracker__box--right"></div>
+            </div>
+
+            <div class="gv-pitch-tracker__pressure gv-pitch-tracker__pressure--home"></div>
+
+            <div class="gv-pitch-tracker__topbar">
+              <span class="gv-pitch-tracker__league">
+                <span>🇧🇬</span>
+                <span>EFBET LIGA</span>
+              </span>
+              <span class="gv-pitch-tracker__venue">
+                📍 Vivacom Arena<span> · София</span>
+              </span>
+              <span class="gv-pitch-tracker__live">
+                <span class="gv-pitch-tracker__live-dot"></span> LIVE
+              </span>
+            </div>
+
+            <div class="gv-pitch-tracker__main">
+              <div class="gv-pitch-tracker__team gv-pitch-tracker__team--home">
+                <div class="gv-pitch-tracker__shield gv-pitch-tracker__shield--home">
+                  <span class="gv-pitch-tracker__shield-fallback">ЛС</span>
+                </div>
+                <div class="gv-pitch-tracker__teamname">Levski Sofia</div>
+              </div>
+
+              <div class="gv-pitch-tracker__scorecol">
+                <div class="gv-pitch-tracker__score">
+                  2 <span>-</span> 1
+                </div>
+                <div class="gv-pitch-tracker__minute">67'</div>
+              </div>
+
+              <div class="gv-pitch-tracker__team gv-pitch-tracker__team--away">
+                <div class="gv-pitch-tracker__shield">
+                  <span class="gv-pitch-tracker__shield-fallback">ЦС</span>
+                </div>
+                <div class="gv-pitch-tracker__teamname">CSKA Sofia</div>
+              </div>
+            </div>
+
+            <div class="gv-pitch-tracker__status">
+              <span class="gv-pitch-tracker__status-dot"></span>
+              <span class="gv-pitch-tracker__status-text">SECOND HALF — IN PLAY</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="prediction-form">
+          <div class="market-tabs">
+            <button type="button" class="market-tab market-tab--active">Main</button>
+            <button type="button" class="market-tab">Goals</button>
+            <button type="button" class="market-tab">Halves</button>
+            <button type="button" class="market-tab">Corners</button>
+            <button type="button" class="market-tab">Special</button>
+          </div>
+
+          <div class="market-table-wrap">
+            <div class="market-table" data-cat="main">
+
+              <div data-cat="main" class="market-section">
+                <div class="market-section__header">
+                  <span class="market-section__name">Match Result</span>
+                  <span class="market-section__toggle">▲</span>
+                </div>
+                <div class="market-options market-options--3">
+                  <button type="button" class="market-option market-option--active">
+                    <div class="market-option__label">Levski Sofia</div>
+                    <div class="market-option__odds">1.85</div>
+                  </button>
+                  <button type="button" class="market-option">
+                    <div class="market-option__label">Draw</div>
+                    <div class="market-option__odds">3.40</div>
+                  </button>
+                  <button type="button" class="market-option">
+                    <div class="market-option__label">CSKA Sofia</div>
+                    <div class="market-option__odds">4.20</div>
+                  </button>
+                </div>
+              </div>
+
+              <div data-cat="main" class="market-section">
+                <div class="market-section__header">
+                  <span class="market-section__name">Over / Under 2.5</span>
+                  <span class="market-section__toggle">▲</span>
+                </div>
+                <div class="ou-table">
+                  <div class="ou-table__subheader">
+                    <span>Line</span>
+                    <span>Over</span>
+                    <span>Under</span>
+                  </div>
+                  <div class="ou-table__row">
+                    <div class="ou-table__line">2.5</div>
+                    <button type="button" class="ou-cell">1.72</button>
+                    <button type="button" class="ou-cell">2.05</button>
+                  </div>
+                </div>
+              </div>
+
+              <div data-cat="main" class="market-section">
+                <div class="market-section__header">
+                  <span class="market-section__name">Both Teams To Score</span>
+                  <span class="market-section__toggle">▲</span>
+                </div>
+                <div class="market-options market-options--2" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                  <button type="button" class="market-option">
+                    <div class="market-option__label">Yes</div>
+                    <div class="market-option__odds">1.55</div>
+                  </button>
+                  <button type="button" class="market-option">
+                    <div class="market-option__label">No</div>
+                    <div class="market-option__odds">2.35</div>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: МОИ ЗАЛОЗИ -->
+      <aside class="gv-betslip">
+        <div class="gv-betslip__head">
+          <h3 class="gv-betslip__title">МОИ ЗАЛОЗИ</h3>
+          <span class="gv-betslip__count">1</span>
+        </div>
+
+        <div class="gv-betslip__body">
+          <div class="gvb-bet">
+            <div class="gvb-bet__body">
+              <div class="gvb-bet__legs">
+                <button type="button" class="gvb-bet__legs-toggle">
+                  <span>▾ Избори (1)</span>
+                  <span class="gvb-bet__legs-sum">Общо 1.85</span>
+                </button>
+                <div class="gvb-bet__legs-list">
+                  <div class="gvb-bet__leg">
+                    <span class="gvb-bet__leg-no">1</span>
+                    <div class="gvb-bet__leg-desc">Levski Sofia — Match Result</div>
+                    <span class="gvb-bet__leg-odds">1.85</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="gvb-bet__stats">
+                <div class="gvb-bet__stat">
+                  <span class="gvb-bet__stat-label">ЗАЛОГ</span>
+                  <span class="gvb-bet__stat-val">50.00 монети</span>
+                </div>
+                <div class="gvb-bet__stat" style="align-items: flex-end;">
+                  <button type="button" class="gvb-cashout-btn gvb-cashout-btn--gold">Cash Out · 62.50</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gv-betslip__footer">
+          <span class="gv-betslip__secure">🔒 SECURE LIVE BETTING</span>
+        </div>
+      </aside>
+
+      <button type="button" class="gv-back-btn" style="grid-column: 1;">← Назад към мачовете</button>
+    </section>
+  </div>
+</body>
+</html>
