@@ -1,1 +1,0 @@
-perf: show cached matches instantly on page mount (stale-while-revalidate)

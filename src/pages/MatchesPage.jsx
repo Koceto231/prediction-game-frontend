@@ -2107,14 +2107,14 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.etg ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.etg && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {['0','1','2','3','4','5','6','7+'].filter(k => preOdds.etg?.[k] != null).map(k => {
                           const o = preOdds.etg[k];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.ExactTotalGoals}:${k}:ETG`;
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={k} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -2125,8 +2125,8 @@ export default function MatchesPage() {
                                   chip: `${k}⚽`,
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{k}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{k} {k === '1' ? 'гол' : 'гола'}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
@@ -2143,7 +2143,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.wm ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.wm && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {[
                           { k: 'H1',     lbl: `${selectedMatch.homeTeamName} +1` },
                           { k: 'H2',     lbl: `${selectedMatch.homeTeamName} +2` },
@@ -2151,7 +2151,7 @@ export default function MatchesPage() {
                           { k: 'A1',     lbl: `${selectedMatch.awayTeamName} +1` },
                           { k: 'A2',     lbl: `${selectedMatch.awayTeamName} +2` },
                           { k: 'A3+',    lbl: `${selectedMatch.awayTeamName} +3` },
-                          { k: 'Draw',   lbl: 'Score Draw' },
+                          { k: 'Draw',   lbl: 'Равен (с голове)' },
                           { k: 'NoGoal', lbl: '0-0' },
                         ].filter(({ k }) => preOdds.wm?.[k] != null).map(({ k, lbl }) => {
                           const o = preOdds.wm[k];
@@ -2159,7 +2159,7 @@ export default function MatchesPage() {
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={k} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -2170,8 +2170,8 @@ export default function MatchesPage() {
                                   chip: k === 'NoGoal' ? '0-0' : k === 'Draw' ? 'X' : k,
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{lbl}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
@@ -2791,7 +2791,7 @@ export default function MatchesPage() {
                         <span className="market-section__toggle">{collapsed.ahAlt ? '▼' : '▲'}</span>
                       </div>
                       {!collapsed.ahAlt && (
-                        <div className="exact-score-grid">
+                        <div className="pick-list">
                           {Object.entries(preOdds.ah.alt)
                             .map(([lineStr, pair]) => ({ line: Number(lineStr), pair }))
                             .filter(({ line }) => Number.isFinite(line))
@@ -2809,7 +2809,7 @@ export default function MatchesPage() {
                               const active  = ouPicks.has(slipKey);
                               return (
                                 <button key={`${side}:${storedLine}`} type="button"
-                                  className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                                  className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                                   onClick={() => {
                                     setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                     addToSlip({
@@ -2820,8 +2820,8 @@ export default function MatchesPage() {
                                       chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr}`,
                                     });
                                   }}>
-                                  <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
-                                  <div className="exact-score-tile__odds">{Number(odds).toFixed(2)}</div>
+                                  <span className="pick-list__label">{lbl} {sign}{lineStr}</span>
+                                  <span className="pick-list__odds">{Number(odds).toFixed(2)}</span>
                                 </button>
                               );
                             })}
@@ -2882,7 +2882,7 @@ export default function MatchesPage() {
                         <span className="market-section__toggle">{collapsed.ah1hAlt ? '▼' : '▲'}</span>
                       </div>
                       {!collapsed.ah1hAlt && (
-                        <div className="exact-score-grid">
+                        <div className="pick-list">
                           {Object.entries(preOdds.ah1h.alt)
                             .map(([lineStr, pair]) => ({ line: Number(lineStr), pair }))
                             .filter(({ line }) => Number.isFinite(line))
@@ -2900,7 +2900,7 @@ export default function MatchesPage() {
                               const active  = ouPicks.has(slipKey);
                               return (
                                 <button key={`${side}:${storedLine}`} type="button"
-                                  className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                                  className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                                   onClick={() => {
                                     setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                     addToSlip({
@@ -2911,8 +2911,8 @@ export default function MatchesPage() {
                                       chip: `${side === 'Home' ? '1' : '2'} ${sign}${lineStr} 1H`,
                                     });
                                   }}>
-                                  <div className="exact-score-tile__label">{lbl} {sign}{lineStr}</div>
-                                  <div className="exact-score-tile__odds">{Number(odds).toFixed(2)}</div>
+                                  <span className="pick-list__label">{lbl} {sign}{lineStr}</span>
+                                  <span className="pick-list__odds">{Number(odds).toFixed(2)}</span>
                                 </button>
                               );
                             })}
@@ -3054,7 +3054,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.rtg ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.rtg && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {[
                           { k: 'HomeOver25',  lbl: `${selectedMatch.homeTeamName} & над 2.5` },
                           { k: 'HomeUnder25', lbl: `${selectedMatch.homeTeamName} & под 2.5` },
@@ -3068,7 +3068,7 @@ export default function MatchesPage() {
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={k} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -3079,8 +3079,8 @@ export default function MatchesPage() {
                                   chip: `${k.startsWith('Home') ? '1' : k.startsWith('Draw') ? 'X' : '2'}/${k.endsWith('Over25') ? 'O' : 'U'}2.5`,
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{lbl}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
@@ -3217,19 +3217,19 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.sbh ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.sbh && (
-                      <div className="exact-score-grid">
+                      <div className="pick-list">
                         {[
-                          { side: 'Home', yn: 'true',  lbl: `${selectedMatch.homeTeamName} / Да` },
-                          { side: 'Home', yn: 'false', lbl: `${selectedMatch.homeTeamName} / Не` },
-                          { side: 'Away', yn: 'true',  lbl: `${selectedMatch.awayTeamName} / Да` },
-                          { side: 'Away', yn: 'false', lbl: `${selectedMatch.awayTeamName} / Не` },
+                          { side: 'Home', yn: 'true',  lbl: `${selectedMatch.homeTeamName} — Да` },
+                          { side: 'Home', yn: 'false', lbl: `${selectedMatch.homeTeamName} — Не` },
+                          { side: 'Away', yn: 'true',  lbl: `${selectedMatch.awayTeamName} — Да` },
+                          { side: 'Away', yn: 'false', lbl: `${selectedMatch.awayTeamName} — Не` },
                         ].filter(({ side, yn }) => preOdds.sbh?.[side]?.[yn] != null).map(({ side, yn, lbl }) => {
                           const o = preOdds.sbh[side][yn];
                           const slipKey = `${selectedMatch.id}:${BET_TYPE.ScoreBothHalves}:${side}${yn === 'true' ? 'Yes' : 'No'}:SBH`;
                           const active  = ouPicks.has(slipKey);
                           return (
                             <button key={`${side}-${yn}`} type="button"
-                              className={`exact-score-tile ${active ? 'exact-score-tile--active' : ''}`}
+                              className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
                               onClick={() => {
                                 setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
                                 addToSlip({
@@ -3241,8 +3241,8 @@ export default function MatchesPage() {
                                   chip: `${side === 'Home' ? '1' : '2'}↔${yn === 'true' ? 'Y' : 'N'}`,
                                 });
                               }}>
-                              <div className="exact-score-tile__label">{lbl}</div>
-                              <div className="exact-score-tile__odds">{Number(o).toFixed(2)}</div>
+                              <span className="pick-list__label">{lbl}</span>
+                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
                             </button>
                           );
                         })}
