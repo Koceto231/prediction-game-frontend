@@ -142,11 +142,15 @@ export default function BetSlipPanel() {
         // (e.g. two TeamGoals lines, or Corners 8.5 vs 9.5).
         leg, label, chip, selKey,
       } = e.detail || {};
-      if (!matchId || !pick || odds == null) return;
+      if (!matchId || odds == null) return;
+      const effectivePick = pick
+        ?? leg?.pick
+        ?? (leg?.goalscorerId != null ? String(leg.goalscorerId) : null);
+      if (!effectivePick) return;
       const bt  = betType || 'Winner';
-      const key = `${matchId}:${bt}:${pick}:${selKey || line || ''}`;
+      const key = `${matchId}:${bt}:${effectivePick}:${selKey || line || ''}`;
       const newPick = {
-        key, matchId, betType: bt, pick,
+        key, matchId, betType: bt, pick: effectivePick,
         line:      line      || null,
         scoreHome: scoreHome ?? null,
         scoreAway: scoreAway ?? null,
@@ -375,6 +379,9 @@ export default function BetSlipPanel() {
         return `Точен резултат — ${p.pick}`;
       case 'HalfTimeCorrectScore':
         return `Резултат на полувремето — ${p.scoreHome}-${p.scoreAway}`;
+      case 'AsianHandicap':
+      case 'AsianHandicap1H':
+        return p.label || p.pick;
       case 'Goalscorer':
       case 'FirstGoalScorer':
       case 'LastGoalScorer':

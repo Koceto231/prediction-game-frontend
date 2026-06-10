@@ -139,16 +139,17 @@ function shortPickDesc(bet, leg) {
       break;
     case 'AsianHandicap':
     case 'AsianHandicap1H': {
-      const ln = lineValue != null
-        ? (pick === 'Away' ? -Number(lineValue) : Number(lineValue))
-        : 0;
-      const sign = ln >= 0 ? '+' : '';
-      const teamChip = pick === 'Home' ? '1' : '2';
-      const halfSuffix = betType === 'AsianHandicap1H' ? ' 1H' : '';
-      return {
-        chip:  `${teamChip} ${sign}${ln}`,
-        label: `Азиатски хендикап${halfSuffix} — ${teamChip} ${sign}${ln}`,
-      };
+      if (pick && lineValue != null) {
+        const ln = pick === 'Away' ? -Number(lineValue) : Number(lineValue);
+        const sign = ln >= 0 ? '+' : '';
+        const teamChip = pick === 'Home' ? '1' : '2';
+        const halfSuffix = betType === 'AsianHandicap1H' ? ' 1H' : '';
+        return {
+          chip:  `${teamChip} ${sign}${ln}`,
+          label: `Азиатски хендикап${halfSuffix} — ${teamChip} ${sign}${ln}`,
+        };
+      }
+      break;
     }
     case 'TeamToScorePenalty':
       return {
@@ -240,7 +241,9 @@ function shortPickDesc(bet, leg) {
   if (homeName) cleaned = cleaned.replace(new RegExp(homeName, 'gi'), '').trim();
   if (awayName) cleaned = cleaned.replace(new RegExp(awayName, 'gi'), '').trim();
   cleaned = cleaned.replace(/^[—–-]+\s*/, '').replace(/\s{2,}/g, ' ').trim();
-  return { chip: null, label: cleaned || rawDesc };
+  if (cleaned && cleaned !== 'Залог') return { chip: null, label: cleaned };
+  if (rawDesc && rawDesc !== 'Залог') return { chip: null, label: rawDesc };
+  return { chip: null, label: cleaned || rawDesc || betType || 'Залог' };
 }
 
 function translatePickDesc(desc, bet) {
@@ -491,14 +494,23 @@ function ActiveBetCard({ bet, onCashedOut }) {
   // Build the picks list — for single bets we synthesise a single-leg
   // entry so the same component renders both shapes the same way.
   const renderedLegs = isAccum ? legs : [{
-    betType:      bet.betType,
-    description:  bet.betDescription,
+    betType:        bet.betType,
+    description:    bet.betDescription,
     goalscorerName: bet.goalscorerName,
-    odds:         Number(bet.oddsAtBetTime),
-    homeTeam:     bet.homeTeam,
-    awayTeam:     bet.awayTeam,
-    homeTeamLogo: bet.homeTeamLogo,
-    awayTeamLogo: bet.awayTeamLogo,
+    pick:           bet.pick,
+    lineValue:      bet.lineValue,
+    dCPick:         bet.dCPick ?? bet.dcPick,
+    bttsPick:       bet.bTTSPick ?? bet.bttsPick,
+    oULine:         bet.oULine ?? bet.ouLine,
+    oUPick:         bet.oUPick ?? bet.ouPick,
+    stringPick:     bet.stringPick,
+    scoreHome:      bet.scoreHome,
+    scoreAway:      bet.scoreAway,
+    odds:           Number(bet.oddsAtBetTime),
+    homeTeam:       bet.homeTeam,
+    awayTeam:       bet.awayTeam,
+    homeTeamLogo:   bet.homeTeamLogo,
+    awayTeamLogo:   bet.awayTeamLogo,
   }];
 
   // Show the dual-crest header when the entire bet sits on one fixture —
