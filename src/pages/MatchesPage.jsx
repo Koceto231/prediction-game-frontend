@@ -302,10 +302,10 @@ export default function MatchesPage() {
   const isMarket   = mode === 'market';
   const hasBetOdds = selectedMatch?.homeOdds != null;
 
-  // Load players when scorer / assist sections are expanded — fetch only once per match.
-  // After the player list arrives, fire parallel per-player odds requests for Assist and SoA.
+  // Pre-fetch players as soon as a match is selected so the scorer / assist /
+  // score-or-assist sections show instantly when expanded.
   useEffect(() => {
-    if ((collapsed.scorer && collapsed.playerAssist && collapsed.playerSoa) || !isMarket || !selectedMatch) return;
+    if (!isMarket || !selectedMatch) return;
     if (playersFetchedRef.current) return;
     playersFetchedRef.current = true;
     setScorerPlayers([]); setScorerLoading(true);
@@ -315,8 +315,7 @@ export default function MatchesPage() {
         const players = r.data ?? [];
         setScorerPlayers(players);
         if (players.length === 0) return;
-        // AssistOdds and SoaOdds are now returned directly in each player object —
-        // no extra per-player API calls needed.
+        // AssistOdds and SoaOdds are returned directly in each player object.
         setAssistOdds(Object.fromEntries(
           players.filter(p => p.assistOdds != null).map(p => [p.playerId, p.assistOdds])
         ));
@@ -326,7 +325,7 @@ export default function MatchesPage() {
       })
       .catch(() => setScorerPlayers([]))
       .finally(() => setScorerLoading(false));
-  }, [collapsed.scorer, collapsed.playerAssist, collapsed.playerSoa, isMarket, selectedMatch?.id]);
+  }, [isMarket, selectedMatch?.id]);
 
 
   // Live odds — Exact Score.
