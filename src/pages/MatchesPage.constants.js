@@ -77,6 +77,8 @@ export const BET_TYPE = {
   SecondHalfExactGoals: 'SecondHalfExactGoals',
   EarlyGoal:            'EarlyGoal',
   LateGoal:             'LateGoal',
+  // ── Phase 10 (Half Exact Goals / Second Half Result) ──────────────
+  SecondHalfResult:     'SecondHalfResult',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
