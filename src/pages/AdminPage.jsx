@@ -779,6 +779,50 @@ function InvitationsManagement() {
   );
 }
 
+function CreateAccount() {
+  const [username, setUsername] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  const create = async () => {
+    const u = username.trim();
+    if (!u) { setFeedback('Въведи потребителско име.'); return; }
+    setFeedback(''); setLoading(true);
+    try {
+      const r = await api.post('/admin/users/create', { username: u });
+      setFeedback(r.data?.message || 'Акаунтът е създаден.');
+      setUsername('');
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Създаването се провали.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="admin-input"
+          placeholder="Потребителско име"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && create()}
+          style={{ flex: 1 }}
+        />
+        <button className="admin-btn admin-btn--accent" type="button"
+          onClick={create} disabled={loading}>
+          {loading ? '…' : 'Създай'}
+        </button>
+      </div>
+      {feedback && (
+        <p className="admin-hint" style={{ color: 'var(--accent)', marginTop: 6 }}>{feedback}</p>
+      )}
+      <p className="admin-hint">Паролата е равна на потребителското име. Акаунтът се създава веднага без имейл.</p>
+    </div>
+  );
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -850,6 +894,11 @@ export default function AdminPage() {
           {/* ── Email invitations ── */}
           <AdminSection title="Покани за регистрация">
             <InvitationsManagement />
+          </AdminSection>
+
+          {/* ── Create account ── */}
+          <AdminSection title="Създай акаунт">
+            <CreateAccount />
           </AdminSection>
 
           {/* ── Matches via Sportmonks ── */}
