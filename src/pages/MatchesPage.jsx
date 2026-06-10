@@ -1032,8 +1032,39 @@ export default function MatchesPage() {
 
   const hasOuTableLines = (obj) =>
     obj != null && Object.keys(obj).some(l => obj[l]?.Over != null || obj[l]?.Under != null);
-  const teamGoalsHomeOu = { ...(preOdds.ttg?.Home ?? {}), ...(preOdds.homeGoals ?? {}) };
-  const teamGoalsAwayOu = { ...(preOdds.ttg?.Away ?? {}), ...(preOdds.awayGoals ?? {}) };
+
+  // Defends against older Bet365 sync data where team-OU dicts were keyed by
+  // raw labels ("Over 0.5", "Under 1.5") instead of the numeric line ("0.5").
+  // Strips the Over/Under prefix and re-buckets so each line carries both
+  // sides — matching the main Goals O/U shape so the existing renderer
+  // produces a sortable, paired table.
+  const normaliseOuDict = (dict) => {
+    if (!dict) return {};
+    const out = {};
+    for (const [rawKey, val] of Object.entries(dict)) {
+      const key = String(rawKey).trim();
+      const m = key.match(/^(Over|Under)\s+(\d+(?:\.\d+)?)$/i);
+      if (m) {
+        const side = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase(); // "Over"|"Under"
+        const line = m[2];
+        if (!out[line]) out[line] = {};
+        if (val != null && typeof val === 'object') {
+          if (val.Over  != null) out[line].Over  = val.Over;
+          if (val.Under != null) out[line].Under = val.Under;
+          if (out[line][side] == null && val[side] != null) out[line][side] = val[side];
+        } else if (typeof val === 'number') {
+          out[line][side] = val;
+        }
+      } else {
+        if (!out[key]) out[key] = {};
+        if (val != null && typeof val === 'object') Object.assign(out[key], val);
+      }
+    }
+    return out;
+  };
+
+  const teamGoalsHomeOu = normaliseOuDict({ ...(preOdds.ttg?.Home ?? {}), ...(preOdds.homeGoals ?? {}) });
+  const teamGoalsAwayOu = normaliseOuDict({ ...(preOdds.ttg?.Away ?? {}), ...(preOdds.awayGoals ?? {}) });
 
   // ── Render ────────────────────────────────────────────────────
   const filteredMatches = selectedLeague
