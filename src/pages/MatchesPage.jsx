@@ -1822,12 +1822,27 @@ export default function MatchesPage() {
                       <div className="pick-list">
                         {Object.entries(preOdds.htExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                          .map(([k, o]) => (
-                            <button key={k} type="button" className="pick-list__row" disabled>
-                              <span className="pick-list__label">{k} {k === '1' ? 'гол' : 'гола'}</span>
-                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                            </button>
-                          ))}
+                          .map(([k, o]) => {
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.HalfTimeExactGoals}:${k}:HTEG1`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={k} type="button"
+                                className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.HalfTimeExactGoals, pick: k, selKey: 'HTEG1',
+                                    odds: o,
+                                    leg: { stringPick: k },
+                                    label: `Точно ${k} гола 1-во полувреме`,
+                                    chip: `1H${k}⚽`,
+                                  });
+                                }}>
+                                <span className="pick-list__label">{k}</span>
+                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
@@ -1844,12 +1859,27 @@ export default function MatchesPage() {
                       <div className="pick-list">
                         {Object.entries(preOdds.shExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                          .map(([k, o]) => (
-                            <button key={k} type="button" className="pick-list__row" disabled>
-                              <span className="pick-list__label">{k} {k === '1' ? 'гол' : 'гола'}</span>
-                              <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                            </button>
-                          ))}
+                          .map(([k, o]) => {
+                            const slipKey = `${selectedMatch.id}:${BET_TYPE.SecondHalfExactGoals}:${k}:SHEG`;
+                            const active  = ouPicks.has(slipKey);
+                            return (
+                              <button key={k} type="button"
+                                className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
+                                onClick={() => {
+                                  setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                  addToSlip({
+                                    betType: BET_TYPE.SecondHalfExactGoals, pick: k, selKey: 'SHEG',
+                                    odds: o,
+                                    leg: { stringPick: k },
+                                    label: `Точно ${k} гола 2-ро полувреме`,
+                                    chip: `2H${k}⚽`,
+                                  });
+                                }}>
+                                <span className="pick-list__label">{k}</span>
+                                <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     )}
                   </div>

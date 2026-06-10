@@ -73,6 +73,8 @@ export const BET_TYPE = {
   FirstGoalMethod:      'FirstGoalMethod',
   HomeTeamExactGoals:   'HomeTeamExactGoals',
   AwayTeamExactGoals:   'AwayTeamExactGoals',
+  HalfTimeExactGoals:   'HalfTimeExactGoals',
+  SecondHalfExactGoals: 'SecondHalfExactGoals',
   EarlyGoal:            'EarlyGoal',
   LateGoal:             'LateGoal',
 };

@@ -244,8 +244,6 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
       )}
     </div>
   );
-}
-
 });
 
 export default LiveBetStatusPanel;
