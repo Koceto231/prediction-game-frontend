@@ -113,7 +113,7 @@ export default function MatchesPage() {
   // Structure: { [betType]: { [side_or_match]: { [line]: { Over, Under } } } }
   const [statOdds, setStatOdds] = useState({});
   // Главни tab sections start expanded (false = open).
-  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, dnb: false, hcp: false, ht: false, corners: true, yellows: true, scorer: false, oddEven: true, wtn: true, homeGoals: true, awayGoals: true, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true, sh2: true, earlyGoal: true, lateGoal: true, fgm: true, htExact: true, shExact: true, homeExact: true, awayExact: true, ttg: true, fgsSection: true, lgsSection: true, pbSection: true, fpbSection: true, tgsSection: true, assistSection: true, dc1h: true };
+  const INIT_COLLAPSED = { winner: false, dc: false, goals: false, btts: false, dnb: false, hcp: false, ht: false, corners: true, yellows: true, scorer: false, oddEven: true, wtn: true, homeGoals: false, awayGoals: false, cs: true, fg: true, btts1h: true, btts2h: true, htGoals: true, shGoals: true, teamOE: true, oe1h: true, teamTs: true, wbh: true, lastScore: true, htft: true, etg: true, wm: true, nog: true, bhh: true, htrb: true, oe2h: true, sbh: true, hwmg: true, thshHome: true, thshAway: true, rtg: true, weh: true, ah: true, ahAlt: true, ah1h: true, ah1hAlt: true, scorePen: true, missPen: true, teamSot: true, teamShots: true, teamOffsides: true, teamTackles: true, matchSot: true, matchShots: true, matchOffsides: true, matchTackles: true, playerAssist: true, playerSoa: true, sh2: true, earlyGoal: true, lateGoal: true, fgm: true, htExact: true, shExact: true, homeExact: true, awayExact: true, ttg: true, fgsSection: true, lgsSection: true, pbSection: true, fpbSection: true, tgsSection: true, assistSection: true, dc1h: true };
   const [collapsed, setCollapsed] = useState(INIT_COLLAPSED);
   const toggleSection = (k) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
@@ -659,8 +659,16 @@ export default function MatchesPage() {
         Away: { true: m.wtnAwayYes ?? null, false: m.wtnAwayNo ?? null },
       },
       hcp: { Home: m.hcpHomeOdds ?? null, Draw: m.hcpDrawOdds ?? null, Away: m.hcpAwayOdds ?? null, line: m.hcpLine ?? null },
-      homeGoals: (() => { try { return m.homeGoalsOuOddsJson ? JSON.parse(m.homeGoalsOuOddsJson) : (ttgNorm.Home ?? {}); } catch { return ttgNorm.Home ?? {}; } })(),
-      awayGoals: (() => { try { return m.awayGoalsOuOddsJson ? JSON.parse(m.awayGoalsOuOddsJson) : (ttgNorm.Away ?? {}); } catch { return ttgNorm.Away ?? {}; } })(),
+      homeGoals: (() => {
+        let direct = {};
+        try { if (m.homeGoalsOuOddsJson) direct = JSON.parse(m.homeGoalsOuOddsJson); } catch { /* ignore */ }
+        return { ...(ttgNorm.Home ?? {}), ...direct };
+      })(),
+      awayGoals: (() => {
+        let direct = {};
+        try { if (m.awayGoalsOuOddsJson) direct = JSON.parse(m.awayGoalsOuOddsJson); } catch { /* ignore */ }
+        return { ...(ttgNorm.Away ?? {}), ...direct };
+      })(),
       ht: { Home: m.htHomeOdds ?? null, Draw: m.htDrawOdds ?? null, Away: m.htAwayOdds ?? null },
       cs: {
         Home: { true: m.csHomeYes ?? null, false: m.csHomeNo ?? null },
@@ -1021,6 +1029,11 @@ export default function MatchesPage() {
     htft:      mHasKeys(preOdds.htft),
     ttg:       false, // market 86 data is shown via homeGoals/awayGoals fallback
   };
+
+  const hasOuTableLines = (obj) =>
+    obj != null && Object.keys(obj).some(l => obj[l]?.Over != null || obj[l]?.Under != null);
+  const teamGoalsHomeOu = { ...(preOdds.ttg?.Home ?? {}), ...(preOdds.homeGoals ?? {}) };
+  const teamGoalsAwayOu = { ...(preOdds.ttg?.Away ?? {}), ...(preOdds.awayGoals ?? {}) };
 
   // ── Render ────────────────────────────────────────────────────
   const filteredMatches = selectedLeague
@@ -1988,9 +2001,93 @@ export default function MatchesPage() {
                   </div>
                   )}
 
+                  {/* Home team goals O/U (markets 20, 86) */}
+                  {hasOuTableLines(teamGoalsHomeOu) && (
+                  <div data-cat="teams" data-order="1" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
+                      <span className="market-section__name">△ {selectedMatch.homeTeamName} — Голове над / под</span>
+                      <span className="market-section__toggle">{collapsed.homeGoals ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.homeGoals && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>НАД</span><span>ПОД</span></div>
+                        {Object.keys(teamGoalsHomeOu)
+                          .filter(l => teamGoalsHomeOu[l]?.Over != null || teamGoalsHomeOu[l]?.Under != null)
+                          .sort((a, b) => parseFloat(a) - parseFloat(b))
+                          .map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].filter(pick => teamGoalsHomeOu[l]?.[pick] != null).map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
+                              return (
+                                <button key={pick} type="button"
+                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                  onClick={() => {
+                                    setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                    addToSlip({
+                                      betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
+                                      odds: teamGoalsHomeOu[l][pick],
+                                      leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
+                                      label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                      chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    });
+                                  }}>
+                                  {Number(teamGoalsHomeOu[l][pick]).toFixed(2)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Away team goals O/U (markets 21, 86) */}
+                  {hasOuTableLines(teamGoalsAwayOu) && (
+                  <div data-cat="teams" data-order="2" className={`market-section ${collapsed.awayGoals ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('awayGoals')}>
+                      <span className="market-section__name">▽ {selectedMatch.awayTeamName} — Голове над / под</span>
+                      <span className="market-section__toggle">{collapsed.awayGoals ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.awayGoals && (
+                      <div className="ou-table">
+                        <div className="ou-table__subheader"><span></span><span>НАД</span><span>ПОД</span></div>
+                        {Object.keys(teamGoalsAwayOu)
+                          .filter(l => teamGoalsAwayOu[l]?.Over != null || teamGoalsAwayOu[l]?.Under != null)
+                          .sort((a, b) => parseFloat(a) - parseFloat(b))
+                          .map(l => (
+                          <div key={l} className="ou-table__row">
+                            <span className="ou-table__line">{l}</span>
+                            {['Over', 'Under'].filter(pick => teamGoalsAwayOu[l]?.[pick] != null).map(pick => {
+                              const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
+                              return (
+                                <button key={pick} type="button"
+                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
+                                  onClick={() => {
+                                    setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+                                    addToSlip({
+                                      betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
+                                      odds: teamGoalsAwayOu[l][pick],
+                                      leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
+                                      label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
+                                      chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
+                                    });
+                                  }}>
+                                  {Number(teamGoalsAwayOu[l][pick]).toFixed(2)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
                   {/* Home Team Exact Goals (market 18) */}
                   {Object.keys(preOdds.homeExact ?? {}).length > 0 && (
-                  <div data-cat="teams" data-order="2" className={`market-section ${collapsed.homeExact ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="teams" data-order="3" className={`market-section ${collapsed.homeExact ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('homeExact')}>
                       <span className="market-section__name">🏠 Точен брой голове — {selectedMatch.homeTeamName}</span>
                       <span className="market-section__toggle">{collapsed.homeExact ? '▼' : '▲'}</span>
@@ -2027,7 +2124,7 @@ export default function MatchesPage() {
 
                   {/* Away Team Exact Goals (market 19) */}
                   {Object.keys(preOdds.awayExact ?? {}).length > 0 && (
-                  <div data-cat="teams" data-order="3" className={`market-section ${collapsed.awayExact ? 'market-section--collapsed' : ''}`}>
+                  <div data-cat="teams" data-order="4" className={`market-section ${collapsed.awayExact ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('awayExact')}>
                       <span className="market-section__name">✈️ Точен брой голове — {selectedMatch.awayTeamName}</span>
                       <span className="market-section__toggle">{collapsed.awayExact ? '▼' : '▲'}</span>
@@ -2311,51 +2408,6 @@ export default function MatchesPage() {
                   </div>
                   )}
 
-                  {/* Win to Nil */}
-                  {mv.wtn && (
-                  <div data-cat="teams" data-order="7" className={`market-section ${collapsed.wtn ? 'market-section--collapsed' : ''}${dis.wtn ? ' market-section--locked' : ''}`}>
-                    <div className="market-section__header" onClick={() => !dis.wtn && toggleSection('wtn')} style={dis.wtn ? { cursor: 'default', opacity: 0.45 } : {}}>
-                      <span className="market-section__name">⊘ Печели на нула</span>
-                      {dis.wtn ? <LiveLock reason={`${groupAPicked} already picked`} /> : wtnTeam && wtnYN && <span className="market-section__badge">{wtnTeam === 'Home' ? selectedMatch.homeTeamName : selectedMatch.awayTeamName} {wtnYN === 'true' ? 'Yes' : 'No'}</span>}
-                      <span className="market-section__toggle">{!dis.wtn && (collapsed.wtn ? '▼' : '▲')}</span>
-                    </div>
-                    {!collapsed.wtn && !dis.wtn && (
-                      <div style={{ padding: '0 16px 12px' }}>
-                        <div className="muted-text" style={{ fontSize: '0.74rem', marginBottom: 8 }}>Team wins AND concedes 0 goals.</div>
-                        {[{ val: 'Home', lbl: selectedMatch.homeTeamName }, { val: 'Away', lbl: selectedMatch.awayTeamName }].map(({ val, lbl }) => (
-                          <div key={val} style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
-                            <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds.wtn?.[val]?.[yn] != null).map(({ yn, lbl2 }) => (
-                                <button key={yn} type="button"
-                                  className={`market-option ${wtnTeam === val && wtnYN === yn ? 'market-option--active' : ''}`}
-                                  onClick={() => {
-                                    if (wtnTeam === val && wtnYN === yn) { setWtnTeam(''); setWtnYN(''); }
-                                    else {
-                                      setWtnTeam(val); setWtnYN(yn);
-                                      addToSlip({
-                                        betType: BET_TYPE.WinToNil, pick: val, selKey: `WTN-${val}`,
-                                        odds: preOdds.wtn[val][yn],
-                                        leg: { pick: val, bTTSPick: yn === 'true' },
-                                        label: `Победа на нула — ${lbl} ${yn === 'true' ? 'Да' : 'Не'}`,
-                                        chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
-                                      });
-                                    }
-                                  }}>
-                                  <div className="market-option__label">{lbl2}</div>
-                                  <div className="market-option__odds">
-                                    {Number(preOdds.wtn[val][yn]).toFixed(2)}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  )}
-
                   {/* Handicap */}
                   {mv.hcp && (
                   <div data-cat="main" data-order="6" className={`market-section ${collapsed.hcp ? 'market-section--collapsed' : ''}${dis.hcp ? ' market-section--locked' : ''}`}>
@@ -2390,92 +2442,6 @@ export default function MatchesPage() {
                             </div>
                           </button>
                         ))}
-                      </div>
-                    )}
-                  </div>
-                  )}
-
-                  {/* Team Goals O/U — combined (markets 20, 21, 86) */}
-                  {(mv.homeGoals || mv.awayGoals || Object.keys(preOdds.ttg?.Home ?? {}).length > 0 || Object.keys(preOdds.ttg?.Away ?? {}).length > 0) && (
-                  <div data-cat="teams" data-order="1" className={`market-section ${collapsed.homeGoals ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('homeGoals')}>
-                      <span className="market-section__name">⚽ Голове на отбор</span>
-                      <span className="market-section__toggle">{collapsed.homeGoals ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.homeGoals && (
-                      <div>
-                        {(() => {
-                          const combined = { ...(preOdds.ttg?.Home ?? {}), ...(preOdds.homeGoals ?? {}) };
-                          const lines = Object.keys(combined).filter(l => combined[l]?.Over != null || combined[l]?.Under != null).sort((a, b) => parseFloat(a) - parseFloat(b));
-                          if (lines.length === 0) return null;
-                          return (
-                            <div>
-                              <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{selectedMatch.homeTeamName}</span><span>OVER</span><span>UNDER</span></div>
-                              <div className="ou-table">
-                                {lines.map(l => (
-                                  <div key={l} className="ou-table__row">
-                                    <span className="ou-table__line">{l}</span>
-                                    {['Over', 'Under'].filter(pick => combined[l]?.[pick] != null).map(pick => {
-                                      const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Home:TGH-${l}-${pick}`;
-                                      return (
-                                        <button key={pick} type="button"
-                                          className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                          onClick={() => {
-                                            setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                            addToSlip({
-                                              betType: BET_TYPE.TeamGoals, pick: 'Home', selKey: `TGH-${l}-${pick}`,
-                                              odds: combined[l][pick],
-                                              leg: { pick: 'Home', lineValue: Number(l), oUPick: pick },
-                                              label: `${selectedMatch.homeTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                              chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
-                                            });
-                                          }}>
-                                          {Number(combined[l][pick]).toFixed(2)}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                        {(() => {
-                          const combined = { ...(preOdds.ttg?.Away ?? {}), ...(preOdds.awayGoals ?? {}) };
-                          const lines = Object.keys(combined).filter(l => combined[l]?.Over != null || combined[l]?.Under != null).sort((a, b) => parseFloat(a) - parseFloat(b));
-                          if (lines.length === 0) return null;
-                          return (
-                            <div>
-                              <div className="ou-table__subheader" style={{paddingLeft:'8px'}}><span>{selectedMatch.awayTeamName}</span><span>OVER</span><span>UNDER</span></div>
-                              <div className="ou-table">
-                                {lines.map(l => (
-                                  <div key={l} className="ou-table__row">
-                                    <span className="ou-table__line">{l}</span>
-                                    {['Over', 'Under'].filter(pick => combined[l]?.[pick] != null).map(pick => {
-                                      const k = `${selectedMatch.id}:${BET_TYPE.TeamGoals}:Away:TGA-${l}-${pick}`;
-                                      return (
-                                        <button key={pick} type="button"
-                                          className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
-                                          onClick={() => {
-                                            setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
-                                            addToSlip({
-                                              betType: BET_TYPE.TeamGoals, pick: 'Away', selKey: `TGA-${l}-${pick}`,
-                                              odds: combined[l][pick],
-                                              leg: { pick: 'Away', lineValue: Number(l), oUPick: pick },
-                                              label: `${selectedMatch.awayTeamName} голове ${pick === 'Over' ? 'над' : 'под'} ${l}`,
-                                              chip: `${pick === 'Over' ? 'O' : 'U'}${l}`,
-                                            });
-                                          }}>
-                                          {Number(combined[l][pick]).toFixed(2)}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
                       </div>
                     )}
                   </div>
@@ -3336,51 +3302,6 @@ export default function MatchesPage() {
                           </button>
                           );
                         })}
-                      </div>
-                    )}
-                  </div>
-                  )}
-
-                  {/* Team to Score */}
-                  {mv.teamTs && (
-                  <div data-cat="teams" data-order="5" className={`market-section ${collapsed.teamTs ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('teamTs')}>
-                      <span className="market-section__name">→ Отбор отбелязва</span>
-                      {(homeTsPick || awayTsPick) && <span className="market-section__badge">selected</span>}
-                      <span className="market-section__toggle">{collapsed.teamTs ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.teamTs && (
-                      <div style={{ padding: '0 16px 12px' }}>
-                        {[
-                          { val: 'Home', lbl: selectedMatch.homeTeamName, pick: homeTsPick, setPick: setHomeTsPick, key: 'homeTs' },
-                          { val: 'Away', lbl: selectedMatch.awayTeamName, pick: awayTsPick, setPick: setAwayTsPick, key: 'awayTs' },
-                        ].map(({ val, lbl, pick: teamPick, setPick, key }) => (
-                          <div key={val} style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-muted)' }}>{lbl}</div>
-                            <div className="market-options market-options--2">
-                              {[{ yn: 'true', lbl2: 'Yes' }, { yn: 'false', lbl2: 'No' }].filter(({ yn }) => preOdds[key]?.[yn] != null).map(({ yn, lbl2 }) => (
-                                <button key={yn} type="button"
-                                  className={`market-option ${teamPick === yn ? 'market-option--active' : ''}`}
-                                  onClick={() => {
-                                    const next = teamPick === yn ? '' : yn;
-                                    setPick(next);
-                                    if (next) addToSlip({
-                                      betType: BET_TYPE.TeamToScore, pick: val, selKey: `TS-${val}`,
-                                      odds: preOdds[key][yn],
-                                      leg: { pick: val, bTTSPick: yn === 'true' },
-                                      label: `${lbl} да отбележи — ${yn === 'true' ? 'Да' : 'Не'}`,
-                                      chip: `${val === 'Home' ? '1' : '2'}${yn === 'true' ? '✓' : '✗'}`,
-                                    });
-                                  }}>
-                                  <div className="market-option__label">{lbl2}</div>
-                                  <div className="market-option__odds">
-                                    {Number(preOdds[key][yn]).toFixed(2)}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
                       </div>
                     )}
                   </div>
