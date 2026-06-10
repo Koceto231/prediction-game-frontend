@@ -9023,7 +9023,7 @@ select:focus {
 /* Exact Score quick-pick tile grid (mockup upgraded_my_bets_overview_5) */
 .exact-score-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -9093,7 +9093,7 @@ select:focus {
 .exact-score-custom summary:hover { color: var(--text-main); }
 
 @media (max-width: 600px) {
-  .exact-score-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .exact-score-grid { gap: 6px; }
   .exact-score-tile { padding: 10px 4px; }
   .exact-score-tile__score { font-size: 0.95rem; }
 }
