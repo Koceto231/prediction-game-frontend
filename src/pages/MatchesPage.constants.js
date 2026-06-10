@@ -189,10 +189,10 @@ export async function fetchOdds(matchId, betType, params = {}) {
 // ── Leagues ──────────────────────────────────────────────────────────
 export const LEAGUE_LIST = [
   { code: null,  label: 'All Leagues',    flag: '◈' },
+  { code: 'WC',  label: 'World Cup',      flag: '🏆' },
   { code: 'PL',  label: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   { code: 'BL1', label: 'Bundesliga',     flag: '🇩🇪' },
   { code: 'SA',  label: 'Serie A',        flag: '🇮🇹' },
   { code: 'PD',  label: 'La Liga',        flag: '🇪🇸' },
   { code: 'BGL', label: 'Efbet Liga',     flag: '🇧🇬' },
-  { code: 'WC',  label: 'World Cup',      flag: '🏆' },
 ];
