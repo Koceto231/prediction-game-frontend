@@ -18,7 +18,16 @@ export default function MatchesPage() {
   const { refreshBalance } = useWallet();
   const { isAdmin } = useAuth();
 
-  const [matches, setMatches]             = useState([]);
+  const [matches, setMatches]             = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('matches_cache');
+      if (!raw) return [];
+      const { ts, data } = JSON.parse(raw);
+      // Treat cached data as fresh for up to 5 minutes
+      if (Date.now() - ts < 5 * 60 * 1000) return data;
+    } catch { /* ignore */ }
+    return [];
+  });
   const [selectedLeague, setSelectedLeague] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
   // Quick Stake modal — opens when the user taps a 1/X/2 odd in a match card
@@ -264,10 +273,15 @@ export default function MatchesPage() {
   }, []);
 
   useEffect(() => {
-    setPageLoading(true);
+    // Only show the spinner if we have nothing cached to display yet.
+    setPageLoading(prev => { if (matches.length === 0) return true; return prev; });
     api.get('/Match/upcoming?take=50')
-      .then(r => setMatches(r.data))
-      .catch(e => setLoadError(e?.response?.data?.message || 'Failed to load matches.'))
+      .then(r => {
+        setMatches(r.data);
+        try { sessionStorage.setItem('matches_cache', JSON.stringify({ ts: Date.now(), data: r.data })); }
+        catch { /* storage full — silently skip */ }
+      })
+      .catch(e => { if (matches.length === 0) setLoadError(e?.response?.data?.message || 'Failed to load matches.'); })
       .finally(() => setPageLoading(false));
   }, []);
 
