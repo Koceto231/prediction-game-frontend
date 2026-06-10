@@ -2092,8 +2092,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.fgsSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.fgsSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.fgsOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.fgsOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2107,8 +2109,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.lgsSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.lgsSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.lgsOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.lgsOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2122,8 +2126,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.pbSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.pbSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.pbOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.pbOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2137,8 +2143,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.fpbSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.fpbSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.fpbOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.fpbOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2152,8 +2160,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.tgsSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.tgsSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.tgsOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.tgsOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2167,8 +2177,10 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.assistSection ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.assistSection && (
-                      <div className="gs-list">
-                        {renderPlayerListByOdds(preOdds.assistOdds)}
+                      <div style={{ padding: '12px 16px' }}>
+                        <div className="gs-list">
+                          {renderPlayerListByOdds(preOdds.assistOdds)}
+                        </div>
                       </div>
                     )}
                   </div>
