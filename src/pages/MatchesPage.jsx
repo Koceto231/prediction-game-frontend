@@ -1011,14 +1011,8 @@ export default function MatchesPage() {
     ? matches.filter(m => m.leagueCode === selectedLeague)
     : matches;
 
-  // Player → team-crest lookup for the player-list market sections
-  // (First/Last Goalscorer, Carded, First Carded, Team Goalscorer,
-  // Assist). The odds dicts only carry { name: odds } so we
-  // cross-reference scorerPlayers — loaded by /Match/{id}/players —
-  // which carries an `isHome` flag per player. Sportmonks odds names
-  // ("M. Salah") frequently don't equal squad names ("Mohamed Salah"),
-  // so the lookup is intentionally lenient: strip accents/punctuation,
-  // try exact → "<last>" → "<initial>. <last>" matches.
+  // Strip accents + punctuation + case for lenient name comparison between
+  // Sportmonks odds labels ("M. Salah") and FantasyPlayer names ("Mohamed Salah").
   const normaliseName = (s) =>
     (s || '')
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -1027,46 +1021,64 @@ export default function MatchesPage() {
       .replace(/\s+/g, ' ')
       .trim();
 
-  const findScorer = (rawName) => {
-    if (!scorerPlayers?.length) return null;
-    const target = normaliseName(rawName);
-    if (!target) return null;
-    const exact = scorerPlayers.find(p => normaliseName(p.name) === target);
-    if (exact) return exact;
-    const targetParts = target.split(' ');
-    const targetLast = targetParts[targetParts.length - 1];
-    const targetInitial = targetParts[0]?.[0];
-    return scorerPlayers.find(p => {
-      const parts = normaliseName(p.name).split(' ');
-      if (!parts.length) return false;
-      const last = parts[parts.length - 1];
-      if (last !== targetLast) return false;
-      // If both have a first token, also require initial-of-first to match
-      // — prevents "M. Smith" matching "John Smith" when both are in squad.
-      const initial = parts[0]?.[0];
-      if (targetInitial && initial && targetParts.length > 1 && parts.length > 1)
-        return initial === targetInitial;
-      return true;
-    });
-  };
+  // Renders a player-market list (First/Last Goalscorer, Player Booked,
+  // First Player Booked, Team Goalscorer, Assist) the *same way* the
+  // Anytime Goalscorer / Score-or-Assist sections do: iterate over
+  // scorerPlayers (which carries name + playerId + isHome) and pull the
+  // price from the Sportmonks dict via lenient name match. The display
+  // name + team crest always come from the squad, never from raw odds
+  // labels — so the row layout is identical to the Goalscorer section.
+  const renderPlayerListByOdds = (oddsDict) => {
+    if (!oddsDict || Object.keys(oddsDict).length === 0) return null;
+    if (!scorerPlayers?.length) {
+      // Squad not loaded yet — fall back to flag-less rows keyed by name
+      // so the section still renders something instead of going blank.
+      return Object.entries(oddsDict).sort((a, b) => a[1] - b[1]).map(([name, o]) => (
+        <div key={name} className="gs-row">
+          <span className="gs-row__name">{name}</span>
+          <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
+        </div>
+      ));
+    }
+    const normalisedDict = Object.entries(oddsDict).map(([n, o]) => ({
+      norm: normaliseName(n), raw: n, odds: Number(o),
+    }));
+    const rows = scorerPlayers
+      .map(p => {
+        const pNorm  = normaliseName(p.name);
+        const pParts = pNorm.split(' ');
+        const pLast  = pParts[pParts.length - 1];
+        const pInit  = pParts[0]?.[0];
+        const hit = normalisedDict.find(d => {
+          if (d.norm === pNorm) return true;
+          const parts = d.norm.split(' ');
+          const last = parts[parts.length - 1];
+          if (last !== pLast) return false;
+          const initial = parts[0]?.[0];
+          if (initial && pInit && parts.length > 1 && pParts.length > 1)
+            return initial === pInit;
+          return true;
+        });
+        return hit ? { ...p, odds: hit.odds } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.odds - b.odds);
 
-  const renderPlayerRow = (name, odds) => {
-    const sp   = findScorer(name);
-    const logo = sp ? (sp.isHome ? selectedMatch?.homeTeamLogo : selectedMatch?.awayTeamLogo) : null;
-    const team = sp ? (sp.isHome ? selectedMatch?.homeTeamName : selectedMatch?.awayTeamName) : null;
-    return (
-      <div key={name} className="gs-row">
-        {(logo || team) && (
+    return rows.map(p => {
+      const logo = p.isHome ? selectedMatch?.homeTeamLogo : selectedMatch?.awayTeamLogo;
+      const team = p.isHome ? selectedMatch?.homeTeamName : selectedMatch?.awayTeamName;
+      return (
+        <div key={p.playerId} className="gs-row">
           <span className="gs-row__crest">
             {logo
               ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               : <span className="gs-row__crest-fallback">{(team || '?').slice(0, 1)}</span>}
           </span>
-        )}
-        <span className="gs-row__name">{name}</span>
-        <span className="gs-row__odds">{Number(odds).toFixed(2)}</span>
-      </div>
-    );
+          <span className="gs-row__name">{p.name}</span>
+          <span className="gs-row__odds">{Number(p.odds).toFixed(2)}</span>
+        </div>
+      );
+    });
   };
 
   return (
@@ -2081,7 +2093,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.fgsSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.fgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.fgsOdds)}
                       </div>
                     )}
                   </div>
@@ -2096,7 +2108,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.lgsSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.lgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.lgsOdds)}
                       </div>
                     )}
                   </div>
@@ -2111,7 +2123,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.pbSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.pbOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.pbOdds)}
                       </div>
                     )}
                   </div>
@@ -2126,7 +2138,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.fpbSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.fpbOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.fpbOdds)}
                       </div>
                     )}
                   </div>
@@ -2141,7 +2153,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.tgsSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.tgsOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.tgsOdds)}
                       </div>
                     )}
                   </div>
@@ -2156,7 +2168,7 @@ export default function MatchesPage() {
                     </div>
                     {!collapsed.assistSection && (
                       <div className="gs-list">
-                        {Object.entries(preOdds.assistOdds).sort((a,b)=>a[1]-b[1]).map(([name, o]) => renderPlayerRow(name, o))}
+                        {renderPlayerListByOdds(preOdds.assistOdds)}
                       </div>
                     )}
                   </div>
