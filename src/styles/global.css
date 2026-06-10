@@ -9027,6 +9027,9 @@ select:focus {
   gap: 8px;
   margin-bottom: 14px;
 }
+.exact-score-grid--col {
+  grid-template-columns: 1fr;
+}
 
 .exact-score-tile {
   display: flex;

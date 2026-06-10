@@ -1698,7 +1698,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.fgm ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.fgm && (
-                      <div className="exact-score-grid">
+                      <div className="exact-score-grid exact-score-grid--col">
                         {(() => {
                           const ORDER = ['Header', 'Free Kick', 'Penalty', 'Own Goal', 'No Goal'];
                           return Object.entries(preOdds.fgm)
@@ -1771,7 +1771,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.homeExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.homeExact && (
-                      <div className="exact-score-grid">
+                      <div className="exact-score-grid exact-score-grid--col">
                         {Object.entries(preOdds.homeExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
@@ -1793,7 +1793,7 @@ export default function MatchesPage() {
                       <span className="market-section__toggle">{collapsed.awayExact ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.awayExact && (
-                      <div className="exact-score-grid">
+                      <div className="exact-score-grid exact-score-grid--col">
                         {Object.entries(preOdds.awayExact).filter(([_, o]) => o != null)
                           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                           .map(([k, o]) => (
