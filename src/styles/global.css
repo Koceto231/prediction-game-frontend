@@ -9157,11 +9157,34 @@ select:focus {
    Falls back gracefully when no data-cat is set (sections stay visible). */
 .market-table[data-cat="main"]    .market-section:not([data-cat="main"]),
 .market-table[data-cat="goals"]   .market-section:not([data-cat="goals"]),
+.market-table[data-cat="teams"]   .market-section:not([data-cat="teams"]),
 .market-table[data-cat="halves"]  .market-section:not([data-cat="halves"]),
-.market-table[data-cat="corners"] .market-section:not([data-cat="corners"]),
+.market-table[data-cat="players"] .market-section:not([data-cat="players"]),
+.market-table[data-cat="stats"]   .market-section:not([data-cat="stats"]),
+.market-table[data-cat="ah"]      .market-section:not([data-cat="ah"]),
 .market-table[data-cat="special"] .market-section:not([data-cat="special"]) {
   display: none;
 }
+.market-section[data-order="1"]  { order: 1; }
+.market-section[data-order="2"]  { order: 2; }
+.market-section[data-order="3"]  { order: 3; }
+.market-section[data-order="4"]  { order: 4; }
+.market-section[data-order="5"]  { order: 5; }
+.market-section[data-order="6"]  { order: 6; }
+.market-section[data-order="7"]  { order: 7; }
+.market-section[data-order="8"]  { order: 8; }
+.market-section[data-order="9"]  { order: 9; }
+.market-section[data-order="10"] { order: 10; }
+.market-section[data-order="11"] { order: 11; }
+.market-section[data-order="12"] { order: 12; }
+.market-section[data-order="13"] { order: 13; }
+.market-section[data-order="14"] { order: 14; }
+.market-section[data-order="15"] { order: 15; }
+.market-section[data-order="16"] { order: 16; }
+.market-section[data-order="17"] { order: 17; }
+.market-section[data-order="18"] { order: 18; }
+.market-section[data-order="19"] { order: 19; }
+.market-section[data-order="20"] { order: 20; }
 
 /* ────────────────────────────────────────────────────────────────
    MATCHES page polish — small tweaks to match stitch mockup
