@@ -69,6 +69,10 @@ export const BET_TYPE = {
   MatchTackles:         'MatchTackles',
   PlayerAssist:         'PlayerAssist',
   PlayerScoreOrAssist:  'PlayerScoreOrAssist',
+  PlayerBooked:         'PlayerBooked',
+  FirstPlayerBooked:    'FirstPlayerBooked',
+  FirstGoalScorer:      'FirstGoalScorer',
+  LastGoalScorer:       'LastGoalScorer',
   // ── Phase 9 (First Goal / Team Exact Goals / Timed Goals) ───────────
   FirstGoalMethod:      'FirstGoalMethod',
   HomeTeamExactGoals:   'HomeTeamExactGoals',

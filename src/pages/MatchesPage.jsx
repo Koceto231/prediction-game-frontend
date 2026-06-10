@@ -1023,25 +1023,17 @@ export default function MatchesPage() {
       .replace(/\s+/g, ' ')
       .trim();
 
-  // Renders a player-market list (First/Last Goalscorer, Player Booked,
-  // First Player Booked, Team Goalscorer, Assist) the *same way* the
-  // Anytime Goalscorer / Score-or-Assist sections do: iterate over
-  // scorerPlayers (which carries name + playerId + isHome) and pull the
-  // price from the Sportmonks dict via lenient name match. The display
-  // name + team crest always come from the squad, never from raw odds
-  // labels — so the row layout is identical to the Goalscorer section.
-  const renderPlayerListByOdds = (oddsDict) => {
+  // Renders a clickable player-market list (bookings, goalscorers, etc.).
+  // Matches squad players to Sportmonks name-keyed odds via lenient name match.
+  const renderPlayerListByOdds = (oddsDict, { betType, labelPrefix, chip, selKeyPrefix }) => {
     if (!oddsDict || Object.keys(oddsDict).length === 0) return null;
-    if (!scorerPlayers?.length) {
-      // Squad not loaded yet — fall back to flag-less rows keyed by name
-      // so the section still renders something instead of going blank.
-      return Object.entries(oddsDict).sort((a, b) => a[1] - b[1]).map(([name, o]) => (
-        <div key={name} className="gs-row">
-          <span className="gs-row__name">{name}</span>
-          <span className="gs-row__odds">{Number(o).toFixed(2)}</span>
-        </div>
-      ));
+    if (scorerLoading) {
+      return <div className="muted-text" style={{ fontSize: '0.82rem' }}>Loading players...</div>;
     }
+    if (!scorerPlayers?.length) {
+      return <div className="muted-text" style={{ fontSize: '0.78rem' }}>No players found — sync via Admin → Sync Players.</div>;
+    }
+
     const normalisedDict = Object.entries(oddsDict).map(([n, o]) => ({
       norm: normaliseName(n), raw: n, odds: Number(o),
     }));
@@ -1066,11 +1058,27 @@ export default function MatchesPage() {
       .filter(Boolean)
       .sort((a, b) => a.odds - b.odds);
 
+    if (rows.length === 0) {
+      return <div className="muted-text" style={{ fontSize: '0.78rem' }}>No matching players for this market.</div>;
+    }
+
     return rows.map(p => {
       const logo = p.isHome ? selectedMatch?.homeTeamLogo : selectedMatch?.awayTeamLogo;
       const team = p.isHome ? selectedMatch?.homeTeamName : selectedMatch?.awayTeamName;
+      const slipKey = `${selectedMatch.id}:${betType}:${p.playerId}:${selKeyPrefix}`;
+      const active  = ouPicks.has(slipKey);
       return (
-        <div key={p.playerId} className="gs-row">
+        <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
+          onClick={() => {
+            setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+            addToSlip({
+              betType, pick: String(p.playerId), selKey: `${selKeyPrefix}-${p.playerId}`,
+              odds: p.odds,
+              leg: { goalscorerId: p.playerId },
+              label: `${labelPrefix} ${p.name}`,
+              chip,
+            });
+          }}>
           <span className="gs-row__crest">
             {logo
               ? <img src={logo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
@@ -1078,7 +1086,7 @@ export default function MatchesPage() {
           </span>
           <span className="gs-row__name">{p.name}</span>
           <span className="gs-row__odds">{Number(p.odds).toFixed(2)}</span>
-        </div>
+        </button>
       );
     });
   };
@@ -1890,55 +1898,6 @@ export default function MatchesPage() {
                   </div>
                   )}
 
-                  {/* First Goal Method (market 250) */}
-                  {Object.keys(preOdds.fgm ?? {}).length > 0 && (
-                  <div data-cat="goals" data-order="5" className={`market-section ${collapsed.fgm ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('fgm')}>
-                      <span className="market-section__name">🎯 Метод за първи гол</span>
-                      <span className="market-section__toggle">{collapsed.fgm ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.fgm && (
-                      <div className="pick-list">
-                        {(() => {
-                          const ORDER = ['Header', 'Free Kick', 'Penalty', 'Own Goal', 'No Goal'];
-                          // Header & Free Kick cannot be settled from Sportmonks event data
-                          const UNSETTLEABLE = new Set(['Header', 'Free Kick']);
-                          return Object.entries(preOdds.fgm)
-                            .filter(([_, o]) => o != null)
-                            .sort((a, b) => {
-                              const ai = ORDER.indexOf(a[0]); const bi = ORDER.indexOf(b[0]);
-                              return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-                            })
-                            .map(([k, o]) => {
-                              const unavailable = UNSETTLEABLE.has(k);
-                              const slipKey = `${selectedMatch.id}:${BET_TYPE.FirstGoalMethod}:${k}:FGM`;
-                              const active  = ouPicks.has(slipKey);
-                              return (
-                                <button key={k} type="button"
-                                  className={`pick-list__row${active ? ' pick-list__row--active' : ''}`}
-                                  disabled={unavailable}
-                                  title={unavailable ? 'Неналичен — данните не позволяват определяне на метода' : undefined}
-                                  onClick={unavailable ? undefined : () => {
-                                    setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
-                                    addToSlip({
-                                      betType: BET_TYPE.FirstGoalMethod, pick: k, selKey: 'FGM',
-                                      odds: o,
-                                      leg: { stringPick: k },
-                                      label: `Метод за първи гол — ${k}`,
-                                      chip: k.slice(0, 3),
-                                    });
-                                  }}>
-                                  <span className="pick-list__label">{k}</span>
-                                  <span className="pick-list__odds">{Number(o).toFixed(2)}</span>
-                                </button>
-                              );
-                            });
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                  )}
-
                   {/* 1st Half Exact Goals (market 33) */}
                   {Object.keys(preOdds.htExact ?? {}).length > 0 && (
                   <div data-cat="halves" data-order="12" className={`market-section ${collapsed.htExact ? 'market-section--collapsed' : ''}`}>
@@ -2098,7 +2057,12 @@ export default function MatchesPage() {
                     {!collapsed.fgsSection && (
                       <div style={{ padding: '12px 16px' }}>
                         <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.fgsOdds)}
+                          {renderPlayerListByOdds(preOdds.fgsOdds, {
+                            betType: BET_TYPE.FirstGoalScorer,
+                            labelPrefix: 'Първи голмайстор —',
+                            chip: '🥇',
+                            selKeyPrefix: 'FGS',
+                          })}
                         </div>
                       </div>
                     )}
@@ -2115,7 +2079,12 @@ export default function MatchesPage() {
                     {!collapsed.lgsSection && (
                       <div style={{ padding: '12px 16px' }}>
                         <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.lgsOdds)}
+                          {renderPlayerListByOdds(preOdds.lgsOdds, {
+                            betType: BET_TYPE.LastGoalScorer,
+                            labelPrefix: 'Последен голмайстор —',
+                            chip: '🏁',
+                            selKeyPrefix: 'LGS',
+                          })}
                         </div>
                       </div>
                     )}
@@ -2132,7 +2101,12 @@ export default function MatchesPage() {
                     {!collapsed.pbSection && (
                       <div style={{ padding: '12px 16px' }}>
                         <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.pbOdds)}
+                          {renderPlayerListByOdds(preOdds.pbOdds, {
+                            betType: BET_TYPE.PlayerBooked,
+                            labelPrefix: 'Картон —',
+                            chip: '🟨',
+                            selKeyPrefix: 'PB',
+                          })}
                         </div>
                       </div>
                     )}
@@ -2149,24 +2123,12 @@ export default function MatchesPage() {
                     {!collapsed.fpbSection && (
                       <div style={{ padding: '12px 16px' }}>
                         <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.fpbOdds)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  )}
-
-                  {/* Team Goalscorer (market 92) */}
-                  {Object.keys(preOdds.tgsOdds ?? {}).length > 0 && (
-                  <div data-cat="players" data-order="4" className={`market-section ${collapsed.tgsSection ? 'market-section--collapsed' : ''}`}>
-                    <div className="market-section__header" onClick={() => toggleSection('tgsSection')}>
-                      <span className="market-section__name">⚽ Голмайстор на отбор</span>
-                      <span className="market-section__toggle">{collapsed.tgsSection ? '▼' : '▲'}</span>
-                    </div>
-                    {!collapsed.tgsSection && (
-                      <div style={{ padding: '12px 16px' }}>
-                        <div className="gs-list">
-                          {renderPlayerListByOdds(preOdds.tgsOdds)}
+                          {renderPlayerListByOdds(preOdds.fpbOdds, {
+                            betType: BET_TYPE.FirstPlayerBooked,
+                            labelPrefix: 'Първи картон —',
+                            chip: '🟨',
+                            selKeyPrefix: 'FPB',
+                          })}
                         </div>
                       </div>
                     )}
