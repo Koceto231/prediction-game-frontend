@@ -749,6 +749,8 @@ export default function MatchesPage() {
       sh2:       { Home: m.sh2Home ?? null, Draw: m.sh2Draw ?? null, Away: m.sh2Away ?? null },
       earlyGoal: (() => { try { return m.earlyGoalOddsJson ? JSON.parse(m.earlyGoalOddsJson) : {}; } catch { return {}; } })(),
       lateGoal:  (() => { try { return m.lateGoalOddsJson  ? JSON.parse(m.lateGoalOddsJson)  : {}; } catch { return {}; } })(),
+      btc:  { true: m.bothTeamsCardYes           ?? null, false: m.bothTeamsCardNo           ?? null },
+      bt2c: { true: m.bothTeamsMoreThan2CardsYes ?? null, false: m.bothTeamsMoreThan2CardsNo ?? null },
       fgm:       (() => { try { return m.firstGoalMethodOddsJson   ? JSON.parse(m.firstGoalMethodOddsJson)   : {}; } catch { return {}; } })(),
       htExact:   (() => { try { return m.firstHalfExactGoalsJson   ? JSON.parse(m.firstHalfExactGoalsJson)   : {}; } catch { return {}; } })(),
       shExact:   (() => { try { return m.secondHalfExactGoalsJson  ? JSON.parse(m.secondHalfExactGoalsJson)  : {}; } catch { return {}; } })(),
@@ -1686,6 +1688,78 @@ export default function MatchesPage() {
                             })}
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Both Teams to Receive a Card (market 274) */}
+                  {(preOdds.btc?.true != null || preOdds.btc?.false != null) && (
+                  <div data-cat="stats" data-order="3" className={`market-section ${collapsed.btc ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('btc')}>
+                      <span className="market-section__name">🟨 И двата отбора с картон</span>
+                      <span className="market-section__toggle">{collapsed.btc ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.btc && (
+                      <div className="market-options market-options--2">
+                        {[{ val: true, lbl: 'Да' }, { val: false, lbl: 'Не' }].filter(({ val }) => preOdds.btc?.[val] != null).map(({ val, lbl }) => {
+                          const o = preOdds.btc[val];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.BothTeamsCard}:${val}:BTC`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={String(val)} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                addToSlip({
+                                  betType: BET_TYPE.BothTeamsCard, pick: String(val), selKey: 'BTC',
+                                  odds: o,
+                                  leg: { bttsPick: val },
+                                  label: `И двата отбора с картон — ${lbl}`,
+                                  chip: lbl,
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Both Teams to Receive >2 Cards (market 276) */}
+                  {(preOdds.bt2c?.true != null || preOdds.bt2c?.false != null) && (
+                  <div data-cat="stats" data-order="4" className={`market-section ${collapsed.bt2c ? 'market-section--collapsed' : ''}`}>
+                    <div className="market-section__header" onClick={() => toggleSection('bt2c')}>
+                      <span className="market-section__name">🟨 И двата отбора с над 2 картона</span>
+                      <span className="market-section__toggle">{collapsed.bt2c ? '▼' : '▲'}</span>
+                    </div>
+                    {!collapsed.bt2c && (
+                      <div className="market-options market-options--2">
+                        {[{ val: true, lbl: 'Да' }, { val: false, lbl: 'Не' }].filter(({ val }) => preOdds.bt2c?.[val] != null).map(({ val, lbl }) => {
+                          const o = preOdds.bt2c[val];
+                          const slipKey = `${selectedMatch.id}:${BET_TYPE.BothTeamsMoreThan2Cards}:${val}:BT2C`;
+                          const active  = ouPicks.has(slipKey);
+                          return (
+                            <button key={String(val)} type="button"
+                              className={`market-option ${active ? 'market-option--active' : ''}`}
+                              onClick={() => {
+                                setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                addToSlip({
+                                  betType: BET_TYPE.BothTeamsMoreThan2Cards, pick: String(val), selKey: 'BT2C',
+                                  odds: o,
+                                  leg: { bttsPick: val },
+                                  label: `И двата отбора с над 2 картона — ${lbl}`,
+                                  chip: lbl,
+                                });
+                              }}>
+                              <div className="market-option__label">{lbl}</div>
+                              <div className="market-option__odds">{Number(o).toFixed(2)}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

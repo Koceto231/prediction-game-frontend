@@ -83,6 +83,9 @@ export const BET_TYPE = {
   LateGoal:             'LateGoal',
   // ── Phase 10 (Half Exact Goals / Second Half Result) ──────────────
   SecondHalfResult:     'SecondHalfResult',
+  // ── Phase 12 (Card BTTS markets) ──────────────────────────────────
+  BothTeamsCard:           'BothTeamsCard',
+  BothTeamsMoreThan2Cards: 'BothTeamsMoreThan2Cards',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
