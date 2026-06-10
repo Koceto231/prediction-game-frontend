@@ -5601,10 +5601,9 @@ button:focus-visible {
 }
 .gs-row {
   display: grid;
-  /* 2 columns: player name (flexible) + odds (fits its content). The
-     legacy 26px crest column was unused — JSX only renders name + odds,
-     so the name was being shoved into a 26px slot and ellipsised to
-     3-4 chars. */
+  /* Default — 2 columns: name (flex) + odds (auto). Used by the
+     player-list sections that don't ship a team crest (First / Last
+     Goalscorer, Player to Score / Miss Penalty, Carded, Assist…). */
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   gap: 12px;
@@ -5614,6 +5613,14 @@ button:focus-visible {
   background: none;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Anytime Goalscorer rows include a team crest before the player
+   name — switch to 3 columns so crest + name + odds line up on
+   one row instead of the odds wrapping to a second line. */
+.gs-row:has(.gs-row__crest) {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  padding-left: 4px;
   cursor: pointer;
   text-align: left;
   transition: background 0.12s;
