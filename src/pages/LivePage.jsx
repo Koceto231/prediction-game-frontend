@@ -1663,7 +1663,7 @@ export default function LivePage() {
                       <div className="ou-table">
                         <div className="ou-table__subheader"><span></span><span>OVER</span><span>UNDER</span></div>
                         {Object.keys(preOdds.ou ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b)).map(label => {
-                          const line = OU_DECIMAL_TO_LINE[label] ?? null;
+                          const line = OU_DECIMAL_TO_LINE[label] ?? label;
                           const cellLocked = isOULocked(label, totalGoals);
                           return (
                           <div key={label} className="ou-table__row" style={cellLocked ? { opacity: 0.4 } : {}}>
@@ -1673,10 +1673,10 @@ export default function LivePage() {
                               const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
                               return (
                               <button key={pick} type="button"
-                                disabled={cellLocked || !line}
-                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${(cellLocked || !line) ? ' ou-cell--disabled' : ''}`}
+                                disabled={cellLocked}
+                                className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${cellLocked ? ' ou-cell--disabled' : ''}`}
                                 onClick={() => {
-                                  if (cellLocked || !line) return;
+                                  if (cellLocked) return;
                                   setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                   if (cellOdds != null) addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: cellOdds });
                                 }}>

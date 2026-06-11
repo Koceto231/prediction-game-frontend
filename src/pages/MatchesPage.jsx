@@ -1556,7 +1556,7 @@ export default function MatchesPage() {
                         {Object.keys(preOdds.ou ?? {}).sort((a,b) => parseFloat(a)-parseFloat(b))
                           .filter(label => preOdds.ou[label]?.Over != null || preOdds.ou[label]?.Under != null)
                           .map(label => {
-                          const line = OU_DECIMAL_TO_LINE[label] ?? null;
+                          const line = OU_DECIMAL_TO_LINE[label] ?? label;
                           return (
                           <div key={label} className="ou-table__row">
                             <span className="ou-table__line">{label}</span>
@@ -1565,10 +1565,8 @@ export default function MatchesPage() {
                               const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
                               return (
                                 <button key={pick} type="button"
-                                  disabled={!line}
-                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}${!line ? ' ou-cell--disabled' : ''}`}
+                                  className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
                                   onClick={() => {
-                                    if (!line) return;
                                     setOuPicks(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
                                     addToSlip({ betType: BET_TYPE.OverUnder, pick, line, odds: cellOdds });
                                   }}>

@@ -758,7 +758,12 @@ function toLegPayload(p) {
     case 'Winner':       return { ...base, pick: p.pick };
     case 'DoubleChance': return { ...base, dCPick: p.pick };
     case 'BTTS':         return { ...base, bTTSPick: p.pick === 'Yes' };
-    case 'OverUnder':    return { ...base, oULine: p.line, oUPick: p.pick };
+    case 'OverUnder': {
+      const isEnum = typeof p.line === 'string' && p.line.startsWith('Line');
+      return isEnum
+        ? { ...base, oULine: p.line, oUPick: p.pick }
+        : { ...base, lineValue: Number(p.line), oUPick: p.pick };
+    }
     case 'ExactScore':           return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
     case 'HalfTimeCorrectScore': return { ...base, scoreHome: p.scoreHome, scoreAway: p.scoreAway };
     default:
@@ -810,9 +815,11 @@ function isConflict(existing, incoming) {
     const LINE_MAP = { Line05: 0.5, Line15: 1.5, Line25: 2.5, Line35: 3.5 };
     const dir   = (p) => p.leg?.oUPick || p.pick;                 // 'Over' | 'Under'
     const scope = (p) => bt === 'TeamGoals' ? (p.leg?.pick || '') : '';
-    const lineOf = (p) => p.leg?.lineValue != null
-      ? Number(p.leg.lineValue)
-      : (LINE_MAP[p.line || p.leg?.oULine] ?? null);
+    const lineOf = (p) => {
+      if (p.leg?.lineValue != null) return Number(p.leg.lineValue);
+      const key = p.line || p.leg?.oULine;
+      return LINE_MAP[key] ?? (key && Number.isFinite(Number(key)) ? Number(key) : null);
+    };
 
     if (scope(incoming) === scope(existing)) {
       if (dir(incoming) === dir(existing)) return true;           // ladder → replace
@@ -866,9 +873,11 @@ function constraintsOf(p) {
     hParity: null, aParity: null, tParity: null,
   };
   const LINE = { Line05: 0.5, Line15: 1.5, Line25: 2.5, Line35: 3.5 };
-  const lineNum = p.leg?.lineValue != null
-    ? Number(p.leg.lineValue)
-    : (LINE[p.line || p.leg?.oULine] ?? null);
+  const lineNum = (() => {
+    if (p.leg?.lineValue != null) return Number(p.leg.lineValue);
+    const key = p.line || p.leg?.oULine;
+    return LINE[key] ?? (key && Number.isFinite(Number(key)) ? Number(key) : null);
+  })();
   const ou  = p.leg?.oUPick || (p.betType === 'OverUnder' ? p.pick : null);
   const yes = (v) => v === true || v === 'true' || v === 'Yes';
 
