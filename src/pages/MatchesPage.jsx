@@ -157,6 +157,23 @@ export default function MatchesPage() {
     }));
   }, [selectedMatch]);
 
+  // Toggle a market pick for the current match — only one active per match.
+  const toggleMatchPick = useCallback((slipKey) => {
+    const mid = selectedMatch?.id;
+    if (!mid) return;
+    const prefix = `${mid}:`;
+    setOuPicks(s => {
+      if (s.has(slipKey)) {
+        const n = new Set(s);
+        n.delete(slipKey);
+        return n;
+      }
+      const n = new Set([...s].filter(k => !k.startsWith(prefix)));
+      n.add(slipKey);
+      return n;
+    });
+  }, [selectedMatch?.id]);
+
   // Mirror slip removals back onto the market grid: when a pick is removed
   // from the Bet Slip (its ×, a conflicting O/U replacing it, clear-all, …)
   // the matching market button here must de-select. Listens for the
@@ -1125,12 +1142,12 @@ export default function MatchesPage() {
     return rows.map(p => {
       const logo = p.isHome ? selectedMatch?.homeTeamLogo : selectedMatch?.awayTeamLogo;
       const team = p.isHome ? selectedMatch?.homeTeamName : selectedMatch?.awayTeamName;
-      const slipKey = `${selectedMatch.id}:${betType}:${p.playerId}:${selKeyPrefix}`;
+      const slipKey = `${selectedMatch.id}:${betType}:${p.playerId}:${selKeyPrefix}-${p.playerId}`;
       const active  = ouPicks.has(slipKey);
       return (
         <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
           onClick={() => {
-            setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+            toggleMatchPick(slipKey);
             addToSlip({
               betType, pick: String(p.playerId), selKey: `${selKeyPrefix}-${p.playerId}`,
               odds: p.odds,
@@ -1562,7 +1579,7 @@ export default function MatchesPage() {
                             <span className="ou-table__line">{label}</span>
                             {['Over', 'Under'].filter(pick => preOdds.ou[label]?.[pick] != null).map(pick => {
                               const cellOdds = preOdds.ou[label][pick];
-                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
+                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
                               return (
                                 <button key={pick} type="button"
                                   className={`ou-cell ${ouPicks.has(k) ? 'ou-cell--active' : ''}`}
@@ -3547,7 +3564,9 @@ export default function MatchesPage() {
                   <div data-cat="players" data-order="1" className={`market-section ${collapsed.scorer ? 'market-section--collapsed' : ''}`}>
                     <div className="market-section__header" onClick={() => toggleSection('scorer')}>
                       <span className="market-section__name">◉ Голмайстор</span>
-                      {scorerPicks.size > 0 && <span className="market-section__badge">{scorerPicks.size}</span>}
+                      {[...ouPicks].some(k => k.startsWith(`${selectedMatch.id}:${BET_TYPE.Goalscorer}:`)) && (
+                        <span className="market-section__badge">1</span>
+                      )}
                       <span className="market-section__toggle">{collapsed.scorer ? '▼' : '▲'}</span>
                     </div>
                     {!collapsed.scorer && (
@@ -3561,15 +3580,15 @@ export default function MatchesPage() {
                             {[...scorerPlayers].sort((a, b) => (a.odds ?? 99) - (b.odds ?? 99)).map(p => {
                               const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
                               const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
-                              const active = scorerPicks.has(p.playerId);
+                              const slipKey = `${selectedMatch.id}:${BET_TYPE.Goalscorer}:${p.playerId}:GS-${p.playerId}`;
+                              const active = ouPicks.has(slipKey);
                               return (
                                 <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
                                   onClick={() => {
-                                    // Toggle local selection; the slip toggles by the same selKey.
+                                    toggleMatchPick(slipKey);
                                     setScorerPicks(s => {
-                                      const n = new Set(s);
-                                      n.has(p.playerId) ? n.delete(p.playerId) : n.add(p.playerId);
-                                      return n;
+                                      if (s.has(p.playerId) && s.size === 1) return new Set();
+                                      return new Set([p.playerId]);
                                     });
                                     addToSlip({
                                       betType: BET_TYPE.Goalscorer, pick: String(p.playerId), selKey: `GS-${p.playerId}`,
@@ -3718,13 +3737,13 @@ export default function MatchesPage() {
                                   .map(p => {
                                     const logo = p.isHome ? selectedMatch.homeTeamLogo : selectedMatch.awayTeamLogo;
                                     const team = p.isHome ? selectedMatch.homeTeamName : selectedMatch.awayTeamName;
-                                    const slipKey = `${selectedMatch.id}:${bt}:${p.playerId}:${chipLabel}`;
+                                    const slipKey = `${selectedMatch.id}:${bt}:${p.playerId}:${chipLabel}-${p.playerId}`;
                                     const active = ouPicks.has(slipKey);
                                     const preOddsVal = oddsMap[p.playerId];
                                     return (
                                       <button key={p.playerId} type="button" className={`gs-row${active ? ' gs-row--active' : ''}`}
                                         onClick={() => {
-                                          setOuPicks(s => { const n = new Set(s); n.has(slipKey) ? n.delete(slipKey) : n.add(slipKey); return n; });
+                                          toggleMatchPick(slipKey);
                                           addToSlip({
                                             betType: bt, pick: String(p.playerId), selKey: `${chipLabel}-${p.playerId}`,
                                             odds: preOddsVal,

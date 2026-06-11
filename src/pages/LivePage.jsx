@@ -1670,7 +1670,7 @@ export default function LivePage() {
                             <span className="ou-table__line">{label}{cellLocked && ' 🔒'}</span>
                             {['Over', 'Under'].map(pick => {
                               const cellOdds = preOdds.ou?.[label]?.[pick];
-                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${label}`;
+                              const k = `${selectedMatch.id}:${BET_TYPE.OverUnder}:${pick}:${line}`;
                               return (
                               <button key={pick} type="button"
                                 disabled={cellLocked}
