@@ -855,6 +855,7 @@ export default function MatchesPage() {
       [BET_TYPE.TeamShots]:          parseTeamStatJson(m.teamShotsOddsJson),
       [BET_TYPE.TeamOffsides]:       parseTeamStatJson(m.teamOffsidesOddsJson),
       [BET_TYPE.TeamTackles]:        parseTeamStatJson(m.teamTacklesOddsJson),
+      [BET_TYPE.TeamCards]:          parseTeamStatJson(m.teamCardsOddsJson),
       [BET_TYPE.MatchShotsOnTarget]: parseMatchStatJson(m.matchSotOddsJson),
       [BET_TYPE.MatchShots]:         parseMatchStatJson(m.matchShotsOddsJson),
       [BET_TYPE.MatchOffsides]:      parseMatchStatJson(m.matchOffsidesOddsJson),
@@ -3647,8 +3648,9 @@ export default function MatchesPage() {
                     { key: 'teamShots',    bt: BET_TYPE.TeamShots,          label: 'Удари (отбор)' },
                     { key: 'teamOffsides', bt: BET_TYPE.TeamOffsides,       label: 'Засади (отбор)' },
                     { key: 'teamTackles',  bt: BET_TYPE.TeamTackles,        label: 'Откраднати топки (отбор)' },
+                    { key: 'teamCards',    bt: BET_TYPE.TeamCards,          label: 'Картони (отбор)' },
                   ].map(({ key, bt, label }) => (
-                    <div key={key} data-cat="stats" data-order={({ teamSot: 3, teamShots: 4, teamOffsides: 5, teamTackles: 6 })[key]} className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
+                    <div key={key} data-cat="stats" data-order={({ teamSot: 3, teamShots: 4, teamOffsides: 5, teamTackles: 6, teamCards: 7 })[key]} className={`market-section ${collapsed[key] ? 'market-section--collapsed' : ''}`}>
                       <div className="market-section__header" onClick={() => toggleSection(key)}>
                         <span className="market-section__name">📊 {label}</span>
                         <span className="market-section__toggle">{collapsed[key] ? '▼' : '▲'}</span>

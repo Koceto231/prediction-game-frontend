@@ -86,6 +86,7 @@ export const BET_TYPE = {
   // ── Phase 12 (Card BTTS markets) ──────────────────────────────────
   BothTeamsCard:           'BothTeamsCard',
   BothTeamsMoreThan2Cards: 'BothTeamsMoreThan2Cards',
+  TeamCards:               'TeamCards',
 };
 
 /** Pick options for the Exact Total Goals (market 93) tile grid. */
@@ -115,6 +116,7 @@ export const TEAM_SOT_LINES    = [2.5, 3.5, 4.5];   // shots on target per team
 export const TEAM_SHOTS_LINES  = [10.5, 12.5, 14.5]; // shots per team
 export const TEAM_OFFSIDES_LINES = [1.5, 2.5, 3.5];
 export const TEAM_TACKLES_LINES  = [14.5, 17.5, 20.5];
+export const TEAM_CARDS_LINES    = [1.5, 2.5, 3.5];  // cards per team
 export const MATCH_SOT_LINES    = [6.5, 8.5, 10.5];  // total match shots on target
 export const MATCH_SHOTS_LINES  = [22.5, 25.5, 28.5];
 export const MATCH_OFFSIDES_LINES = [3.5, 4.5, 5.5];
