@@ -125,7 +125,8 @@ export default function BetSlipPanel() {
   );
   useEffect(() => {
     if (totalPicks === 1) setOpen(true);     // first pick → pop open
-    if (totalPicks === 0) setOpen(false);    // last pick removed → collapse, no empty screen
+    // Do NOT auto-collapse when the last pick is removed — the user asked for
+    // the slip to stay open until they explicitly hit the close arrow / pill.
   }, [totalPicks]);
 
   // ── Pick add / clear event listeners ───────────────────────────────
@@ -346,10 +347,10 @@ export default function BetSlipPanel() {
       setColumns([fresh]);
       setActiveColumnId(fresh.id);
 
-      if (immediateCount > 0 && newQueued.length === 0) {
-        setTimeout(() => { setSuccess(''); setOpen(false); }, 1600);
-      } else if (immediateCount > 0) {
-        setTimeout(() => setSuccess(''), 3000);
+      // Keep the slip open after a successful submit — closing is now strictly
+      // a user action (close arrow, pill, or Clear All).
+      if (immediateCount > 0) {
+        setTimeout(() => setSuccess(''), newQueued.length === 0 ? 1600 : 3000);
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Грешка при залагане.');
