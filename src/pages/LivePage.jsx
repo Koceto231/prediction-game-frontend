@@ -1540,8 +1540,8 @@ export default function LivePage() {
               {/* Live event banner — surfaces what's currently happening on
                   the pitch (goal, card, corner, shot on target, dangerous
                   attack, foul). Driven by useLiveEventQueue's stats diff;
-                  each event flashes in for 5 s then we fall back to the
-                  phase pill. */}
+                  majors (goal/card/VAR) show for 5 s, minor stat events
+                  for 2.5 s, then we fall back to the phase pill. */}
               {(() => {
                 const phaseText = isHT(selectedMatch.liveState) ? 'HALF TIME'
                   : isFT(selectedMatch.liveState) ? 'FULL TIME'

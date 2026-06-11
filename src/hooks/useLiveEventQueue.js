@@ -21,14 +21,25 @@ import { useEffect, useRef, useState } from 'react';
  *              ONLY when nothing else fired in the same cycle (fouls
  *              are noisy and lower-priority than the other markers).
  *
- * Events queue up; one is shown for `displayMs` (default 5_000 ms)
- * before the next pops. When the queue is empty the hook returns null.
+ * Events queue up; one is shown at a time. Major events (goal, card,
+ * VAR) display for `displayMs` (default 5_000 ms); minor stat events
+ * (corner, shot, dangerous attack, foul) for `minorDisplayMs`
+ * (default 2_500 ms). When the queue is empty the hook returns null.
+ *
+ * Major events jump the queue: they interrupt an active minor event
+ * and flush queued minors, so a goal never waits behind a backlog of
+ * dangerous-attack banners. Pending minors are capped at 2 — they are
+ * ambience, and an unbounded queue made every banner increasingly
+ * stale during busy matches.
  *
  * Switching to a different match resets the queue + skips one cycle
  * of diff detection (otherwise the previous match's stats vs the new
  * match's stats produce a flood of phantom events).
  */
-export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
+const MAJOR_KINDS = new Set(['goal', 'red', 'yellow', 'var']);
+const MAX_PENDING_MINORS = 2;
+
+export default function useLiveEventQueue(match, { displayMs = 5_000, minorDisplayMs = 2_500 } = {}) {
   const [active, setActive] = useState(null);
   const prevRef  = useRef(null);
   const queueRef = useRef([]);
@@ -130,12 +141,36 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
       if (curr.foulsAway > prev.foulsAway) newEvents.push({ team: 'away', kind: 'foul', title: 'Foul', sub: away });
     }
 
-    if (newEvents.length > 0) queueRef.current.push(...newEvents);
+    if (newEvents.length > 0) {
+      const majors = newEvents.filter(e => MAJOR_KINDS.has(e.kind));
+      const minors = newEvents.filter(e => !MAJOR_KINDS.has(e.kind));
+
+      if (majors.length > 0) {
+        // Majors jump the line: drop queued minors and interrupt an
+        // active minor so the goal/card banner shows immediately.
+        const queuedMajors = queueRef.current.filter(e => MAJOR_KINDS.has(e.kind));
+        queueRef.current = [...queuedMajors, ...majors];
+        setActive(a => (a && !MAJOR_KINDS.has(a.kind) ? null : a));
+      } else {
+        queueRef.current.push(...minors);
+      }
+
+      // Cap pending minors — keep only the newest few so the queue
+      // can't grow faster than it drains during busy spells.
+      const majorsQ = queueRef.current.filter(e => MAJOR_KINDS.has(e.kind));
+      const minorsQ = queueRef.current.filter(e => !MAJOR_KINDS.has(e.kind)).slice(-MAX_PENDING_MINORS);
+      queueRef.current = [...majorsQ, ...minorsQ];
+    }
   }, [match]);
 
-  // Drain the queue — show one event at a time for `displayMs`
+  // Drain the queue — show one event at a time
   useEffect(() => {
     if (active) return; // wait until current finishes
+    if (queueRef.current.length > 0) {
+      // Pop the next event immediately instead of waiting for a tick
+      setActive(queueRef.current.shift());
+      return;
+    }
     const timer = setInterval(() => {
       if (queueRef.current.length > 0) {
         setActive(queueRef.current.shift());
@@ -146,9 +181,10 @@ export default function useLiveEventQueue(match, { displayMs = 5_000 } = {}) {
 
   useEffect(() => {
     if (!active) return;
-    const t = setTimeout(() => setActive(null), displayMs);
+    const ms = MAJOR_KINDS.has(active.kind) ? displayMs : minorDisplayMs;
+    const t = setTimeout(() => setActive(null), ms);
     return () => clearTimeout(t);
-  }, [active, displayMs]);
+  }, [active, displayMs, minorDisplayMs]);
 
   return active;
 }
