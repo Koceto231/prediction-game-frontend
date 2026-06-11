@@ -741,11 +741,17 @@ function toLegPayload(p) {
         lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
       };
     case 'TeamGoals':
-    case 'Corners':
-    case 'YellowCards':
       return {
         betType: base.betType,
         pick: p.leg?.pick ?? p.pick ?? null,
+        lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
+        oUPick: ouDir,
+      };
+    case 'Corners':
+    case 'YellowCards':
+      // Over/Under direction goes in oUPick only — pick is MatchWinner (Home/Draw/Away).
+      return {
+        betType: base.betType,
         lineValue: p.leg?.lineValue ?? p.lineValue ?? null,
         oUPick: ouDir,
       };

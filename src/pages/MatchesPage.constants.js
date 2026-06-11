@@ -175,6 +175,9 @@ export const EMPTY_FORM = {
 /** Convert a numeric goal line like 2.5 to the enum key form "Line25". */
 export const lineToKey = (l) => `Line${String(l).replace('.', '')}`;
 
+/** O/U lines ending in .5 — excludes integer lines (e.g. "1") that can push. */
+export const isHalfPointOuLine = (line) => /\.5$/.test(String(line).trim());
+
 /** Number-or-null parser for score inputs. */
 export const parseScore = (v) => {
   if (v === '' || v == null) return null;
