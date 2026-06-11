@@ -11,13 +11,22 @@ import api from '../api/apiClient';
  *   rejected   — red banner with reason
  *   new-odds   — odds changed, "Accept X.XX?" button with 8s expiry countdown
  *   cancelled  — user cancelled, brief confirmation then dismiss
- *   expired    — ExpiresAt passed with no update (failsafe)
+ *   expired    — deadline passed with no update (failsafe, auto-dismisses)
  */
 const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismiss }, ref) {
-  const { id, expiresAt, odds, fixture } = bet;
+  const { id, expiresAt, odds, fixture, submittedAt } = bet;
 
-  // Seconds remaining until ExpiresAt
-  const [secsLeft,     setSecsLeft]     = useState(() => calcSecsLeft(expiresAt));
+  // The 15s window is anchored to the CLIENT-side click time (submittedAt) so
+  // the countdown starts the instant the user submits and is immune to server
+  // clock skew. Server ExpiresAt is only a fallback for entries without it.
+  const deadline = useRef(
+    submittedAt ? submittedAt + QUEUE_WINDOW_MS
+    : expiresAt ? new Date(expiresAt).getTime()
+    :             Date.now() + QUEUE_WINDOW_MS,
+  ).current;
+
+  // Seconds remaining until the deadline
+  const [secsLeft,     setSecsLeft]     = useState(() => secsUntil(deadline));
   const [phase,        setPhase]        = useState('queued'); // queued|accepted|rejected|new-odds|cancelled|expired
   const [rejReason,    setRejReason]    = useState('');
   const [newOdds,      setNewOdds]      = useState(null);
@@ -63,21 +72,21 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
     [handleAccepted, handleRejected, handleCancelled]);
 
   // ── Countdown tick ─────────────────────────────────────────────────────
+  // Recomputed from the deadline (not decremented) so the remaining time is
+  // correct even when the panel mounts a beat after the bet was submitted.
   useEffect(() => {
     if (phase !== 'queued') return;
     tickRef.current = setInterval(() => {
-      setSecsLeft(s => {
-        if (s <= 1) {
-          clearInterval(tickRef.current);
-          // If still queued after expiry, show "expired" failsafe
-          setPhase(p => p === 'queued' ? 'expired' : p);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
+      const left = secsUntil(deadline);
+      setSecsLeft(left);
+      if (left <= 0) {
+        clearInterval(tickRef.current);
+        // If still queued after expiry, show "expired" failsafe
+        setPhase(p => p === 'queued' ? 'expired' : p);
+      }
+    }, 250);
     return () => clearInterval(tickRef.current);
-  }, [phase]);
+  }, [phase, deadline]);
 
   // ── New-odds offer countdown tick ──────────────────────────────────────
   useEffect(() => {
@@ -95,6 +104,16 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
       });
     }, 1000);
     return () => clearInterval(newTickRef.current);
+  }, [phase, id, onDismiss]);
+
+  // ── Expired failsafe auto-dismiss ──────────────────────────────────────
+  // SignalR / polling normally resolves the bet within a second or two of
+  // the window closing; if nothing arrives, dismiss anyway so the фиш
+  // doesn't linger — the outcome is visible in "Моите залози".
+  useEffect(() => {
+    if (phase !== 'expired') return;
+    dismissRef.current = setTimeout(() => onDismiss?.(id), 5000);
+    return () => clearTimeout(dismissRef.current);
   }, [phase, id, onDismiss]);
 
   // ── Cleanup ────────────────────────────────────────────────────────────
@@ -133,10 +152,9 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
   };
 
   // ── Progress bar width (0→100%) ────────────────────────────────────────
-  const totalSecs = calcSecsLeft(expiresAt) > 0
-    ? Math.max(15, calcSecsLeft(expiresAt))
-    : 15;
-  const barPct = phase === 'queued' ? Math.round((secsLeft / totalSecs) * 100) : 0;
+  const barPct = phase === 'queued'
+    ? Math.min(100, Math.round((secsLeft / (QUEUE_WINDOW_MS / 1000)) * 100))
+    : 0;
 
   return (
     <div className={`lbsp lbsp--${phase}`}>
@@ -247,6 +265,13 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
 });
 
 export default LiveBetStatusPanel;
+
+// Mirrors LiveBetting:DelaySeconds on the backend (default 15).
+const QUEUE_WINDOW_MS = 15000;
+
+function secsUntil(deadlineMs) {
+  return Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+}
 
 function calcSecsLeft(expiresAt) {
   if (!expiresAt) return 15;

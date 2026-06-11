@@ -247,7 +247,7 @@ export default function BetSlipPanel() {
     setActiveColumnId(fresh.id);
     setError(''); setSuccess('');
     // Collapse the panel so the empty-state "Колонка 1 е празна" screen
-    // doesn't linger. Wrapper render check (`totalPicks > 0 || open`)
+    // doesn't linger. The wrapper render check (picks or queued live bets)
     // then hides the whole slip; the next odd-click auto-reopens it
     // via the totalPicks === 1 effect.
     setOpen(false);
@@ -284,6 +284,10 @@ export default function BetSlipPanel() {
     if (loading || placeableCount === 0 || overBalance) return;
 
     setLoading(true); setError(''); setSuccess('');
+    // Live countdowns are anchored to the moment the user presses "Заложи" —
+    // capture the click time before any network round-trips so the 15s timer
+    // starts immediately, independent of server clock / response latency.
+    const submittedAt = Date.now();
     try {
       const toPlace = columnSummaries.filter(s => !s.isEmpty && s.stakeNum > 0);
       const results = await Promise.all(
@@ -307,8 +311,6 @@ export default function BetSlipPanel() {
         }),
       );
 
-      await refreshBalance();
-
       // ── Detect live-queued bets — show countdown panels instead of clearing
       const newQueued = [];
       results.forEach((res, i) => {
@@ -317,10 +319,11 @@ export default function BetSlipPanel() {
         if (status === 'Queued') {
           const col = toPlace[i];
           newQueued.push({
-            id:        data.id       ?? data.Id,
-            expiresAt: data.expiresAt ?? data.ExpiresAt,
-            odds:      data.oddsAtBetTime ?? data.OddsAtBetTime ?? col.combined,
-            fixture:   col.picks[0]?.fixture ?? `Мач #${data.matchId ?? data.MatchId}`,
+            id:          data.id       ?? data.Id,
+            expiresAt:   data.expiresAt ?? data.ExpiresAt,
+            submittedAt,               // countdown anchor — client-side click time
+            odds:        data.oddsAtBetTime ?? data.OddsAtBetTime ?? col.combined,
+            fixture:     col.picks[0]?.fixture ?? `Мач #${data.matchId ?? data.MatchId}`,
           });
         }
       });
@@ -328,11 +331,15 @@ export default function BetSlipPanel() {
       const immediateCount = results.length - newQueued.length;
 
       if (newQueued.length > 0) {
-        // Open slip so panels are visible and activate polling fallback
+        // Open slip so panels are visible and activate polling fallback.
+        // Done BEFORE the balance-refresh round-trip so the already-running
+        // countdown shows up as early as possible.
         setOpen(true);
         setQueuedBets(prev => [...prev, ...newQueued]);
         newQueued.forEach(b => ensureWatching(b.id));
       }
+
+      await refreshBalance();
 
       if (immediateCount > 0) {
         setSuccess(
@@ -445,10 +452,13 @@ export default function BetSlipPanel() {
   return (
     <>
 
-      {/* Connected slip — only rendered while there are picks, so an empty
-          column never shows the "Колонка е празна" screen. */}
-      {totalPicks > 0 && (
+      {/* Connected slip — rendered while there are picks OR live bets still
+          in the 15s queue. When the last live panel resolves and no picks
+          remain, the whole фиш disappears automatically. The body itself is
+          gated on picks so the queued-only state shows just the panels. */}
+      {(totalPicks > 0 || queuedBets.length > 0) && (
       <div className={`gvb-slip${open ? ' gvb-slip--open' : ''}`}>
+      {totalPicks > 0 && (
       <div className="gvb-slip__body">
         <div className="gvb-slip-panel__head">
           <button
@@ -612,6 +622,7 @@ export default function BetSlipPanel() {
           </>
         )}
       </div>
+      )}
 
       {/* ── Live bet status panels ── shown while bets are in the 15s queue */}
       {queuedBets.map(bet => (
