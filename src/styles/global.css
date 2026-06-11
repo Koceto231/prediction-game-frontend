@@ -6773,16 +6773,7 @@ select:focus {
   flex: 1;
 }
 
-.market-section__badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #0a0a0a;
-  background: var(--accent);
-  padding: 2px 8px;
-  border-radius: 3px;
-}
+.market-section__badge { display: none; }
 
 .market-section__lock {
   font-size: 0.68rem;
