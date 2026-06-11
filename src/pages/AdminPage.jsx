@@ -856,6 +856,157 @@ function CreateAccount() {
   );
 }
 
+// ── Live Match Simulation ──────────────────────────────────────────────────
+function LiveMatchSimulation() {
+  const [matchId, setMatchId]     = useState(null);
+  const [betIds, setBetIds]       = useState([]);
+  const [log, setLog]             = useState([]);
+  const [result, setResult]       = useState(null);
+  const [loading, setLoading]     = useState('');
+  const [homeScore, setHomeScore] = useState('2');
+  const [awayScore, setAwayScore] = useState('1');
+
+  const appendLog = (lines) => setLog(prev => [...prev, ...lines]);
+
+  const doSetup = async () => {
+    setLoading('setup'); setLog([]); setResult(null); setMatchId(null); setBetIds([]);
+    try {
+      const r = await api.post('/admin/simulate/setup');
+      setMatchId(r.data.matchId);
+      setBetIds(r.data.betIds ?? []);
+      appendLog(['=== SETUP ===', ...(r.data.log ?? [])]);
+    } catch (e) {
+      appendLog(['SETUP ERROR: ' + (e?.response?.data?.message || e?.message)]);
+    } finally { setLoading(''); }
+  };
+
+  const doProcessQueue = async () => {
+    if (!matchId) return;
+    setLoading('queue');
+    try {
+      const r = await api.post(`/admin/simulate/process-queue?matchId=${matchId}&forceExpire=true`);
+      appendLog(['', '=== PROCESS QUEUE ===', ...(r.data.log ?? [])]);
+    } catch (e) {
+      appendLog(['QUEUE ERROR: ' + (e?.response?.data?.message || e?.message)]);
+    } finally { setLoading(''); }
+  };
+
+  const doFinish = async () => {
+    if (!matchId) return;
+    setLoading('finish');
+    try {
+      const r = await api.post(`/admin/simulate/finish?matchId=${matchId}&homeScore=${homeScore}&awayScore=${awayScore}`);
+      appendLog(['', '=== FINISH & SETTLE ===', ...(r.data.log ?? [])]);
+      setResult(r.data);
+    } catch (e) {
+      appendLog(['FINISH ERROR: ' + (e?.response?.data?.message || e?.message)]);
+    } finally { setLoading(''); }
+  };
+
+  const doFullRun = async () => {
+    setLoading('full'); setLog([]); setResult(null); setMatchId(null); setBetIds([]);
+    try {
+      const r = await api.post(`/admin/simulate/full-run?homeScore=${homeScore}&awayScore=${awayScore}`);
+      setMatchId(r.data.matchId);
+      setBetIds(r.data.bets?.map((_, i) => i) ?? []);
+      appendLog(r.data.fullLog ?? []);
+      setResult(r.data);
+    } catch (e) {
+      appendLog(['FULL-RUN ERROR: ' + (e?.response?.data?.message || e?.message)]);
+    } finally { setLoading(''); }
+  };
+
+  const doCleanup = async () => {
+    setLoading('cleanup');
+    try {
+      const r = await api.delete('/admin/simulate/cleanup');
+      appendLog(['', '=== CLEANUP ===', ...(r.data.log ?? [])]);
+      setMatchId(null); setBetIds([]); setResult(null);
+    } catch (e) {
+      appendLog(['CLEANUP ERROR: ' + (e?.response?.data?.message || e?.message)]);
+    } finally { setLoading(''); }
+  };
+
+  const busy = loading !== '';
+
+  return (
+    <div>
+      {/* Score selector */}
+      <div className="admin-row" style={{ gap: 8, marginBottom: 8 }}>
+        <label className="admin-label">Final score</label>
+        <input className="admin-input" type="number" min="0" max="20"
+          value={homeScore} onChange={e => setHomeScore(e.target.value)}
+          style={{ width: 60, textAlign: 'center' }} />
+        <span style={{ color: 'var(--text-muted)', alignSelf: 'center' }}>–</span>
+        <input className="admin-input" type="number" min="0" max="20"
+          value={awayScore} onChange={e => setAwayScore(e.target.value)}
+          style={{ width: 60, textAlign: 'center' }} />
+      </div>
+
+      {/* One-shot full run */}
+      <div className="admin-actions" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <button className="admin-btn admin-btn--accent" type="button"
+          disabled={busy}
+          onClick={doFullRun}>
+          {loading === 'full' ? '⏳ Running…' : '▶ Full Run (setup → queue → settle)'}
+        </button>
+      </div>
+
+      <p className="admin-hint" style={{ margin: '6px 0 10px' }}>
+        Or run step by step:
+      </p>
+
+      {/* Step-by-step */}
+      <div className="admin-actions" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <button className="admin-btn" type="button" disabled={busy} onClick={doSetup}>
+          {loading === 'setup' ? '…' : '1️⃣ Setup (create match + bets)'}
+        </button>
+        <button className="admin-btn" type="button" disabled={busy || !matchId} onClick={doProcessQueue}>
+          {loading === 'queue' ? '…' : '2️⃣ Process live queue'}
+        </button>
+        <button className="admin-btn" type="button" disabled={busy || !matchId} onClick={doFinish}>
+          {loading === 'finish' ? '…' : '3️⃣ Finish + settle bets'}
+        </button>
+        <button className="admin-btn admin-btn--danger" type="button" disabled={busy} onClick={doCleanup}>
+          {loading === 'cleanup' ? '…' : '🗑 Cleanup'}
+        </button>
+      </div>
+
+      {matchId && (
+        <p className="admin-hint" style={{ marginTop: 6 }}>
+          Match ID: <strong>{matchId}</strong>  · Bets: <strong>{betIds.length}</strong>
+        </p>
+      )}
+
+      {/* Result summary */}
+      {result && (
+        <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(240,197,25,0.07)',
+          border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.78rem' }}>
+          <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--accent)' }}>
+            Result: {result.score} — {result.winner} wins
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <span>💚 Won: <strong>{result.bets?.filter(b => b.status === 'Won').length ?? 0}</strong></span>
+            <span>❌ Lost: <strong>{result.bets?.filter(b => b.status === 'Lost').length ?? 0}</strong></span>
+            <span>💰 Payout: <strong>{result.totalPayout?.toFixed(2) ?? '—'}</strong></span>
+            <span>👤 Balance: <strong>{result.userBalance?.toFixed(2) ?? '—'}</strong></span>
+          </div>
+        </div>
+      )}
+
+      {/* Log output */}
+      {log.length > 0 && (
+        <pre style={{ marginTop: 10, padding: '8px 10px', background: '#0d0d0d',
+          border: '1px solid var(--border)', borderRadius: 6,
+          fontSize: '0.70rem', maxHeight: 320, overflowY: 'auto',
+          color: 'var(--text-soft)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {log.join('\n')}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 function AdminSection({ title, children }) {
   return (
     <div className="admin-section">
@@ -1149,6 +1300,11 @@ export default function AdminPage() {
               </button>
             </div>
             <p className="admin-hint">Force Re-sync — изтрива старите статистики и ги дърпа наново от Sportmonks, после пренасмята всички залози за мача (включително изгубени голмайстори).</p>
+          </AdminSection>
+
+          {/* ── Live Match Simulation ── */}
+          <AdminSection title="🧪 Live Match Simulation">
+            <LiveMatchSimulation />
           </AdminSection>
 
         </div>
