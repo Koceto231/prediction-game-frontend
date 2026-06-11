@@ -9038,7 +9038,7 @@ select:focus {
 }
 .pick-list__row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 96px;
   align-items: center;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -9069,7 +9069,6 @@ select:focus {
   font-weight: 700;
   color: var(--accent);
   border-left: 1px solid rgba(255, 255, 255, 0.05);
-  min-width: 70px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
