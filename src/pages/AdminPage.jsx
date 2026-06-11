@@ -213,6 +213,8 @@ function WalletManagement() {
   const [selfAmount, setSelfAmount] = useState('10000');
   const [filter, setFilter]     = useState('');
   const [historyUser, setHistoryUser] = useState(null);
+  const [newUsername, setNewUsername] = useState('');
+  const [creating, setCreating]       = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -293,6 +295,20 @@ function WalletManagement() {
     }
   };
 
+  const createUser = async () => {
+    const username = newUsername.trim();
+    if (!username) return;
+    setCreating(true); setFeedback('');
+    try {
+      await api.post('/admin/users/create', { username });
+      setFeedback(`Акаунт "${username}" е създаден. Парола = потребителско име.`);
+      setNewUsername('');
+      load();
+    } catch (e) {
+      setFeedback(e?.response?.data?.message || 'Създаването се провали.');
+    } finally { setCreating(false); }
+  };
+
   const filtered = users.filter(u =>
     !filter.trim()
       || u.username?.toLowerCase().includes(filter.toLowerCase())
@@ -309,6 +325,23 @@ function WalletManagement() {
         <button className="admin-btn admin-btn--accent admin-self-topup__btn"
           type="button" onClick={selfTopUp}>
           Добави
+        </button>
+      </div>
+
+      {/* Create account */}
+      <div className="admin-self-topup" style={{ marginTop: 8 }}>
+        <span className="admin-self-topup__label">Нов акаунт</span>
+        <input
+          className="admin-input admin-self-topup__amount"
+          placeholder="потребителско_име"
+          value={newUsername}
+          onChange={e => setNewUsername(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && createUser()}
+          style={{ flex: 1, minWidth: 120 }}
+        />
+        <button className="admin-btn admin-btn--accent admin-self-topup__btn"
+          type="button" onClick={createUser} disabled={creating || !newUsername.trim()}>
+          {creating ? '…' : 'Създай'}
         </button>
       </div>
 
