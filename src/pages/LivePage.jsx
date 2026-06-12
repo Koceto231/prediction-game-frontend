@@ -710,12 +710,12 @@ function LiveBetCard({ bet, onCashedOut, lock }) {
           )}
         </div>
 
-        <div className="gvb-bet__stats" style={{ gridTemplateColumns: '1fr 1fr', fontSize: '0.9rem' }}>
+        <div className="gvb-bet__stats" style={{ gridTemplateColumns: '1fr', gap: 10, fontSize: '0.9rem' }}>
           <div className="gvb-bet__stat">
             <span className="gvb-bet__stat-label" style={{ fontSize: '0.74rem' }}>ЗАЛОГ</span>
             <span className="gvb-bet__stat-val" style={{ fontSize: '1rem' }}>{Number(bet.amount).toFixed(2)} монети</span>
           </div>
-          <div className="gvb-bet__stat" style={{ alignItems: 'flex-end' }}>
+          <div className="gvb-bet__stat" style={{ alignItems: 'stretch' }}>
             <CashOutBadge bet={bet} onCashedOut={onCashedOut} compact lock={lock} />
           </div>
         </div>
