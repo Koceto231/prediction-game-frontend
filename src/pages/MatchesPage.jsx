@@ -1036,6 +1036,9 @@ export default function MatchesPage() {
 
   const dis = { winner: false, dc: false, dnb: false, htft: false, wtn: false, wbh: false, hcp: false, ht: false };
   const LiveLock = () => null;
+  // Referenced only inside `dis.*`-guarded LiveLock branches, which never
+  // evaluate here (dis is all-false) — stubbed like dis/LiveLock above.
+  const groupAPicked = null, groupBPicked = null;
   const mHas = obj => obj != null && Object.values(obj).some(v => v != null);
   const mHasKeys = obj => obj != null && Object.keys(obj).length > 0;
 
