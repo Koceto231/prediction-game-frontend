@@ -3,15 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 /**
  * Anti-cheat live odds suspension.
  *
- * A user watching the broadcast sees a goal / VAR check / dangerous attack a
- * few seconds before our odds catch up, so they could bet at stale odds.
- * To prevent that we LOCK live betting for a short window whenever one of
- * these moments is detected from the live snapshot:
+ * A user watching the broadcast sees a goal / VAR check a few seconds before
+ * our odds catch up, so they could bet at stale odds. To prevent that we LOCK
+ * live betting for a short window whenever one of these moments is detected:
  *
- *   • GOAL            — home/away score increased          (lock ~12s)
- *   • VAR             — a "under review" var event          (lock until resolved,
- *                       capped at ~25s as a safety net)
- *   • DANGEROUS ATTACK— `dangerousAttacks.{home|away}` rose  (lock ~5s)
+ *   • GOAL — home/away score increased          (lock ~12s)
+ *   • VAR  — a "under review" var event          (lock until resolved,
+ *             capped at ~25s as a safety net)
+ *
+ * The backend also sets SuspendedUntil (45s for goals, 25s for VAR) via
+ * LiveScoreDetectorJob — this hook acts as a fast client-side complement.
  *
  * VAR is special: Sportmonks emits the review start ("Goal under review") and
  * later the decision ("Goal Confirmed/Disallowed", "Penalty Awarded/Cancelled")
@@ -21,12 +22,11 @@ import { useEffect, useRef, useState } from 'react';
  * Returns `null` when betting is open, otherwise `{ kind, reason, until }`.
  * A longer/higher-priority lock is never shortened by a weaker one.
  */
-const DURATION = { goal: 12_000, var: 25_000, danger: 5_000 };
-const PRIORITY = { goal: 3, var: 2, danger: 1 };
+const DURATION = { goal: 12_000, var: 25_000 };
+const PRIORITY = { goal: 2, var: 1 };
 const REASON   = {
-  goal:   'Гол — коефициентите се обновяват',
-  var:    'VAR проверка',
-  danger: 'Опасна атака',
+  goal: 'Гол — коефициентите се обновяват',
+  var:  'VAR проверка',
 };
 
 // A VAR event whose decision text names an outcome means the review is DONE.
@@ -48,12 +48,10 @@ export default function useOddsSuspension(match) {
     const varEvents = (stats?.extraEvents ?? []).filter(e => e.kind === 'var');
     const lastVar = varEvents[varEvents.length - 1] ?? null;
     const curr = {
-      matchId:    match.id,
-      homeScore:  match.homeScore ?? 0,
-      awayScore:  match.awayScore ?? 0,
-      dangerHome: stats?.dangerousAttacks?.home ?? 0,
-      dangerAway: stats?.dangerousAttacks?.away ?? 0,
-      varKey:     lastVar ? `${lastVar.minute}|${lastVar.detail ?? ''}` : null,
+      matchId:   match.id,
+      homeScore: match.homeScore ?? 0,
+      awayScore: match.awayScore ?? 0,
+      varKey:    lastVar ? `${lastVar.minute}|${lastVar.detail ?? ''}` : null,
     };
     const prev = prevRef.current;
     prevRef.current = curr;
@@ -81,8 +79,7 @@ export default function useOddsSuspension(match) {
       }
     }
 
-    if (curr.homeScore > prev.homeScore || curr.awayScore > prev.awayScore) { applyLock('goal'); return; }
-    if (curr.dangerHome > prev.dangerHome || curr.dangerAway > prev.dangerAway) { applyLock('danger'); }
+    if (curr.homeScore > prev.homeScore || curr.awayScore > prev.awayScore) { applyLock('goal'); }
   }, [match]);
 
   // Auto-release when the window elapses
