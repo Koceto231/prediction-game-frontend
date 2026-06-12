@@ -42,11 +42,44 @@ export default function BetSlipPanel() {
   const [success,        setSuccess]        = useState('');
 
   // ── Live bet queue panels ───────────────────────────────────────────────
-  // Each entry: { id, expiresAt, odds, fixture, _handlers }
+  // Each entry: { id, expiresAt, submittedAt, odds, fixture, stake, legs,
+  //               columnId, pickKeys }
   const [queuedBets, setQueuedBets] = useState([]);
   const panelRefs = useRef({}); // betId → ref to LiveBetStatusPanel handlers
 
+  // Mirrors of state for event-driven callbacks (SignalR / timers) that need
+  // the CURRENT value, not the one captured at submit time.
+  const queuedBetsRef     = useRef(queuedBets);
+  const columnsRef        = useRef(columns);
+  const activeColumnIdRef = useRef(activeColumnId);
+  useEffect(() => { queuedBetsRef.current     = queuedBets;     }, [queuedBets]);
+  useEffect(() => { columnsRef.current        = columns;        }, [columns]);
+  useEffect(() => { activeColumnIdRef.current = activeColumnId; }, [activeColumnId]);
+
   const dismissQueued = useCallback((betId) => {
+    // The placed picks stayed visible in their column while the bet was in
+    // the 15s queue — strip them now that the bet resolved. Picks the user
+    // added meanwhile are untouched.
+    const bet = queuedBetsRef.current.find(b => b.id === betId);
+    if (bet?.columnId && bet.pickKeys?.length) {
+      let updated = columnsRef.current.map(c => c.id === bet.columnId
+        ? { ...c, picks: c.picks.filter(p => !bet.pickKeys.includes(p.key)) }
+        : c);
+      const betCol = updated.find(c => c.id === bet.columnId);
+      if (betCol && betCol.picks.length === 0) {
+        updated = updated.filter(c => c.id !== bet.columnId);
+      }
+      if (updated.length === 0) {
+        const fresh = newColumn();
+        setColumns([fresh]);
+        setActiveColumnId(fresh.id);
+      } else {
+        setColumns(updated);
+        if (!updated.some(c => c.id === activeColumnIdRef.current)) {
+          setActiveColumnId(updated[0].id);
+        }
+      }
+    }
     setQueuedBets(prev => prev.filter(b => b.id !== betId));
     delete panelRefs.current[betId];
   }, []);
@@ -281,7 +314,9 @@ export default function BetSlipPanel() {
 
   // ── Submit ─────────────────────────────────────────────────────────
   const handlePlaceAll = async () => {
-    if (loading || placeableCount === 0 || overBalance) return;
+    // queuedBets guard: the placed picks stay visible while a live bet is in
+    // the 15s queue — block re-submitting them until the queue resolves.
+    if (loading || placeableCount === 0 || overBalance || queuedBets.length > 0) return;
 
     setLoading(true); setError(''); setSuccess('');
     // Live countdowns are anchored to the moment the user presses "Заложи" —
@@ -332,6 +367,10 @@ export default function BetSlipPanel() {
               label: pickLabel(p),
               odds:  Number(p.odds),
             })),
+            // Which column/picks to strip once the bet resolves — until then
+            // the column stays on screen so the whole фиш remains visible.
+            columnId:    col.id,
+            pickKeys:    col.picks.map(p => p.key),
           });
         }
       });
@@ -357,10 +396,22 @@ export default function BetSlipPanel() {
         );
       }
 
-      // Clear the slip of non-live columns (live picks stay visible via panels)
-      const fresh = newColumn();
-      setColumns([fresh]);
-      setActiveColumnId(fresh.id);
+      // Keep the queued columns on screen while the 15s window runs — the
+      // фиш stays fully visible (pick cards, stake, summary) until the bet
+      // resolves; dismissQueued strips the placed picks afterwards. Columns
+      // that placed instantly (prematch) clear as before.
+      const queuedColIds = new Set(newQueued.map(b => b.columnId));
+      const keptCols = columnsRef.current.filter(c => queuedColIds.has(c.id));
+      if (keptCols.length > 0) {
+        setColumns(keptCols);
+        if (!queuedColIds.has(activeColumnIdRef.current)) {
+          setActiveColumnId(keptCols[0].id);
+        }
+      } else {
+        const fresh = newColumn();
+        setColumns([fresh]);
+        setActiveColumnId(fresh.id);
+      }
 
       // Keep the slip open after a successful submit — closing is now strictly
       // a user action (close arrow, pill, or Clear All).
@@ -618,13 +669,15 @@ export default function BetSlipPanel() {
                 type="button"
                 className="gvb-slip-panel__btn gvb-slip-panel__btn--gold"
                 onClick={handlePlaceAll}
-                disabled={loading || placeableCount === 0 || overBalance}
+                disabled={loading || placeableCount === 0 || overBalance || queuedBets.length > 0}
               >
                 {loading
                   ? 'Залагане…'
-                  : placeableCount > 1
-                    ? `Заложи всички (${totalStake.toFixed(2)} монети)`
-                    : `Заложи ${totalStake.toFixed(2)} монети`}
+                  : queuedBets.length > 0
+                    ? 'Обработва се…'
+                    : placeableCount > 1
+                      ? `Заложи всички (${totalStake.toFixed(2)} монети)`
+                      : `Заложи ${totalStake.toFixed(2)} монети`}
               </button>
             </div>
           </>
