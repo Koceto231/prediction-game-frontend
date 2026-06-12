@@ -58,7 +58,7 @@ export default function BetSlipPanel() {
 
   const dismissQueued = useCallback((betId) => {
     // The placed picks stayed visible in their column while the bet was in
-    // the 15s queue — strip them now that the bet resolved. Picks the user
+    // the live queue — strip them now that the bet resolved. Picks the user
     // added meanwhile are untouched.
     const bet = queuedBetsRef.current.find(b => b.id === betId);
     if (bet?.columnId && bet.pickKeys?.length) {
@@ -315,12 +315,12 @@ export default function BetSlipPanel() {
   // ── Submit ─────────────────────────────────────────────────────────
   const handlePlaceAll = async () => {
     // queuedBets guard: the placed picks stay visible while a live bet is in
-    // the 15s queue — block re-submitting them until the queue resolves.
+    // the live queue — block re-submitting them until the queue resolves.
     if (loading || placeableCount === 0 || overBalance || queuedBets.length > 0) return;
 
     setLoading(true); setError(''); setSuccess('');
     // Live countdowns are anchored to the moment the user presses "Заложи" —
-    // capture the click time before any network round-trips so the 15s timer
+    // capture the click time before any network round-trips so the timer
     // starts immediately, independent of server clock / response latency.
     const submittedAt = Date.now();
     try {
@@ -396,7 +396,7 @@ export default function BetSlipPanel() {
         );
       }
 
-      // Keep the queued columns on screen while the 15s window runs — the
+      // Keep the queued columns on screen while the queue window runs — the
       // фиш stays fully visible (pick cards, stake, summary) until the bet
       // resolves; dismissQueued strips the placed picks afterwards. Columns
       // that placed instantly (prematch) clear as before.
@@ -512,7 +512,7 @@ export default function BetSlipPanel() {
     <>
 
       {/* Connected slip — rendered while there are picks OR live bets still
-          in the 15s queue. When the last live panel resolves and no picks
+          in the live queue. When the last live panel resolves and no picks
           remain, the whole фиш disappears automatically. The body itself is
           gated on picks so the queued-only state shows just the panels. */}
       {(totalPicks > 0 || queuedBets.length > 0) && (
@@ -685,7 +685,7 @@ export default function BetSlipPanel() {
       </div>
       )}
 
-      {/* ── Live bet status panels ── shown while bets are in the 15s queue */}
+      {/* ── Live bet status panels ── shown while bets are in the live queue */}
       {totalPicks === 0 && queuedBets.length > 0 && (
         <div className="gvb-slip__queued-head">ФИШ</div>
       )}

@@ -16,13 +16,20 @@ import api from '../api/apiClient';
 const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismiss }, ref) {
   const { id, expiresAt, odds, fixture, submittedAt, legs, stake } = bet;
 
-  // The 15s window is anchored to the CLIENT-side click time (submittedAt) so
-  // the countdown starts the instant the user submits and is immune to server
-  // clock skew. Server ExpiresAt is only a fallback for entries without it.
+  // Window duration comes from the server's ExpiresAt (20s for most markets,
+  // 35s for cards/corners). We anchor the countdown to the client click time
+  // (submittedAt) so it starts instantly and is immune to server clock skew,
+  // but we use the server's window length so the bar fills correctly.
+  const windowMs = useRef(
+    expiresAt && submittedAt
+      ? Math.max(20_000, new Date(expiresAt).getTime() - submittedAt)
+      : 20_000
+  ).current;
+
   const deadline = useRef(
-    submittedAt ? submittedAt + QUEUE_WINDOW_MS
+    submittedAt ? submittedAt + windowMs
     : expiresAt ? new Date(expiresAt).getTime()
-    :             Date.now() + QUEUE_WINDOW_MS,
+    :             Date.now() + windowMs,
   ).current;
 
   // Seconds remaining until the deadline
@@ -153,7 +160,7 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
 
   // ── Progress bar width (0→100%) ────────────────────────────────────────
   const barPct = phase === 'queued'
-    ? Math.min(100, Math.round((secsLeft / (QUEUE_WINDOW_MS / 1000)) * 100))
+    ? Math.min(100, Math.round((secsLeft / (windowMs / 1000)) * 100))
     : 0;
 
   return (
@@ -291,15 +298,12 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
 
 export default LiveBetStatusPanel;
 
-// Mirrors LiveBetting:DelaySeconds on the backend (default 15).
-const QUEUE_WINDOW_MS = 15000;
-
 function secsUntil(deadlineMs) {
   return Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
 }
 
 function calcSecsLeft(expiresAt) {
-  if (!expiresAt) return 15;
+  if (!expiresAt) return 8;
   const diff = Math.round((new Date(expiresAt).getTime() - Date.now()) / 1000);
   return Math.max(0, diff);
 }
