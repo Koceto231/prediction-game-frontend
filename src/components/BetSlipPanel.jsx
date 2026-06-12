@@ -324,6 +324,14 @@ export default function BetSlipPanel() {
             submittedAt,               // countdown anchor — client-side click time
             odds:        data.oddsAtBetTime ?? data.OddsAtBetTime ?? col.combined,
             fixture:     col.picks[0]?.fixture ?? `Мач #${data.matchId ?? data.MatchId}`,
+            // Snapshot of what was placed, so the panel can keep showing the
+            // full фиш content (picks + stake) while the bet processes.
+            stake:       col.stakeNum,
+            legs:        col.picks.map(p => ({
+              chip:  pickChip(p),
+              label: pickLabel(p),
+              odds:  Number(p.odds),
+            })),
           });
         }
       });
@@ -625,6 +633,9 @@ export default function BetSlipPanel() {
       )}
 
       {/* ── Live bet status panels ── shown while bets are in the 15s queue */}
+      {totalPicks === 0 && queuedBets.length > 0 && (
+        <div className="gvb-slip__queued-head">ФИШ</div>
+      )}
       {queuedBets.map(bet => (
         <LiveBetStatusPanel
           key={bet.id}

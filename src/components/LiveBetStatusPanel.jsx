@@ -14,7 +14,7 @@ import api from '../api/apiClient';
  *   expired    — deadline passed with no update (failsafe, auto-dismisses)
  */
 const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismiss }, ref) {
-  const { id, expiresAt, odds, fixture, submittedAt } = bet;
+  const { id, expiresAt, odds, fixture, submittedAt, legs, stake } = bet;
 
   // The 15s window is anchored to the CLIENT-side click time (submittedAt) so
   // the countdown starts the instant the user submits and is immune to server
@@ -177,6 +177,19 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
       {/* Fixture */}
       <div className="lbsp__fixture">{fixture}</div>
 
+      {/* Placed picks — the фиш content stays visible while processing */}
+      {Array.isArray(legs) && legs.length > 0 && (
+        <div className="lbsp__legs">
+          {legs.map((l, i) => (
+            <div key={i} className="lbsp__leg">
+              {l.chip && <span className="lbsp__leg-chip">{l.chip}</span>}
+              <span className="lbsp__leg-label">{l.label}</span>
+              <span className="lbsp__leg-odds">{Number(l.odds).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── QUEUED phase: countdown bar + cancel ── */}
       {phase === 'queued' && (
         <>
@@ -190,6 +203,18 @@ const LiveBetStatusPanel = forwardRef(function LiveBetStatusPanel({ bet, onDismi
             <span className="lbsp__odds-label">Коефициент</span>
             <span className="lbsp__odds-val">{Number(odds).toFixed(2)}</span>
           </div>
+          {stake != null && (
+            <>
+              <div className="lbsp__odds-row">
+                <span className="lbsp__odds-label">Залог</span>
+                <span className="lbsp__stake-val">{Number(stake).toFixed(2)} монети</span>
+              </div>
+              <div className="lbsp__odds-row">
+                <span className="lbsp__odds-label">Възможна печалба</span>
+                <span className="lbsp__odds-val">{(Number(stake) * Number(odds)).toFixed(2)} монети</span>
+              </div>
+            </>
+          )}
           {actionError && <div className="lbsp__error">{actionError}</div>}
           <button
             className="lbsp__btn lbsp__btn--cancel"
